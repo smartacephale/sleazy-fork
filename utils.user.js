@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.0.3
+// @version      1.0.5
 // @match        *://*/*
 // ==/UserScript==
 
@@ -13,9 +13,16 @@ function parseDOM(html) {
     return parsed.children.length > 1 ? parsed : parsed.firstElementChild;
 }
 
-function fetchHtml(url) { return fetch(url).then((r) => r.text()).then((h) => parseDOM(h)); }
+const MOBILE_UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36';
 
-function fetchText(url) { return fetch(url).then((r) => r.text()); }
+function fetchCustomUA(url, ua = MOBILE_UA) {
+    const headers = new Headers({ "User-Agent": ua });
+    return fetch(url, { headers });
+}
+
+function fetchMobHtml(url) { return fetchCustomUA(url).then((r) => r.text()).then((h) => parseDOM(h)); }
+
+function fetchHtml(url) { return fetch(url).then((r) => r.text()).then((h) => parseDOM(h)); }
 
 function timeToSeconds(t) {
     return (t.match(/\d+/gm) || ['0'])
