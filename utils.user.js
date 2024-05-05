@@ -95,6 +95,8 @@ class Observer {
 
 class LazyImgLoader {
     constructor(callback, attributeName = 'data-lazy-load', removeTagAfter = true) {
+        this.attributeName = attributeName;
+        this.removeTagAfter = removeTagAfter;
         this.lazyImgObserver = new Observer((target) => {
             callback(target, this.delazify);
         });
