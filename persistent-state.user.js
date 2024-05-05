@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         persistentstate
+// @name         persistent-state
 // @description  simple state manager based on Vue3.reactive and localStorage
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
@@ -10,7 +10,7 @@
 /* globals reactive, watch */
 
 class PersistentState {
-    key = "state_2";
+    key = "state_acephale";
 
     constructor(state) {
         this.state = reactive(state);
