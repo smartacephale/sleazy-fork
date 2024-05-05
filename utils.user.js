@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         utils
-// @description  helper functions, intersection observer, mutation observer
+// @description  helper functions, intersection observer, mutation observer, lazy img loader
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.0.5
+// @version      1.1
 // @match        *://*/*
 // ==/UserScript==
 
@@ -13,7 +13,10 @@ function parseDOM(html) {
     return parsed.children.length > 1 ? parsed : parsed.firstElementChild;
 }
 
-const MOBILE_UA = 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36';
+const MOBILE_UA = [
+    'Mozilla/5.0 (Linux; Android 10; K)', 
+    'AppleWebKit/537.36 (KHTML, like Gecko)', 
+    'Chrome/114.0.0.0 Mobile Safari/537.36'].join(' ');
 
 function fetchCustomUA(url, ua = MOBILE_UA) {
     const headers = new Headers({ "User-Agent": ua });
@@ -90,6 +93,37 @@ class Observer {
 
 //====================================================================================================
 
+class LazyImgLoader {
+    constructor(callback, attributeName = 'data-lazy-load', removeTagAfter = true) {
+        this.lazyImgObserver = new Observer((target) => {
+            callback(target, this.delazify);
+        });
+    }
+
+    lazify(target, img) {
+        img.setAttribute(this.attributeName, img.src);
+        img.src = '';
+        this.lazyImgObserver.observe(img);
+    }
+
+    delazify = (target) => {
+        this.lazyImgObserver.observer.unobserve(target);
+        target.src = target.getAttribute(this.attributeName);
+        if (removeTagAfter) target.removeAttribute(this.attributeName);
+    }
+
+    static create(callback) {
+        const lazyImgLoader = new LazyImgLoader((target, delazify) => {
+            if (callback(target)) {
+                delazify(target);
+            }
+        });
+        return lazyImgLoader;
+    }
+}
+
+//====================================================================================================
+
 function waitForElementExists(parent, selector, callback) {
     const observer = new MutationObserver((mutations) => {
         const el = parent.querySelector(selector);
@@ -98,4 +132,8 @@ function waitForElementExists(parent, selector, callback) {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
+
+
+
+
 
