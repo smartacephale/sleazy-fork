@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1
+// @version      1.1.1
 // @match        *://*/*
 // ==/UserScript==
 
@@ -109,7 +109,7 @@ class LazyImgLoader {
     delazify = (target) => {
         this.lazyImgObserver.observer.unobserve(target);
         target.src = target.getAttribute(this.attributeName);
-        if (removeTagAfter) target.removeAttribute(this.attributeName);
+        if (this.removeTagAfter) target.removeAttribute(this.attributeName);
     }
 
     static create(callback) {
