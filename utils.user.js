@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         utils
+// @description  utils
 // @namespace    http://tampermonkey.net/
+// @author       smartacephale
 // @license      MIT
 // @version      1.0
-// @description  utils
-// @author       smartacephale
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
-// @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
+// @match        *://*/*
 // ==/UserScript==
 
 function parseDOM(html) {
