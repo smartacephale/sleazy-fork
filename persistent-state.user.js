@@ -10,9 +10,8 @@
 /* globals reactive, watch */
 
 class PersistentState {
-    key = "state_acephale";
-
-    constructor(state) {
+    constructor(state, key = "state_acephale") {
+        this.key = key;
         this.state = reactive(state);
         this.sync();
         this.watchPersistence();
