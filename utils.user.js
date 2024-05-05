@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.0
+// @version      1.0.1
 // @match        *://*/*
 // ==/UserScript==
 
@@ -31,3 +31,4 @@ function parseIntegerOr(n, or) {
 function stringToTags(s) {
     return s.split(",").map(s => s.trim().toLowerCase()).filter(_ => _);
 }
+
