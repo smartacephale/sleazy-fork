@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         utils
-// @description  utils
+// @description  helper functions
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.0.1
+// @version      1.0.2
 // @match        *://*/*
 // ==/UserScript==
 
