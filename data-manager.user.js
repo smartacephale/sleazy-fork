@@ -142,8 +142,8 @@ class DataManager {
 
       this.data.set(url, { element: thumbElement, duration, title });
 
-      const img = this.rules.THUMB_IMG_DATA(thumbElement);
-      if (img) this.lazyImgLoader.lazify(thumbElement, img);
+      const { img, imgSrc } = this.rules.THUMB_IMG_DATA(thumbElement);
+      this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
 
       this.rules.CONTAINER.appendChild(thumbElement);
     }
