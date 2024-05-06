@@ -145,7 +145,9 @@ class DataManager {
       const { img, imgSrc } = this.rules.THUMB_IMG_DATA(thumbElement);
       this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
 
-      (container || this.rules.CONTAINER).appendChild(thumbElement);
+      if (container !== false) {
+        (container || this.rules.CONTAINER).appendChild(thumbElement);
+      }
     }
 
     this.filterAll(data_offset);
