@@ -27,7 +27,7 @@ class PaginationManager {
 
     this.stateLocale.pagIndexLast = this.rules.PAGINATION_LAST;
     this.paginationGenerator = this.createNextPageGenerator();
-    this.paginationObserver = Observer.observeWhile(RULES.PAGINATION, this.generatorConsume, delay);
+    this.paginationObserver = Observer.observeWhile(RULES.INTERSECTION_OBSERVABLE || RULES.PAGINATION, this.generatorConsume, delay);
   }
 
   generatorConsume = async () => {
