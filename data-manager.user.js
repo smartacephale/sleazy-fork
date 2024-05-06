@@ -129,7 +129,7 @@ class DataManager {
     this.filter_(applyFilters, offset);
   }
 
-  handleLoadedHTML = (html, container) => {
+  handleLoadedHTML = (html, container, doNotAppend = false) => {
     const thumbs = this.rules.GET_THUMBS(html);
 
     const data_offset = this.data.size;
@@ -145,9 +145,8 @@ class DataManager {
       const { img, imgSrc } = this.rules.THUMB_IMG_DATA(thumbElement);
       this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
 
-      if (container !== false) {
-        (container || this.rules.CONTAINER).appendChild(thumbElement);
-      }
+      if (doNotAppend === true) continue;
+      (container || this.rules.CONTAINER).appendChild(thumbElement);
     }
 
     this.filterAll(data_offset);
