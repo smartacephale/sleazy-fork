@@ -65,7 +65,7 @@ class VueUI {
 
       <!-- PRIVATE/PUBLIC FILTER v-if="Object.hasOwn(state, privateFilter)" -->
       <div v-if="accessFilter" class="flex items-center bg-zinc-900 py-2 px-2 m-1 font-mono rounded">
-        <span class="inline-block ml-2">
+        <span class="inline-block ml-2 flex">
           <input type="checkbox" id="filterPrivate" v-model="state.filterPrivate"
             class="size-auto invert checked:invert-0 accent-gray-700">
           <label for="filterPrivate" class="text-zinc-300 font-mono ml-2">private</label>
@@ -76,7 +76,7 @@ class VueUI {
         </span>
 
         <button type="button" @click="accessFilterCallback"
-          class="mx-2 size-auto text-zinc-300 rounded px-3 py-1 bg-gray-700 hover:bg-gray-600 ml-auto">check
+          class="mx-2 size-auto text-zinc-300 rounded px-3 py-2 bg-gray-700 hover:bg-gray-600 ml-auto">check
           access 🔓</button>
       </div>
 
