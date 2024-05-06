@@ -102,8 +102,9 @@ class LazyImgLoader {
         });
     }
 
-    lazify(target, img) {
-        img.setAttribute(this.attributeName, img.src);
+    lazify(target, img, imgSrc) {
+        if (!img || !imgSrc) return;
+        img.setAttribute(this.attributeName, imgSrc);
         img.src = '';
         this.lazyImgObserver.observe(img);
     }
