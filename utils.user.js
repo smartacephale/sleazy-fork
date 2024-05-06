@@ -135,3 +135,32 @@ function waitForElementExists(parent, selector, callback) {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
+
+//====================================================================================================
+
+class Tick {
+    constructor(delay, startImmediate = true) {
+        this.tick = null;
+        this.delay = delay;
+        this.startImmediate = startImmediate;
+    }
+
+    start(callback, callbackFinal = null) {
+        this.stop();
+        this.callbackFinal = callbackFinal;
+        if (this.startImmediate) callback();
+        this.tick = setInterval(callback, this.delay);
+    }
+
+    stop() {
+        if(this.tick !== null) {
+            clearInterval(this.tick);
+            this.tick = null;
+        }
+        if (this.callbackFinal) {
+            this.callbackFinal();
+            this.callbackFinal = null;
+        }
+    }
+}
+
