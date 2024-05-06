@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.1
+// @version      1.1.2
 // @match        *://*/*
 // ==/UserScript==
 
@@ -135,8 +135,3 @@ function waitForElementExists(parent, selector, callback) {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
-
-
-
-
-
