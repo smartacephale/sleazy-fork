@@ -109,7 +109,7 @@ class VueUI {
     </template>
   </div>`;
 
-  constructor(state, stateLocale, accessFilter, accessFilterCallback) {
+  constructor(state, stateLocale, accessFilter = false, accessFilterCallback = false) {
     const root = parseDOM('<div id="tapermonkey-app" style="position: relative; z-index: 999999;"></div>');
       document.body.appendChild(root);
 
