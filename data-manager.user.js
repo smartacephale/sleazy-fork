@@ -145,10 +145,10 @@ class DataManager {
       const { img, imgSrc } = this.rules.THUMB_IMG_DATA(thumbElement);
       this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
 
-      const parent = container || this.rules.CONTAINER;
-      if (!parent.contains(thumbElement)) parent.appendChild(thumbElement);
-      // fuck know what to except...
-      // (container || this.rules.CONTAINER).appendChild(thumbElement);
+      // const parent = container || this.rules.CONTAINER;
+      // if (!parent.contains(thumbElement)) parent.appendChild(thumbElement);
+      // fuck knows what to except...
+      (container || this.rules.CONTAINER).appendChild(thumbElement);
     }
 
     this.filterAll(data_offset);
