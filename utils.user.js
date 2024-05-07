@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         utils
-// @description  helper functions, intersection observer, mutation observer, lazy img loader
+// @description  helper functions, intersection & mutation observers, lazyloader
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.2
+// @version      1.2
 // @match        *://*/*
 // ==/UserScript==
 
@@ -62,7 +62,6 @@ function listenEvents(dom, events, callback) {
     }
 }
 
-//====================================================================================================
 
 class Observer {
     constructor(callback) {
@@ -97,7 +96,6 @@ class Observer {
     }
 }
 
-//====================================================================================================
 
 class LazyImgLoader {
     constructor(callback, attributeName = 'data-lazy-load', removeTagAfter = true) {
@@ -131,7 +129,6 @@ class LazyImgLoader {
     }
 }
 
-//====================================================================================================
 
 function waitForElementExists(parent, selector, callback) {
     const observer = new MutationObserver((mutations) => {
@@ -157,7 +154,6 @@ function watchElementChildrenCount(element, callback) {
     observer.observe(element, { childList: true });
 }
 
-//====================================================================================================
 
 class Tick {
     constructor(delay, startImmediate = true) {
@@ -185,7 +181,6 @@ class Tick {
     }
 }
 
-//====================================================================================================
 
 function copyAttributes(target, source) {
     for (const attr of source.attributes) {
