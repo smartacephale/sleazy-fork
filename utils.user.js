@@ -170,3 +170,20 @@ class Tick {
     }
 }
 
+//====================================================================================================
+
+function copyAttributes(target, source) {
+    for (const attr of source.attributes) {
+        target.setAttribute(attr.nodeName, attr.nodeValue);
+    }
+}
+
+function replaceElementTag(e, tagName) {
+    const newTagElement = document.createElement(tagName);
+    copyAttributes(newTagElement, e);
+    newTagElement.innerHTML = e.innerHTML;
+    e.parentNode.replaceChild(newTagElement, e);
+}
+
+
+
