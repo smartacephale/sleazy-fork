@@ -8,6 +8,12 @@
 // @match        *://*/*
 // ==/UserScript==
 
+function findNextSibling(el) {
+    if (el.nextElementSibling) return el.nextElementSibling;
+    if (el.parentElement) return getNextSibling(el.parentElement);
+    return null;
+}
+
 function parseDOM(html) {
     const parsed = new DOMParser().parseFromString(html, 'text/html').body;
     return parsed.children.length > 1 ? parsed : parsed.firstElementChild;
