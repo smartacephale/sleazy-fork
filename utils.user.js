@@ -142,6 +142,21 @@ function waitForElementExists(parent, selector, callback) {
     observer.observe(document.body, { childList: true, subtree: true });
 }
 
+function watchElementChildrenCount(element, callback) {
+    let count = element.children.length;
+    const observer = new MutationObserver((mutationList, observer) => {
+        for (const mutation of mutationList) {
+            if (mutation.type === "childList") {
+                if (count !== element.children.length) {
+                    count = element.children.length;
+                    callback(observer, count);
+                }
+            }
+        }
+    });
+    observer.observe(element, { childList: true });
+}
+
 //====================================================================================================
 
 class Tick {
@@ -184,6 +199,3 @@ function replaceElementTag(e, tagName) {
     newTagElement.innerHTML = e.innerHTML;
     e.parentNode.replaceChild(newTagElement, e);
 }
-
-
-
