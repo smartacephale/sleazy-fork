@@ -10,7 +10,7 @@
 
 function findNextSibling(el) {
     if (el.nextElementSibling) return el.nextElementSibling;
-    if (el.parentElement) return getNextSibling(el.parentElement);
+    if (el.parentElement) return findNextSibling(el.parentElement);
     return null;
 }
 
