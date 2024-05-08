@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.0
+// @version      1.1
 // @match        *://*/*
 // ==/UserScript==
 /* globals reactive, watch */
@@ -42,3 +42,66 @@ class PersistentState {
         }
     }
 }
+
+
+
+class DefaultState {
+    DEFAULT_STATE = {
+        filterDurationFrom: 0,
+        filterDurationTo: 600,
+        filterDuration: false,
+        filterExcludeWords: "",
+        filterExclude: false,
+        filterIncludeWords: "",
+        filterInclude: false,
+        infiniteScrollEnabled: true,
+        uiEnabled: true,
+    };
+
+    DEFAAULT_STATE_PRIVATE_FILTERS = {
+        filterPrivate: false,
+        filterPublic: false
+    }
+
+    constructor(privateFilter = false) {
+        if (privateFilter) {
+            Object.assign(this.DEFAULT_STATE, this.DEFAAULT_STATE_PRIVATE_FILTERS);
+        }
+
+        const { state } = new PersistentState(this.DEFAULT_STATE);
+
+        this.state = state;
+
+        this.stateLocale = reactive({
+            pagIndexLast: 1,
+            pagIndexCur: 1,
+        });
+    }
+
+    setWatchers(filter_) {
+        const { state } = this;
+
+        if (Object.hasOwn(state, 'filterPrivate')) {
+            watch(() => state.filterPrivate, () => filter_({ filterPrivate: true }));
+            watch(() => state.filterPublic, () => filter_({ filterPublic: true }));
+        }
+
+        watch([() => state.filterDurationFrom, () => state.filterDurationTo], (a, b) => {
+            state.filterDurationFrom = parseIntegerOr(a[0], b[0]);
+            state.filterDurationTo = parseIntegerOr(a[1], b[1]);
+            if (state.filterDuration) filter_({ filterDuration: true });
+        });
+        watch(() => state.filterDuration, () => filter_({ filterDuration: true }));
+
+        watch(() => state.filterExclude, () => filter_({ filterExclude: true }));
+        watch(() => state.filterExcludeWords, () => {
+            if (state.filterExclude) filter_({ filterExclude: true });
+        }, { deep: true });
+
+        watch(() => state.filterInclude, () => filter_({ filterInclude: true }));
+        watch(() => state.filterIncludeWords, () => {
+            if (state.filterInclude) filter_({ filterInclude: true });
+        }, { deep: true });
+    }
+}
+
