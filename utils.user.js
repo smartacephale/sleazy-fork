@@ -194,3 +194,9 @@ function replaceElementTag(e, tagName) {
     newTagElement.innerHTML = e.innerHTML;
     e.parentNode.replaceChild(newTagElement, e);
 }
+
+
+function getAllUniqueParents(elements) {
+    return Array.from(elements).reduce((acc, v) => acc.includes(v.parentElement) ? acc : [...acc, v.parentElement], []);
+}
+
