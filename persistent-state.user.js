@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1
+// @version      1.1.1
 // @match        *://*/*
 // ==/UserScript==
 /* globals reactive, watch */
@@ -42,7 +42,6 @@ class PersistentState {
         }
     }
 }
-
 
 
 class DefaultState {
