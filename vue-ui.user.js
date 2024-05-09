@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.0
+// @version      1.1
 // @match        *://*/*
 // ==/UserScript==
 /* globals */
@@ -132,4 +132,3 @@ class VueUI {
       #tapermonkey-app button:hover { background: #4b5563; }`);
   }
 }
-
