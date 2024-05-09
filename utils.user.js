@@ -154,6 +154,20 @@ function watchElementChildrenCount(element, callback) {
     observer.observe(element, { childList: true });
 }
 
+function watchDomChangesWithThrottle(element, callback, throttle = 1000, options = { childList: true, subtree: true, attribute: true }) {
+    let lastMutationTime;
+    let timeout;
+    const observer = new MutationObserver((mutationList, observer) => {
+        let now = Date.now();
+        if (lastMutationTime && Date.now() - lastMutationTime < throttle) {
+            timeout && clearTimeout(timeout);
+        }
+        timeout = setTimeout(callback, throttle);
+        lastMutationTime = now;
+    });
+    observer.observe(element, options);
+}
+
 
 class Tick {
     constructor(delay, startImmediate = true) {
