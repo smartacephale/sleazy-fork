@@ -75,7 +75,7 @@ class VueUI {
           <label for="filterPublic" class="text-zinc-300 font-mono ml-2">public</label>
         </span>
 
-        <button type="button" @click="accessFilterCallback"
+        <button v-if="accessFilterCallback" type="button" @click="accessFilterCallback"
           class="mx-2 size-auto text-zinc-300 rounded px-3 py-2 bg-gray-700 hover:bg-gray-600 ml-auto">check
           access 🔓</button>
       </div>
