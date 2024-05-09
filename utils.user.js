@@ -154,7 +154,7 @@ function watchElementChildrenCount(element, callback) {
     observer.observe(element, { childList: true });
 }
 
-function watchDomChangesWithThrottle(element, callback, throttle = 1000, options = { childList: true, subtree: true, attribute: true }) {
+function watchDomChangesWithThrottle(element, callback, throttle = 1000, options = { childList: true, subtree: true, attributes: true }) {
     let lastMutationTime;
     let timeout;
     const observer = new MutationObserver((mutationList, observer) => {
