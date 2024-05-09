@@ -133,8 +133,10 @@ class LazyImgLoader {
 function waitForElementExists(parent, selector, callback) {
     const observer = new MutationObserver((mutations) => {
         const el = parent.querySelector(selector);
-        observer.disconnect();
-        if (el) callback(el);
+        if (el) {
+            observer.disconnect();
+            callback(el);
+        }
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
