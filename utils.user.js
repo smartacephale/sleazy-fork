@@ -158,8 +158,8 @@ function watchDomChangesWithThrottle(element, callback, throttle = 1000, options
     let lastMutationTime;
     let timeout;
     const observer = new MutationObserver((mutationList, observer) => {
-        let now = Date.now();
-        if (lastMutationTime && Date.now() - lastMutationTime < throttle) {
+        const now = Date.now();
+        if (lastMutationTime && now - lastMutationTime < throttle) {
             timeout && clearTimeout(timeout);
         }
         timeout = setTimeout(callback, throttle);
