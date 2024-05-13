@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.2.5
+// @version      4.2.6
 // @description  Infinite scroll (optional). Lazy loading. Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -53,10 +53,21 @@ class THISVID_RULES {
     constructor() {
         const { href, pathname } = window.location;
 
+        this.PAGINATION_ALLOWED = [
+            /\.com\/$/,
+            /\/(categories|tags?)\//,
+            /\/?q=.*/,
+            /\/(\w+-)?(rated|popular|private|newest|winners|updates)\/(\d+\/)?$/,
+            /\/members\/\d+\/\w+_videos\//,
+            /\/playlist\/\d+\//,
+            /\/my_(\w+)_videos\//
+        ].some(r => r.test(href));
+
         this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
         this.IS_WATCHLATER_KIND = /^\/my_(\w+)_videos\//.test(pathname);
         this.IS_MESSAGES_PAGE = /\/my_messages\//.test(pathname);
         this.IS_PLAYLIST = /^\/playlist\/\d+\//.test(pathname);
+        this.IS_VIDEO_PAGE = pathname.startsWith('/videos/');
 
         this.PAGE_HAS_VIDEO = !!document.querySelector('.tumbpu[title], .thumbs-items .thumb-holder');
         this.PAGINATION = $('.pagination');
@@ -162,10 +173,6 @@ class THISVID_RULES {
 
     IS_PRIVATE(thumbElement) {
         return thumbElement.firstElementChild.classList.contains('private');
-    }
-
-    PRIVATE_PREVIEW_FIX() {
-        unsafeWindow.$('img[alt!="Private"]').off();
     }
 }
 
@@ -274,7 +281,7 @@ function checkPrivateVidsAccess() {
 //====================================================================================================
 
 function downloader() {
-    if (!location.pathname.startsWith('/videos/')) return;
+    if (!RULES.IS_VIDEO_PAGE) return;
     function helper() {
         unsafeWindow.$('.fp-ui').click();
         waitForElementExists(document.body, 'video', (video) => {
@@ -295,6 +302,7 @@ unsafeWindow.$(document).ready(downloader);
 
 class PreviewAnimation {
     constructor(element, delay = ANIMATION_DELAY) {
+        unsafeWindow.$('img[alt!="Private"]').off();
         this.tick = new Tick(delay);
         listenEvents(element, ['mouseout', 'mouseover', 'touchstart', 'touchend'], this.animatePreview);
     }
@@ -320,19 +328,6 @@ class Router {
     }
 
     route() {
-        const { href } = window.location;
-        const allowed_pagination = [
-            /\.com\/$/,
-            /\/(categories|tags?)\//,
-            /\/?q=.*/,
-            /\/(\w+-)?(rated|popular|private|newest|winners|updates)\/(\d+\/)?$/,
-            /\/members\/\d+\/\w+_videos\//,
-            /\/playlist\/\d+\//,
-            /\/my_(\w+)_videos\//
-        ];
-
-        const isPaginationPage = allowed_pagination.some(r => r.test(href));
-
         this.handleMessages();
 
         if (!RULES.PAGE_HAS_VIDEO) return;
@@ -342,16 +337,16 @@ class Router {
         containers.forEach(c => {
             handleLoadedHTML(c, RULES.IS_MEMBER_PAGE ? c : RULES.CONTAINER);
         });
-        RULES.PRIVATE_PREVIEW_FIX();
 
         new PreviewAnimation(document.body);
-        this.ui = new VueUI(state, stateLocale, true, checkPrivateVidsAccess);
+        new VueUI(state, stateLocale, true, checkPrivateVidsAccess);
 
         this.handleMemberPage();
-        if (isPaginationPage) this.handlePaginationPage();
+        this.handlePaginationPage();
     }
 
     handlePaginationPage() {
+        if (!RULES.PAGINATION_ALLOWED) return;
         stateLocale.pagIndexLast = RULES.PAGINATION_LAST;
         if (!RULES.PAGINATION) return;
         this.paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
