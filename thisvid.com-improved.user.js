@@ -2,13 +2,14 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.2.6
+// @version      4.3
 // @description  Infinite scroll (optional). Lazy loading. Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
+// @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
@@ -188,8 +189,6 @@ function friend(id, i = 0) {
 const FRIEND_REQUEST_URL = (id) => `${window.location.origin}/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
 
 function initFriendship() {
-    if (!RULES.IS_OTHER_MEMBER_PAGE) return;
-
     createFriendButton();
 
     function getUsers(el) {
@@ -287,7 +286,15 @@ function downloader() {
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
             const name = document.querySelector('.headline').innerText + '.mp4';
-            downloadBlob(url, name);
+            GM_download({
+                url,
+                name,
+                saveAs: true,
+                onprogress: (e) => {
+                    const p = 100 * (e.loaded/e.total);
+                    btn.css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
+                }
+            });
         });
     }
 
@@ -353,7 +360,7 @@ class Router {
     }
 
     handleMemberPage() {
-        if (!RULES.IS_MEMBER_PAGE) return;
+        if (!RULES.IS_OTHER_MEMBER_PAGE) return;
         initFriendship();
     }
 
