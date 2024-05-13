@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.2.3
+// @version      4.2.5
 // @description  Infinite scroll (optional). Lazy loading. Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -17,11 +17,11 @@
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
 // @run-at       document-idle
-// @downloadURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
-// @updateURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
+// @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
 /* globals jQuery, $, listenEvents, range, Tick, waitForElementExists, downloadBlob,
-     timeToSeconds, parseDOM, fetchHtml, parseCSSUrl, circularShift, fetchText,
+     timeToSeconds, parseDOM, fetchHtml, parseCSSUrl, circularShift, fetchText, replaceElementTag,
      DataManager, PaginationManager, VueUI, DefaultState */
 
 const SponsaaLogo = `
@@ -39,6 +39,12 @@ const SponsaaLogo = `
       ⣿⣿⣿⣿⣿⣿⣷⣵⡵⣼⢼⢼⡴⣵⢵⡵⣵⢵⡵⣵⣪⣾⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
       ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣮⣧⣫⣪⡪⡣⣫⣪⣣⣯⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
       ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿`;
+
+const haveAccessColor = 'linear-gradient(90deg, #31623b, #212144)';
+const haveNoAccessColor = 'linear-gradient(90deg, #462525, #46464a)';
+const succColor = 'linear-gradient(#2f6eb34f, #66666647)';
+const failColor = 'linear-gradient(rgba(179, 47, 47, 0.31), rgba(102, 102, 102, 0.28))';
+const friendProfileColor = 'radial-gradient(circle, rgb(28, 42, 50) 48%, rgb(0, 0, 0) 100%)';
 
 function $(x, e = document.body) { return e.querySelector(x); }
 function $$(x, e = document.body) { return e.querySelectorAll(x); }
@@ -63,18 +69,15 @@ class THISVID_RULES {
         // highlight friend page profile
         this.IS_MEMBER_FRIEND = this.IS_OTHER_MEMBER_PAGE && document.querySelector('.case-left')?.innerText.includes('is in your friends');
         if (this.IS_MEMBER_FRIEND) {
-            document.querySelector('.profile').style.background = 'radial-gradient(circle, rgb(28, 42, 50) 48%, rgb(0, 0, 0) 100%)';
+            document.querySelector('.profile').style.background = friendProfileColor;
         }
 
         // playlist page add link to video
         if (this.IS_PLAYLIST) {
-            const videoUrl = this.PLAYLIST_THUMB_URL(window.location.pathname);
+            const videoUrl = this.PLAYLIST_THUMB_URL(pathname);
             const desc = document.querySelector('.tools-left > li:nth-child(4) > .title-description');
-            const ahref = document.createElement('a');
-            ahref.href = videoUrl;
-            const container = desc.parentElement;
-            ahref.appendChild(desc);
-            container.appendChild(ahref);
+            const link = replaceElementTag(desc, 'a');
+            link.href = videoUrl;
         }
     }
 
@@ -239,13 +242,6 @@ async function getUserData(id) {
         };
     });
 }
-
-//====================================================================================================
-
-const haveAccessColor = 'linear-gradient(90deg, #31623b, #212144)';
-const haveNoAccessColor = 'linear-gradient(90deg, #462525, #46464a)';
-const succColor = 'linear-gradient(#2f6eb34f, #66666647)';
-const failColor = 'linear-gradient(rgba(179, 47, 47, 0.31), rgba(102, 102, 102, 0.28))';
 
 //====================================================================================================
 
