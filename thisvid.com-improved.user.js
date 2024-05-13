@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.2.2
+// @version      4.2.3
 // @description  Infinite scroll (optional). Lazy loading. Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -47,13 +47,17 @@ class THISVID_RULES {
     constructor() {
         const { href, pathname } = window.location;
 
-        this.PAGE_HAS_VIDEO = document.querySelector('.tumbpu[title], .thumbs-items .thumb-holder');
+        this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
+        this.IS_WATCHLATER_KIND = /^\/my_(\w+)_videos\//.test(pathname);
+        this.IS_MESSAGES_PAGE = /\/my_messages\//.test(pathname);
+        this.IS_PLAYLIST = /^\/playlist\/\d+\//.test(pathname);
+
+        this.PAGE_HAS_VIDEO = !!document.querySelector('.tumbpu[title], .thumbs-items .thumb-holder');
         this.PAGINATION = $('.pagination');
         this.PAGINATION_LAST = this.PAGINATION ? parseInt($('.pagination-next')?.previousElementSibling?.innerText) : 1;
 
         this.CONTAINER = Array.from(document.querySelectorAll('.thumbs-items')).pop();
 
-        this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
         this.IS_OTHER_MEMBER_PAGE = !$('.my-avatar') && this.IS_MEMBER_PAGE;
 
         // highlight friend page profile
@@ -61,11 +65,6 @@ class THISVID_RULES {
         if (this.IS_MEMBER_FRIEND) {
             document.querySelector('.profile').style.background = 'radial-gradient(circle, rgb(28, 42, 50) 48%, rgb(0, 0, 0) 100%)';
         }
-
-        this.IS_WATCHLATER_KIND = /^\/my_(\w+)_videos\//.test(pathname);
-
-        this.IS_MESSAGES_PAGE = /\/my_messages\//.test(pathname);
-        this.IS_PLAYLIST = /^\/playlist\/\d+\//.test(pathname);
 
         // playlist page add link to video
         if (this.IS_PLAYLIST) {
@@ -243,6 +242,13 @@ async function getUserData(id) {
 
 //====================================================================================================
 
+const haveAccessColor = 'linear-gradient(90deg, #31623b, #212144)';
+const haveNoAccessColor = 'linear-gradient(90deg, #462525, #46464a)';
+const succColor = 'linear-gradient(#2f6eb34f, #66666647)';
+const failColor = 'linear-gradient(rgba(179, 47, 47, 0.31), rgba(102, 102, 102, 0.28))';
+
+//====================================================================================================
+
 function requestPrivateAccess(e, memberid) {
     e.preventDefault();
     friend(memberid);
@@ -250,9 +256,6 @@ function requestPrivateAccess(e, memberid) {
 }
 
 unsafeWindow.requestPrivateAccess = requestPrivateAccess;
-
-const haveAccessColor = 'linear-gradient(90deg, #31623b, #212144)';
-const haveNoAccessColor = 'linear-gradient(90deg, #462525, #46464a)';
 
 function checkPrivateVidsAccess() {
     document.querySelectorAll('.tumbpu > .private').forEach(t => {
@@ -368,8 +371,6 @@ class Router {
         for (const member of $$('.user-avatar > a')) {
             getUserData(member.href).then(({ publicVideosCount, privateVideosCount }) => {
                 if (privateVideosCount > 0) {
-                    const succColor = 'linear-gradient(#2f6eb34f, #66666647)';
-                    const failColor = 'linear-gradient(rgba(179, 47, 47, 0.31), rgba(102, 102, 102, 0.28))';
                     const success = !member.parentElement.nextElementSibling.innerText.includes('declined');
                     member.parentElement.parentElement.style.background = success ? succColor : failColor;
                 }
