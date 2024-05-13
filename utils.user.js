@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.3.5
+// @version      1.3.6
 // @match        *://*/*
 // ==/UserScript==
 
@@ -219,11 +219,3 @@ function getAllUniqueParents(elements) {
     return Array.from(elements).reduce((acc, v) => acc.includes(v.parentElement) ? acc : [...acc, v.parentElement], []);
 }
 
-function downloadBlob(url, filename) {
-    return fetch(url).then(t => t.blob()).then(b => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(b);
-        a.setAttribute("download", filename);
-        a.click();
-    });
-}
