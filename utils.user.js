@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.3.4
+// @version      1.3.5
 // @match        *://*/*
 // ==/UserScript==
 
@@ -211,6 +211,7 @@ function replaceElementTag(e, tagName) {
     copyAttributes(newTagElement, e);
     newTagElement.innerHTML = e.innerHTML;
     e.parentNode.replaceChild(newTagElement, e);
+    return newTagElement;
 }
 
 
