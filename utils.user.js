@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.3.3
+// @version      1.3.4
 // @match        *://*/*
 // ==/UserScript==
 
@@ -32,6 +32,8 @@ function fetchCustomUA(url, ua = MOBILE_UA) {
 function fetchMobHtml(url) { return fetchCustomUA(url).then((r) => r.text()).then((h) => parseDOM(h)); }
 
 function fetchHtml(url) { return fetch(url).then((r) => r.text()).then((h) => parseDOM(h)); }
+
+function fetchText(url) { return fetch(url).then((r) => r.text()); }
 
 function timeToSeconds(t) {
     return (t.match(/\d+/gm) || ['0'])
