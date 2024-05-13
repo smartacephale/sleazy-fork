@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Lazy loading. Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.camwhores.tv/*
 // @grant        GM_addStyle
+// @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
@@ -17,6 +18,8 @@
 // @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
+// @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
 /* globals jQuery, $, Vue, waitForElementExists,
  timeToSeconds, parseDOM, fetchHtml, DefaultState, circularShift, getAllUniqueParents,
@@ -176,22 +179,21 @@ function animate() {
 
 //====================================================================================================
 
-function download_(url, filename) {
-    fetch(url).then(t => t.blob()).then(b => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(b);
-        a.setAttribute("download", filename);
-        a.click();
-    });
-}
-
 function downloader() {
     if (!/^\/videos\/\d+\//.test(location.pathname)) return;
     function helper() {
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
             const name = document.querySelector('.headline').innerText + '.mp4';
-            download_(url, name);
+            GM_download({
+                url,
+                name,
+                saveAs: true,
+                onprogress: (e) => {
+                    const p = 100 * (e.loaded/e.total);
+                    btn.children().css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
+                }
+            });
         });
     }
 
