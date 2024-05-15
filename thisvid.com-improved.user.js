@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.3
+// @version      4.3.2
 // @description  Infinite scroll (optional). Lazy loading. Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -26,20 +26,20 @@
      DataManager, PaginationManager, VueUI, DefaultState */
 
 const SponsaaLogo = `
-      Kono bangumi ha(wa) goran no suponsaa no teikyou de okurishimasu⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⡟⣟⢻⢛⢟⠿⢿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣾⣾⣵⣧⣷⢽⢮⢧⢿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣿⣯⣭⣧⣯⣮⣧⣯⣧⣯⡮⣵⣱⢕⣕⢕⣕⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⡫⡻⣝⢯⡻⣝⡟⣟⢽⡫⡟⣏⢏⡏⡝⡭⡹⡩⣻⣿⣿⣿⣿⠟⠟⢟⡟⠟⠻⠛⠟⠻⠻⣿⣿⣿⡟⠟⠻⠛⠟⠻⠻⣿⣿
-      ⣿⣿⣿⣿⡿⣻⣿⣿⣿⡿⣿⣿⡿⣿⣿⢿⢿⡻⢾⠽⡺⡞⣗⠷⣿⣿⣿⡏⠀⠀⠀⣣⣤⡄⠀⠠⣄⡆⠫⠋⠻⢕⣤⡄⠀ ⢀⣤⣔⣿⣿
-      ⣿⣿⣿⣿⣷⣷⣷⣾⣶⣯⣶⣶⣷⣷⣾⣷⣳⣵⣧⣳⡵⣕⣮⣞⣾⣿⡟⠄⢀⣦⠀⢘⣽⡇⠀⠨⣿⡌⠀⠣⣠⠹⠿⡭⠀ ⠐⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣕⣵⣱⣫⣳⡯⣯⣫⣯⣞⣮⣎⣮⣪⣢⣣⣝⣜⡜⣜⣾⣿⠃⠀⠀⠑⠀⠀⢺⡇⠀ ⢘⣾⠀⢄⢄⠘⠀⢘⢎⠀⢈⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣙⣛⣛⢻⢛⢟⢟⣛⢻⢹⣙⢳⢹⢚⢕⣓⡓⡏⣗⣿⣓⣀⣀⣿⣿⣮⢀⣀⣇⣀⣐⣿⣔⣀⢁⢀⣀⣀⣅⣀⡠⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣾⡞⣞⢷⡻⡯⡷⣗⢯⢷⢞⢷⢻⢞⢷⡳⣻⣺⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣿⣷⣵⡵⣼⢼⢼⡴⣵⢵⡵⣵⢵⡵⣵⣪⣾⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣮⣧⣫⣪⡪⡣⣫⣪⣣⣯⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-      ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿`;
+     Kono bangumi ha(wa) goran no suponsaa no teikyou de okurishimasu⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⡟⣟⢻⢛⢟⠿⢿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣿⣾⣾⣵⣧⣷⢽⢮⢧⢿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣿⣯⣭⣧⣯⣮⣧⣯⣧⣯⡮⣵⣱⢕⣕⢕⣕⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⡫⡻⣝⢯⡻⣝⡟⣟⢽⡫⡟⣏⢏⡏⡝⡭⡹⡩⣻⣿⣿⣿⣿⠟⠟⢟⡟⠟⠻⠛⠟⠻⠻⣿⣿⣿⡟⠟⠻⠛⠟⠻⠻⣿⣿
+     ⣿⣿⣿⣿⡿⣻⣿⣿⣿⡿⣿⣿⡿⣿⣿⢿⢿⡻⢾⠽⡺⡞⣗⠷⣿⣿⣿⡏⠀⠀⠀⣣⣤⡄⠀⠠⣄⡆⠫⠋⠻⢕⣤⡄⠀ ⢀⣤⣔⣿⣿
+     ⣿⣿⣿⣿⣷⣷⣷⣾⣶⣯⣶⣶⣷⣷⣾⣷⣳⣵⣧⣳⡵⣕⣮⣞⣾⣿⡟⠄⢀⣦⠀⢘⣽⡇⠀⠨⣿⡌⠀⠣⣠⠹⠿⡭⠀ ⠐⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣕⣵⣱⣫⣳⡯⣯⣫⣯⣞⣮⣎⣮⣪⣢⣣⣝⣜⡜⣜⣾⣿⠃⠀⠀⠑⠀⠀⢺⡇⠀ ⢘⣾⠀⢄⢄⠘⠀⢘⢎⠀⢈⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣙⣛⣛⢻⢛⢟⢟⣛⢻⢹⣙⢳⢹⢚⢕⣓⡓⡏⣗⣿⣓⣀⣀⣿⣿⣮⢀⣀⣇⣀⣐⣿⣔⣀⢁⢀⣀⣀⣅⣀⡠⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣾⡞⣞⢷⡻⡯⡷⣗⢯⢷⢞⢷⢻⢞⢷⡳⣻⣺⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣿⣷⣵⡵⣼⢼⢼⡴⣵⢵⡵⣵⢵⡵⣵⣪⣾⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣮⣧⣫⣪⡪⡣⣫⣪⣣⣯⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿`;
 
 const haveAccessColor = 'linear-gradient(90deg, #31623b, #212144)';
 const haveNoAccessColor = 'linear-gradient(90deg, #462525, #46464a)';
@@ -69,6 +69,8 @@ class THISVID_RULES {
         this.IS_MESSAGES_PAGE = /\/my_messages\//.test(pathname);
         this.IS_PLAYLIST = /^\/playlist\/\d+\//.test(pathname);
         this.IS_VIDEO_PAGE = pathname.startsWith('/videos/');
+
+        this.LOGGED_IN = document.cookie.includes('kt_member');
 
         this.PAGE_HAS_VIDEO = !!document.querySelector('.tumbpu[title], .thumbs-items .thumb-holder');
         this.PAGINATION = $('.pagination');
@@ -182,8 +184,7 @@ const RULES = new THISVID_RULES();
 //====================================================================================================
 
 function friend(id, i = 0) {
-    return fetchText(FRIEND_REQUEST_URL(id))
-        .then((text) => console.log(`friend request #${i} with /members/662717/${id}/`, text));
+    return fetchText(FRIEND_REQUEST_URL(id)).then((text) => console.log(`#${i} * ${id}`, text));
 }
 
 const FRIEND_REQUEST_URL = (id) => `${window.location.origin}/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
@@ -280,30 +281,23 @@ function checkPrivateVidsAccess() {
 //====================================================================================================
 
 function downloader() {
-    if (!RULES.IS_VIDEO_PAGE) return;
-    function helper() {
+    function getVideoAndDownload() {
         unsafeWindow.$('.fp-ui').click();
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
             const name = document.querySelector('.headline').innerText + '.mp4';
-            GM_download({
-                url,
-                name,
-                saveAs: true,
-                onprogress: (e) => {
-                    const p = 100 * (e.loaded/e.total);
-                    btn.css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
-                }
-            });
+            const onprogress = (e) => {
+                const p = 100 * (e.loaded / e.total);
+                btn.css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
+            }
+            GM_download({ url, name, saveAs: true, onprogress });
         });
     }
 
     const btn = unsafeWindow.$('<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>');
     unsafeWindow.$('.share_btn').after(btn);
-    btn.on('click', helper);
+    btn.on('click', getVideoAndDownload);
 }
-
-unsafeWindow.$(document).ready(downloader);
 
 //====================================================================================================
 
@@ -329,52 +323,48 @@ class PreviewAnimation {
 
 //====================================================================================================
 
-class Router {
-    constructor() {
-        this.route();
-    }
-
-    route() {
-        this.handleMessages();
-
-        if (!RULES.PAGE_HAS_VIDEO) return;
-
-        const containers = Array.from(RULES.IS_WATCHLATER_KIND ? [RULES.CONTAINER] : document.querySelectorAll('.thumbs-items:not(.thumbs-members)'));
-        if (containers.length > 1 && !RULES.IS_MEMBER_PAGE) RULES.CONTAINER = containers[0];
-        containers.forEach(c => {
-            handleLoadedHTML(c, RULES.IS_MEMBER_PAGE ? c : RULES.CONTAINER);
+function highlightMessages() {
+    for (const member of $$('.user-avatar > a')) {
+        getUserData(member.href).then(({ publicVideosCount, privateVideosCount }) => {
+            if (privateVideosCount > 0) {
+                const success = !member.parentElement.nextElementSibling.innerText.includes('declined');
+                member.parentElement.parentElement.style.background = success ? succColor : failColor;
+            }
+            $('.user-comment p', member.parentElement.parentElement).innerText +=
+                `  |  videos: ${publicVideosCount} public, ${privateVideosCount} private`;
         });
+    }
+}
 
-        new PreviewAnimation(document.body);
-        new VueUI(state, stateLocale, true, checkPrivateVidsAccess);
+//====================================================================================================
 
-        this.handleMemberPage();
-        this.handlePaginationPage();
+function route() {
+    if (RULES.IS_MESSAGES_PAGE) {
+        highlightMessages();
     }
 
-    handlePaginationPage() {
-        if (!RULES.PAGINATION_ALLOWED) return;
-        stateLocale.pagIndexLast = RULES.PAGINATION_LAST;
-        if (!RULES.PAGINATION) return;
-        this.paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
-    }
+    if (RULES.IS_VIDEO_PAGE) downloader();
 
-    handleMemberPage() {
-        if (!RULES.IS_OTHER_MEMBER_PAGE) return;
+    if (!RULES.PAGE_HAS_VIDEO) return;
+
+    const containers = Array.from(RULES.IS_WATCHLATER_KIND ? [RULES.CONTAINER] : document.querySelectorAll('.thumbs-items:not(.thumbs-members)'));
+    if (containers.length > 1 && !RULES.IS_MEMBER_PAGE) RULES.CONTAINER = containers[0];
+    containers.forEach(c => {
+        handleLoadedHTML(c, RULES.IS_MEMBER_PAGE ? c : RULES.CONTAINER);
+    });
+
+    new PreviewAnimation(document.body);
+    new VueUI(state, stateLocale, true, RULES.LOGGED_IN ? checkPrivateVidsAccess : false);
+
+
+    if (RULES.IS_OTHER_MEMBER_PAGE) {
         initFriendship();
     }
 
-    handleMessages() {
-        if (!RULES.IS_MESSAGES_PAGE) return;
-        for (const member of $$('.user-avatar > a')) {
-            getUserData(member.href).then(({ publicVideosCount, privateVideosCount }) => {
-                if (privateVideosCount > 0) {
-                    const success = !member.parentElement.nextElementSibling.innerText.includes('declined');
-                    member.parentElement.parentElement.style.background = success ? succColor : failColor;
-                }
-                $('.user-comment p', member.parentElement.parentElement).innerText += `  |  videos: ${publicVideosCount} public, ${privateVideosCount} private`;
-            })
-        }
+    if (RULES.PAGINATION_ALLOWED) {
+        stateLocale.pagIndexLast = RULES.PAGINATION_LAST;
+        if (!RULES.PAGINATION) return;
+        this.paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     }
 }
 
@@ -388,4 +378,4 @@ const { state, stateLocale } = defaultState;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
 defaultState.setWatchers(filter_);
 
-const router = new Router();
+route();
