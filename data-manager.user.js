@@ -4,10 +4,10 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1
+// @version      1.1.2
 // @match        *://*/*
 // ==/UserScript==
-/* globals LazyImgLoader */
+/* globals LazyImgLoader, stringToWords */
 
 /** Manages thumbs, applying filters, lazy loading, keep list unique */
 class DataManager {
@@ -123,7 +123,7 @@ class DataManager {
   }
 
   filterAll = (offset) => {
-    const applyFilters = Object.assign({}, ...Object.keys(this.dataFilters).map(f => ({ [f]: state[f] })));
+    const applyFilters = Object.assign({}, ...Object.keys(this.dataFilters).map(f => ({ [f]: this.state[f] })));
     this.filter_(applyFilters, offset);
   }
 
@@ -133,7 +133,10 @@ class DataManager {
 
     for (const thumbElement of thumbs) {
       const url = this.rules.THUMB_URL(thumbElement);
-      if (!url || this.data.has(url)) continue;
+      if (!url || this.data.has(url)) {
+        thumbElement.remove(); // for document.body
+        continue;
+      }
 
       const { title, duration } = this.rules.THUMB_DATA(thumbElement);
       this.data.set(url, { element: thumbElement, duration, title });
