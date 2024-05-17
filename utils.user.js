@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4
+// @version      1.4.2
 // @match        *://*/*
 // ==/UserScript==
 
@@ -263,7 +263,6 @@ function getAllUniqueParents(elements) {
     return Array.from(elements).reduce((acc, v) => acc.includes(v.parentElement) ? acc : [...acc, v.parentElement], []);
 }
 
-
 function downloadBlob(url, filename) {
     return fetch(url).then(t => t.blob()).then(b => {
         const a = document.createElement("a");
@@ -274,4 +273,10 @@ function downloadBlob(url, filename) {
 }
 
 function isMob() { return /iPhone|Android/i.test(navigator.userAgent); }
+
+function objectToFormData(object) {
+    const formData = new FormData();
+    Object.keys(object).forEach(key => formData.append(key, object[key]));
+    return formData;
+}
 
