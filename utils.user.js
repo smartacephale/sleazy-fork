@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4.2
+// @version      1.4.3
 // @match        *://*/*
 // ==/UserScript==
 
@@ -108,7 +108,6 @@ function listenEvents(dom, events, callback) {
     }
 }
 
-
 class Observer {
     constructor(callback) {
         this.callback = callback;
@@ -142,7 +141,6 @@ class Observer {
     }
 }
 
-
 class LazyImgLoader {
     constructor(callback, attributeName = 'data-lazy-load', removeTagAfter = true) {
         this.attributeName = attributeName;
@@ -174,7 +172,6 @@ class LazyImgLoader {
         return lazyImgLoader;
     }
 }
-
 
 function waitForElementExists(parent, selector, callback) {
     const observer = new MutationObserver((mutations) => {
@@ -216,7 +213,6 @@ function watchDomChangesWithThrottle(element, callback, throttle = 1000, options
     observer.observe(element, options);
 }
 
-
 class Tick {
     constructor(delay, startImmediate = true) {
         this.tick = null;
@@ -243,7 +239,6 @@ class Tick {
     }
 }
 
-
 function copyAttributes(target, source) {
     for (const attr of source.attributes) {
         target.setAttribute(attr.nodeName, attr.nodeValue);
@@ -257,7 +252,6 @@ function replaceElementTag(e, tagName) {
     e.parentNode.replaceChild(newTagElement, e);
     return newTagElement;
 }
-
 
 function getAllUniqueParents(elements) {
     return Array.from(elements).reduce((acc, v) => acc.includes(v.parentElement) ? acc : [...acc, v.parentElement], []);
@@ -279,4 +273,3 @@ function objectToFormData(object) {
     Object.keys(object).forEach(key => formData.append(key, object[key]));
     return formData;
 }
-
