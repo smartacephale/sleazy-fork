@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.6
+// @version      1.6.1
 // @license      MIT
-// @description  Infinite scroll (optional). Lazy loading. Filter by duration, include/exclude phrases
+// @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.spankbang.com/*
