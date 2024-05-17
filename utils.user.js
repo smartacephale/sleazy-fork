@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4.6
+// @version      1.4.7
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -41,7 +41,7 @@ function wait(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, batchPause = 20000) {
+async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, batchTimeout = 20000) {
     const results = [];
     const total = links.length;
 
@@ -73,7 +73,7 @@ async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, 
             console.log(`progress: ${results.length}/${total}`);
             if (failed.length > 0) {
                 const failedRatio = (1 - ((links.length-failed.length) / batchSize));
-                const timeout = failedRatio * batchPause + batchPause / 3;
+                const timeout = failedRatio * batchTimeout + batchTimeout / 3;
                 await wait(timeout);
                 return processlinks(failed);
             }
