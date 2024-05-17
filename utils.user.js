@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4.5
+// @version      1.4.6
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -55,11 +55,13 @@ async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, 
                     const res = await fetchCallback(l);
                     const isResponse = res instanceof Response;
                     if (res.ok || !isResponse) {
+                        /*
                         if (typeof res.text === 'function') {
                             const t = await res.text();
                             console.log(l, t);
                         }
                         if (!isResponse) { console.log(l, res); }
+                        */
                         results.push(res);
                     } else {
                         throw new Error(res.statusText);
