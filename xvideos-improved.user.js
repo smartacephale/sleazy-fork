@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.5.1
 // @license      MIT
-// @description  Infinite scroll. Lazy loading. Filter by duration, include/exclude phrases
+// @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xvideos.com/*
