@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.8
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @grant        GM_addStyle
 // @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1378482
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
@@ -22,8 +22,8 @@
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
 /* globals jQuery, $, Vue, waitForElementExists,
- timeToSeconds, parseDOM, fetchHtml, DefaultState, circularShift, getAllUniqueParents, range,
- PersistentState, DataManager, PaginationManager, VueUI, Tick, watchDomChangesWithThrottle, */
+ timeToSeconds, parseDOM, fetchHtml, DefaultState, circularShift, getAllUniqueParents, range, retryFetch,
+ DataManager, PaginationManager, VueUI, Tick, watchDomChangesWithThrottle, objectToFormData, */
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -216,12 +216,6 @@ function shouldReload() {
 
 //====================================================================================================
 
-function objectToFormData(object) {
-    const formData = new FormData();
-    Object.keys(object).forEach(key => formData.append(key, object[key]));
-    return formData;
-}
-
 function friendRequest(id) {
     const formData = objectToFormData({
         message: "",
@@ -239,47 +233,18 @@ function getMemberLinks(document) {
     return Array.from(document.querySelectorAll('.item > a')).map(l => l.href).filter(l => /\/members\/\d+\/$/.test(l));
 }
 
-function wait(milliseconds) {
-    return new Promise(resolve => setTimeout(resolve, milliseconds));
-}
-
-async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, batchPause = 20000) {
-    const failed = links.slice(batchSize);
-    const batch = links.slice(0, batchSize);
-    if (links.length > 1) {
-        await Promise.all(batch.map(async (l, i) => {
-            await wait(i*interval);
-            try {
-                const res = await fetchCallback(l);
-                if (!res.ok) {
-                    throw new Error(res.statusText);
-                }
-                const text = await res.text();
-                console.log(l, text);
-            } catch (error) {
-                failed.push(l);
-            }
-        }));
-        if (failed.length > 0) {
-            const timeout = (1 - ((links.length-failed.length) / batchSize)) * batchPause + batchPause / 3;
-            return wait(timeout).then(() => retryFetch(failed, fetchCallback, interval));
-        }
-    }
-    return true;
-}
-
 async function getMemberFriends(id) {
     const url = `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = range(pag_last, 1).map(u => iteratable_url(u));
-    const friendlist = (await Promise.all(pages.map(n => fetchHtml(n)))).flatMap(getMemberLinks);
+    const friendlist = (await retryFetch(pages, fetchHtml)).flatMap(getMemberLinks);
     return retryFetch(friendlist, friendRequest);
 }
 
 function createFriendButton() {
     const button = parseDOM('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
-    document.querySelector('.button[href="#friends"]').parentElement.append(button);
+    document.querySelector('.main-container-user > .headline').append(button);
     const memberid = window.location.pathname.match(/\d+/)[0];
     button.addEventListener('click', () => {
         button.style.background = 'radial-gradient(#ff6114, #5babc4)';
@@ -327,4 +292,3 @@ defaultState.setWatchers(filter_);
 
 console.log(LOGO);
 route();
-
