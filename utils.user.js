@@ -4,10 +4,9 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4.8
+// @version      1.4.9a
 // @match        *://*/*
-// @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
-// @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
+// @downloadURL none
 // ==/UserScript==
 
 function findNextSibling(el) {
@@ -22,8 +21,8 @@ function parseDOM(html) {
 }
 
 const MOBILE_UA = [
-    'Mozilla/5.0 (Linux; Android 10; K)', 
-    'AppleWebKit/537.36 (KHTML, like Gecko)', 
+    'Mozilla/5.0 (Linux; Android 10; K)',
+    'AppleWebKit/537.36 (KHTML, like Gecko)',
     'Chrome/114.0.0.0 Mobile Safari/537.36'].join(' ');
 
 function fetchCustomUA(url, ua = MOBILE_UA) {
@@ -64,10 +63,10 @@ async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, 
                         */
                         results.push(res);
                     } else {
-                        throw new Error(res.statusText);
+                        failed.push(l);
                     }
                 } catch (error) {
-                    failed.push(l);
+                    console.error(error);
                 }
             }));
             console.log(`progress: ${results.length}/${total}`);
