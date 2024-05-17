@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4.9a
+// @version      1.4.9b
 // @match        *://*/*
 // @downloadURL none
 // ==/UserScript==
