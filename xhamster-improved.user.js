@@ -2,8 +2,8 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.0
-// @description  Infinite scroll. Lazy loading. Filter by duration, include/exclude phrases. Automatically expand more videos on video page.
+// @version      2.0.1
+// @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page.
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xhamster.com/*
