@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.8
+// @version      1.0.9
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -259,12 +259,12 @@ function createFriendButton() {
 //====================================================================================================
 
 function route() {
-    if (RULES.PAGINATION) {
+    if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE) {
         const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
         shouldReload();
     }
 
-    if (RULES.HAS_VIDEOS) {
+    if (RULES.HAS_VIDEOS && !RULES.IS_MEMBER_PAGE) {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
         const ui = new VueUI(state, stateLocale, true);
@@ -292,3 +292,4 @@ defaultState.setWatchers(filter_);
 
 console.log(LOGO);
 route();
+
