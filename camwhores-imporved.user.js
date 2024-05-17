@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.1.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @grant        GM_addStyle
 // @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1378538
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1378566
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
@@ -118,9 +118,6 @@ class CAMWHORES_RULES {
         const { href, pathname, search, origin } = url_ || window.location;
         const url = new URL(href);
         let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
-
-        //console.log('document____', document_);
-        //console.log('document____', document_?.querySelectorAll('.pagination'));
 
         const pag = (document_ && Array.from(document_?.querySelectorAll('.pagination')).pop() || this.PAGINATION);
         const pag_last = parseInt(pag?.querySelector('.last')?.firstElementChild.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
@@ -292,6 +289,3 @@ defaultState.setWatchers(filter_);
 
 console.log(LOGO);
 route();
-
-
-
