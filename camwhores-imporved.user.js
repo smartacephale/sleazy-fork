@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.3
 // @license      MIT
-// @description  Infinite scroll (optional). Lazy loading. Filter by duration, include/exclude phrases
+// @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass frined request button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.camwhores.tv/*
@@ -22,7 +22,7 @@
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
 /* globals jQuery, $, Vue, waitForElementExists,
- timeToSeconds, parseDOM, fetchHtml, DefaultState, circularShift, getAllUniqueParents,
+ timeToSeconds, parseDOM, fetchHtml, DefaultState, circularShift, getAllUniqueParents, range,
  PersistentState, DataManager, PaginationManager, VueUI, Tick, watchDomChangesWithThrottle, */
 
 const LOGO = `camwhores admin should burn in hell
@@ -60,6 +60,7 @@ class CAMWHORES_RULES {
         this.IS_FAVOURITES = /\/my\/\w+\/videos/.test(pathname);
         this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/videos/.test(pathname);
+        this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
 
         this.CALC_CONTAINER();
 
@@ -113,12 +114,17 @@ class CAMWHORES_RULES {
         }
     }
 
-    URL_DATA() {
-        const { href, pathname, search, origin } = window.location;
+    URL_DATA(url_, document_) {
+        const { href, pathname, search, origin } = url_ || window.location;
         const url = new URL(href);
-        let offset = parseInt(document.querySelector('.page-current')?.innerText) || 1;
+        let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const el = this.PAGINATION.querySelector('a[data-block-id][data-parameters]');
+        console.log('document____', document_);
+        console.log('document____', document_?.querySelectorAll('.pagination'));
+
+        const pag = (document_ && Array.from(document_?.querySelectorAll('.pagination')).pop() || this.PAGINATION);
+        const pag_last = parseInt(pag?.querySelector('.last')?.firstElementChild.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
+        const el = pag.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el.getAttribute('data-parameters') || "";
 
         const attrs = {
@@ -136,7 +142,8 @@ class CAMWHORES_RULES {
             'from_videos': dataParameters.match(/from_videos[\+from_albums)]*\:([\w+|\+]*)/)?.[1],
             'from_albums': dataParameters.match(/from_albums\:([\w+|\+]*)/)?.[1],
             'from': dataParameters.match(/from\:([\w+|\+]*)/)?.[1],
-            'from_my_fav_videos': dataParameters.match(/from_my_fav_videos\:([\w+|\+]*)/)?.[1]
+            'from_my_fav_videos': dataParameters.match(/from_my_fav_videos\:([\w+|\+]*)/)?.[1],
+            'from_friends': dataParameters.match(/from_friends\:([\w+|\+]*)/)?.[1]
         }
 
         Object.keys(attrs).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
@@ -150,7 +157,8 @@ class CAMWHORES_RULES {
 
         return {
             offset,
-            iteratable_url
+            iteratable_url,
+            pag_last
         };
     }
 }
@@ -164,7 +172,7 @@ function rotateImg(src, count) {
 }
 
 function animate() {
-    const tick = new Tick(500);
+    const tick = new Tick(ANIMATION_DELAY);
     $('img.thumb[data-cnt]').off()
     document.body.addEventListener('mouseover', (e) => {
         if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src')) return;
@@ -180,42 +188,116 @@ function animate() {
 //====================================================================================================
 
 function downloader() {
-    if (!/^\/videos\/\d+\//.test(location.pathname)) return;
-    function helper() {
+    function tryDownloadVideo() {
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
             const name = document.querySelector('.headline').innerText + '.mp4';
-            GM_download({
-                url,
-                name,
-                saveAs: true,
-                onprogress: (e) => {
-                    const p = 100 * (e.loaded/e.total);
-                    btn.children().css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
-                }
-            });
+            const onprogress = (e) => {
+                const p = 100 * (e.loaded/e.total);
+                btn.children().css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
+            }
+            GM_download({ url, name, saveAs: true, onprogress });
         });
     }
 
     const btn = unsafeWindow.$('<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>');
     unsafeWindow.$('.tabs-menu > ul').append(btn);
-    btn.on('click', helper);
+    btn.on('click', tryDownloadVideo);
 }
-
-unsafeWindow.$(document).ready(downloader);
 
 //====================================================================================================
 
-const SCROLL_RESET_DELAY = 500;
+// since script cannot be reloaded and scroll params need to be reset according to site options
+function shouldReload() {
+    const sortContainer = document.querySelector('.sort');
+    if (!sortContainer) return;
+    watchDomChangesWithThrottle(sortContainer, () => window.location.reload(), 1000);
+}
 
-const defaultState = new DefaultState(true);
-const { state, stateLocale } = defaultState;
-const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-defaultState.setWatchers(filter_);
+//====================================================================================================
+
+function objectToFormData(object) {
+    const formData = new FormData();
+    Object.keys(object).forEach(key => formData.append(key, object[key]));
+    return formData;
+}
+
+// https://www.camwhores.tv/members/401401/
+function friendRequest(id) {
+    const formData = objectToFormData({
+        message: "",
+        action:	"add_to_friends_complete",
+        "function":	"get_block",
+        block_id:	"member_profile_view_view_profile",
+        format:	"json",
+        mode:	"async"
+    });
+    const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
+    return fetch(url, { body: formData, method: "post" });
+}
+
+function getMemberLinks(document) {
+    return Array.from(document.querySelectorAll('.item > a')).map(l => l.href).filter(l => /\/members\/\d+\/$/.test(l));
+}
+
+function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, batchPause = 20000) {
+    const failed = links.slice(batchSize);
+    const batch = links.slice(0, batchSize);
+    if (links.length > 1) {
+        await Promise.all(batch.map(async (l, i) => {
+            await wait(i*interval);
+            try {
+                const res = await fetchCallback(l);
+                if (!res.ok) {
+                    throw new Error(res.statusText);
+                }
+                const text = await res.text();
+                console.log(l, text);
+            } catch (error) {
+                failed.push(l);
+            }
+        }));
+        if (failed.length > 0) {
+            const timeout = (1 - ((links.length-failed.length) / batchSize)) * batchPause + batchPause / 3;
+            return wait(timeout).then(() => retryFetch(failed, fetchCallback, interval));
+        }
+    }
+    return true;
+}
+
+async function getMemberFriends(id) {
+    const url = `${window.location.origin}/members/${id}/friends/`;
+    const document_ = await fetchHtml(url);
+    const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
+    const pages = range(pag_last, 1).map(u => iteratable_url(u));
+    const friendlist = (await Promise.all(pages.map(n => fetchHtml(n)))).flatMap(getMemberLinks);
+    return retryFetch(friendlist, friendRequest);
+}
+
+function createFriendButton() {
+    const button = parseDOM('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
+    document.querySelector('.button[href="#friends"]').parentElement.append(button);
+    const memberid = window.location.pathname.match(/\d+/)[0];
+    button.addEventListener('click', () => {
+        button.style.background = 'radial-gradient(#ff6114, #5babc4)';
+        button.innerText = 'processing requests';
+        getMemberFriends(memberid).then(() => {
+            button.style.background = 'radial-gradient(blue, lightgreen)';
+            button.innerText = 'friend requests sent';
+        });
+    }, { once: true });
+}
+
+//====================================================================================================
 
 function route() {
     if (RULES.PAGINATION) {
         const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+        shouldReload();
     }
 
     if (RULES.HAS_VIDEOS) {
@@ -224,16 +306,26 @@ function route() {
         const ui = new VueUI(state, stateLocale, true);
         animate();
     }
+
+    if (RULES.IS_VIDEO_PAGE) {
+        downloader();
+    }
+
+    if (RULES.IS_MEMBER_PAGE) {
+        createFriendButton();
+    }
 }
 
-route();
+//====================================================================================================
+
+const SCROLL_RESET_DELAY = 500;
+const ANIMATION_DELAY = 500;
+
+const defaultState = new DefaultState(true);
+const { state, stateLocale } = defaultState;
+const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
+defaultState.setWatchers(filter_);
+
 console.log(LOGO);
-
-// since script cannot be reloaded and scroll params need to be reset according to site options
-function shouldReload() {
-    const sortContainer = document.querySelector('.sort');
-    if (!sortContainer) return;
-    watchDomChangesWithThrottle(sortContainer, () => window.location.reload(), 1000);
-}
-shouldReload();
+route();
 
