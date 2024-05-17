@@ -4,8 +4,10 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4.3
+// @version      1.4.4
 // @match        *://*/*
+// @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
+// @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
 // ==/UserScript==
 
 function findNextSibling(el) {
@@ -51,21 +53,22 @@ async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, 
                 await wait(i*interval);
                 try {
                     const res = await fetchCallback(l);
-                    if (Object.hasOwn(res, 'ok') && !res.ok) {
+                    const isResponse = res instanceof Response;
+                    if (res.ok || !isResponse) {
+                        if (typeof res.text === 'function') {
+                            const t = await res.text();
+                            console.log(l, t, res.ok);
+                        }
+                        if (!isResponse) { console.log(l, res); }
+                        results.push(res);
+                    } else {
                         throw new Error(res.statusText);
                     }
-                    if (typeof res.text === 'function') {
-                        const t = await res.text();
-                        console.log(l, t);
-                    } else {
-                        console.log(l, res);
-                    }
-                    results.push(res);
                 } catch (error) {
                     failed.push(l);
                 }
             }));
-            console.log(`progress: ${total-failed.length}/${total}`);
+            console.log(`progress: ${results.length}/${total}`);
             if (failed.length > 0) {
                 const failedRatio = (1 - ((links.length-failed.length) / batchSize));
                 const timeout = failedRatio * batchPause + batchPause / 3;
