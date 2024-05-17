@@ -4,8 +4,8 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.3.1
-// @description  Infinite scroll (optional). Lazy loading. Filter by duration. Filter by phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available.
+// @version      2.3.2
+// @description  Infinite scroll (optional). Filter by duration. Filter by phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available.
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
