@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.3.2
+// @version      4.3.3
 // @description  Infinite scroll (optional). Lazy loading. Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -21,7 +21,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, listenEvents, range, Tick, waitForElementExists, downloadBlob,
+/* globals jQuery, $, listenEvents, range, Tick, waitForElementExists, downloadBlob, isMob,
      timeToSeconds, parseDOM, fetchHtml, parseCSSUrl, circularShift, fetchText, replaceElementTag,
      DataManager, PaginationManager, VueUI, DefaultState */
 
@@ -290,7 +290,11 @@ function downloader() {
                 const p = 100 * (e.loaded / e.total);
                 btn.css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
             }
-            GM_download({ url, name, saveAs: true, onprogress });
+            if (!isMob()) {
+                GM_download({ url, name, saveAs: true, onprogress });
+            } else {
+                downloadBlob(url, name);
+            }
         });
     }
 
