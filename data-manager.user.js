@@ -4,8 +4,10 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.2
+// @version      1.1.3
 // @match        *://*/*
+// @downloadURL https://update.greasyfork.org/scripts/494204/data-manager.user.js
+// @updateURL https://update.greasyfork.org/scripts/494204/data-manager.meta.js
 // ==/UserScript==
 /* globals LazyImgLoader, stringToWords */
 
@@ -127,14 +129,14 @@ class DataManager {
     this.filter_(applyFilters, offset);
   }
 
-  handleLoadedHTML = (html, container) => {
+  handleLoadedHTML = (html, container, removeDuplicates = false) => {
     const thumbs = this.rules.GET_THUMBS(html);
     const data_offset = this.data.size;
 
     for (const thumbElement of thumbs) {
       const url = this.rules.THUMB_URL(thumbElement);
       if (!url || this.data.has(url)) {
-        thumbElement.remove(); // for document.body
+        if (removeDuplicates) thumbElement.remove();
         continue;
       }
 
