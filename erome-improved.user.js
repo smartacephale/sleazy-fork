@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2
+// @version      2.2.1
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -45,13 +45,18 @@ console.log(LOGO);
 $('#disclaimer').remove();
 $('body').css('overflow', 'visible');
 
+const PINK = '#eb6395';
+const GREY = '#a09f9d';
+
+function isActiveColor(condition) { return condition ? PINK : GREY; };
+
 function togglePhotoElements() {
   Array.from(document.querySelectorAll('.media-group')).forEach(a => {
     if (!a.querySelector('.video')) {
       $(a.parentElement).toggle(config.showPhotos);
     }
   });
-  $('#togglePhotos').css('backgroundColor', !config.showPhotos ? '#a09f9d' : '#eb6395');
+  $('#togglePhotos').css('backgroundColor', isActiveColor(config.showPhotos));
   $('#togglePhotos').text(!config.showPhotos ? 'show photos' : 'hide photos');
 }
 
@@ -63,7 +68,7 @@ function hidePhotoOnlyAlbums() {
       }
     });
   });
-  $('#togglePhotoAlbums').css('color', !config.showPhotoAlbums ? '#eb6395' : '#a09f9d');
+  $('#togglePhotoAlbums').css('color', isActiveColor(!config.showPhotoAlbums));
 }
 
 function infiniteScrollAndLazyLoading() {
