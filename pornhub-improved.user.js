@@ -2,8 +2,8 @@
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.6
-// @description  Infinite scroll (optional). Lazy loading. Filter by duration, include/exclude phrases
+// @version      1.6.1
+// @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.pornhub.com/*
