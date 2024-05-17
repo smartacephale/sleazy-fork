@@ -35,6 +35,50 @@ function fetchHtml(url) { return fetch(url).then((r) => r.text()).then((h) => pa
 
 function fetchText(url) { return fetch(url).then((r) => r.text()); }
 
+function wait(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, batchPause = 20000) {
+    const results = [];
+    const total = links.length;
+
+    const processlinks = async (links) => {
+        const failed = links.slice(batchSize);
+        const batch = links.slice(0, batchSize);
+        if (links.length > 0) {
+            await Promise.all(batch.map(async (l, i) => {
+                await wait(i*interval);
+                try {
+                    const res = await fetchCallback(l);
+                    if (Object.hasOwn(res, 'ok') && !res.ok) {
+                        throw new Error(res.statusText);
+                    }
+                    if (typeof res.text === 'function') {
+                        const t = await res.text();
+                        console.log(l, t);
+                    } else {
+                        console.log(l, res);
+                    }
+                    results.push(res);
+                } catch (error) {
+                    failed.push(l);
+                }
+            }));
+            console.log(`progress: ${total-failed.length}/${total}`);
+            if (failed.length > 0) {
+                const failedRatio = (1 - ((links.length-failed.length) / batchSize));
+                const timeout = failedRatio * batchPause + batchPause / 3;
+                await wait(timeout);
+                return processlinks(failed);
+            }
+        }
+    }
+
+    await processlinks(links);
+    return results;
+}
+
 function timeToSeconds(t) {
     return (t.match(/\d+/gm) || ['0'])
         .reverse()
