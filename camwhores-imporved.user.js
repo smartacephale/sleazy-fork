@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -59,7 +59,7 @@ class CAMWHORES_RULES {
 
         this.IS_FAVOURITES = /\/my\/\w+\/videos/.test(pathname);
         this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
-        this.IS_MEMBER_VIDEOS = /\/members\/\d+\/videos/.test(pathname);
+        this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
         this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
 
         this.CALC_CONTAINER();
@@ -140,6 +140,7 @@ class CAMWHORES_RULES {
             'from_albums': dataParameters.match(/from_albums\:([\w+|\+]*)/)?.[1],
             'from': dataParameters.match(/from\:([\w+|\+]*)/)?.[1],
             'from_my_fav_videos': dataParameters.match(/from_my_fav_videos\:([\w+|\+]*)/)?.[1],
+            'from_fav_videos': dataParameters.match(/from_fav_videos\:([\w+|\+]*)/)?.[1],
             'from_friends': dataParameters.match(/from_friends\:([\w+|\+]*)/)?.[1]
         }
 
