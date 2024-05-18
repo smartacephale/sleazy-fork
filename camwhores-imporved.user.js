@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -214,17 +214,18 @@ function shouldReload() {
 
 //====================================================================================================
 
-function friendRequest(id) {
-    const formData = objectToFormData({
+const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
         message:    "",
-        action:	    "add_to_friends_complete",
-        "function":	"get_block",
-        block_id:	"member_profile_view_view_profile",
-        format:	    "json",
-        mode:	    "async"
-    });
+        action:     "add_to_friends_complete",
+        "function": "get_block",
+        block_id:   "member_profile_view_view_profile",
+        format:     "json",
+        mode:       "async"
+});
+
+function friendRequest(id) {
     const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
-    return fetch(url, { body: formData, method: "post" });
+    return fetch(url, { body: DEFAULT_FRIEND_REQUEST_FORMDATA, method: "post" });
 }
 
 function getMemberLinks(document) {
