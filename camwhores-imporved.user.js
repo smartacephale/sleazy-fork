@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -125,23 +125,23 @@ class CAMWHORES_RULES {
         const dataParameters = el.getAttribute('data-parameters') || "";
 
         const attrs = {
-            'mode':'async',
-            'function': 'get_block',
-            'block_id': el?.getAttribute('data-block-id'),
-            'q': dataParameters.match(/q\:([\w+|\+]*)/)?.[1],
-            'category_ids': dataParameters.match(/category_ids\:([\w+|\+]*)/)?.[1],
-            'sort_by': dataParameters.match(/sort_by\:([\w+|\+]*)/)?.[1],
-            'fav_type': dataParameters.match(/fav_type\:([\w+|\+]*)/)?.[1],
-            'playlist_id': dataParameters.match(/playlist_id\:([\w+|\+]*)/)?.[1],
+            'mode':               'async',
+            'function':           'get_block',
+            'block_id':           el?.getAttribute('data-block-id'),
+            'q':                  dataParameters.match(/q\:([\w+|\+]*)/)?.[1],
+            'category_ids':       dataParameters.match(/category_ids\:([\w+|\+]*)/)?.[1],
+            'sort_by':            dataParameters.match(/sort_by\:([\w+|\+]*)/)?.[1],
+            'fav_type':           dataParameters.match(/fav_type\:([\w+|\+]*)/)?.[1],
+            'playlist_id':        dataParameters.match(/playlist_id\:([\w+|\+]*)/)?.[1],
         };
 
         const attrs_iterators = {
-            'from_videos': dataParameters.match(/from_videos[\+from_albums)]*\:([\w+|\+]*)/)?.[1],
-            'from_albums': dataParameters.match(/from_albums\:([\w+|\+]*)/)?.[1],
-            'from': dataParameters.match(/from\:([\w+|\+]*)/)?.[1],
+            'from_videos':        dataParameters.match(/from_videos[\+from_albums)]*\:([\w+|\+]*)/)?.[1],
+            'from_albums':        dataParameters.match(/from_albums\:([\w+|\+]*)/)?.[1],
+            'from':               dataParameters.match(/from\:([\w+|\+]*)/)?.[1],
             'from_my_fav_videos': dataParameters.match(/from_my_fav_videos\:([\w+|\+]*)/)?.[1],
-            'from_fav_videos': dataParameters.match(/from_fav_videos\:([\w+|\+]*)/)?.[1],
-            'from_friends': dataParameters.match(/from_friends\:([\w+|\+]*)/)?.[1]
+            'from_fav_videos':    dataParameters.match(/from_fav_videos\:([\w+|\+]*)/)?.[1],
+            'from_friends':       dataParameters.match(/from_friends\:([\w+|\+]*)/)?.[1]
         }
 
         Object.keys(attrs).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
@@ -216,12 +216,12 @@ function shouldReload() {
 
 function friendRequest(id) {
     const formData = objectToFormData({
-        message: "",
-        action:	"add_to_friends_complete",
+        message:    "",
+        action:	    "add_to_friends_complete",
         "function":	"get_block",
         block_id:	"member_profile_view_view_profile",
-        format:	"json",
-        mode:	"async"
+        format:	    "json",
+        mode:	    "async"
     });
     const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
     return fetch(url, { body: formData, method: "post" });
