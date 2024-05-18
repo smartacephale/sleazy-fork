@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.4
+// @version      1.1.5
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -237,7 +237,7 @@ async function getMemberFriends(id) {
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = range(pag_last, 1).map(u => iteratable_url(u));
     const friendlist = (await retryFetch(pages, fetchHtml, 150, 50, 2000)).flatMap(getMemberLinks);
-    return retryFetch(friendlist.slice(3000), friendRequest, 250, 12, 10000);
+    return retryFetch(friendlist, friendRequest, 250, 12, 10000);
 }
 
 function createFriendButton() {
