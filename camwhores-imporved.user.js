@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.1.7
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -59,6 +59,7 @@ class CAMWHORES_RULES {
 
         this.IS_FAVOURITES = /\/my\/\w+\/videos/.test(pathname);
         this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
+        this.IS_MINE_MEMBER_PAGE = /\/my\/$/.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
         this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
 
@@ -175,6 +176,7 @@ function animate() {
     document.body.addEventListener('mouseover', (e) => {
         if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src')) return;
         const origin = e.target.src;
+        if (origin.includes('avatar')) return;
         const count = parseInt(e.target.getAttribute('data-cnt')) || 5;
         tick.start(
             () => { e.target.src = rotateImg(e.target.src, count); },
@@ -258,12 +260,12 @@ function createFriendButton() {
 //====================================================================================================
 
 function route() {
-    if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE) {
+    if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
         const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
         shouldReload();
     }
 
-    if (RULES.HAS_VIDEOS && !RULES.IS_MEMBER_PAGE) {
+    if (RULES.HAS_VIDEOS) {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
         const ui = new VueUI(state, stateLocale, true);
