@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.7
+// @version      1.1.8
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @grant        GM_addStyle
 // @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1378566
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1380190
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
@@ -23,7 +23,7 @@
 // ==/UserScript==
 /* globals jQuery, $, Vue, waitForElementExists,
  timeToSeconds, parseDOM, fetchHtml, DefaultState, circularShift, getAllUniqueParents, range, retryFetch,
- DataManager, PaginationManager, VueUI, Tick, watchDomChangesWithThrottle, objectToFormData, */
+ DataManager, PaginationManager, VueUI, Tick, watchDomChangesWithThrottle, objectToFormData, wait */
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -122,8 +122,8 @@ class CAMWHORES_RULES {
 
         const pag = (document_ && Array.from(document_?.querySelectorAll('.pagination')).pop() || this.PAGINATION);
         const pag_last = parseInt(pag?.querySelector('.last')?.firstElementChild.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
-        const el = pag.querySelector('a[data-block-id][data-parameters]');
-        const dataParameters = el.getAttribute('data-parameters') || "";
+        const el = pag?.querySelector('a[data-block-id][data-parameters]');
+        const dataParameters = el?.getAttribute('data-parameters') || "";
 
         const attrs = {
             'mode':               'async',
@@ -217,13 +217,73 @@ function shouldReload() {
 //====================================================================================================
 
 const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
-        message:    "",
-        action:     "add_to_friends_complete",
-        "function": "get_block",
-        block_id:   "member_profile_view_view_profile",
-        format:     "json",
-        mode:       "async"
+    message:    "",
+    action:     "add_to_friends_complete",
+    "function": "get_block",
+    block_id:   "member_profile_view_view_profile",
+    format:     "json",
+    mode:       "async"
 });
+
+class LSMNGR {
+    storageKey = 'lsmngr';
+    lockKey = 'lsmngr-lock';
+    batchSize = 100;
+    constructor() {
+        this.keys = this.readKeys();
+    }
+    writeValue(value) {
+        const size = this.batchSize;
+        [...Array(Math.ceil(value.length/size))].forEach((_,i) => {
+            const batch = value.slice(size*i, size*i+size);
+            const key = Number.parseInt(window.location.pathname.match(/\d+/)[0])+i;
+            this.writeKey(key);
+            this.write(key, batch);
+        });
+    }
+    getRandomKeyValue() {
+        const keys = this.readKeys();
+        for (const key of keys) {
+            const value = this.read(key);
+            this.write(this.storageKey, keys.filter(k => k !== key));
+            this.delete(key);
+            if (value?.length > 0) {
+                return value;
+            }
+        }
+        return [];
+    }
+    isLocked() {
+        const lock = this.read(this.lockKey);
+        const locktime = 10*60*1000;
+        return !(!lock || Date.now() - lock > locktime);
+    }
+    lock(value) {
+        if (value) {
+            this.write(this.lockKey, Date.now());
+        } else {
+            this.delete(this.lockKey);
+        }
+    }
+    writeKey(key) {
+        const keys = [...this.readKeys(), key];
+        this.write(this.storageKey, keys);
+    }
+    readKeys() {
+        return this.read(this.storageKey) || [];
+    }
+    read(key) {
+        return JSON.parse(localStorage.getItem(key));
+    }
+    write(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+    delete(key) {
+        localStorage.removeItem(key);
+    }
+}
+
+const lsmngr = new LSMNGR();
 
 function friendRequest(id) {
     const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
@@ -238,10 +298,26 @@ async function getMemberFriends(id) {
     const url = `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
-    const pages = range(pag_last, 1).map(u => iteratable_url(u));
-    const friendlist = (await retryFetch(pages, fetchHtml, 150, 50, 2000)).flatMap(getMemberLinks);
-    return retryFetch(friendlist, friendRequest, 250, 12, 10000);
+    const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
+    const friendlist = (await retryFetch(pages, fetchHtml, 150, 50, 2000)).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
+    lsmngr.writeValue(friendlist);
+    await processFriendship();
 }
+
+async function processFriendship() {
+    console.log('processFriendship');
+    const friendlist = lsmngr.getRandomKeyValue();
+    if (friendlist.length > 0 && !lsmngr.isLocked()) {
+        lsmngr.lock(true);
+        const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
+        await retryFetch(urls, friendRequest, 250, 12, 10000);
+        lsmngr.lock(false);
+        await wait(5000);
+        await processFriendship();
+    }
+}
+setTimeout(processFriendship, 3000);
+setTimeout(processFriendship, 11*60*1000);
 
 function createFriendButton() {
     const button = parseDOM('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
