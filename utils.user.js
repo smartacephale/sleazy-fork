@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.5
+// @version      1.5a
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
