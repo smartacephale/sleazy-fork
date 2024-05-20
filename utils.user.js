@@ -4,9 +4,10 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.4.9b
+// @version      1.5
 // @match        *://*/*
-// @downloadURL none
+// @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
+// @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
 // ==/UserScript==
 
 function findNextSibling(el) {
@@ -63,7 +64,9 @@ async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, 
                         */
                         results.push(res);
                     } else {
-                        failed.push(l);
+                        if (res.status !== 404) {
+                            failed.push(l);
+                        }
                     }
                 } catch (error) {
                     console.error(error);
