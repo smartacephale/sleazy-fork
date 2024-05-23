@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -227,65 +227,58 @@ const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
     mode:       "async"
 });
 
-class LSMNGR {
-    storageKey = 'lsmngr';
+class LSMNGR_v2 {
     lockKey = 'lsmngr-lock';
-    batchSize = 100;
+    prefix = 'lsm-';
+
     constructor() {
-        this.keys = this.readKeys();
-    }
-    writeValue(value) {
-        const size = this.batchSize;
-        [...Array(Math.ceil(value.length/size))].forEach((_,i) => {
-            const batch = value.slice(size*i, size*i+size);
-            const key = Number.parseInt(window.location.pathname.match(/\d+/)[0])+i;
-            this.writeKey(key);
-            this.write(key, batch);
+        // migration
+        const old = localStorage.getItem('lsmngr');
+        if (!old) return;
+        const list = JSON.parse(old);
+        localStorage.removeItem('lsmngr');
+        list.forEach(l => {
+            const i = localStorage.getItem(l);
+            if (i) {
+                const v = JSON.parse(i);
+                v.forEach(x => this.setKey(x));
+            }
+            localStorage.removeItem(l);
         });
     }
-    getRandomKeyValue() {
-        const keys = this.readKeys();
-        for (const key of keys) {
-            const value = this.read(key);
-            this.write(this.storageKey, keys.filter(k => k !== key));
-            this.delete(key);
-            if (value?.length > 0) {
-                return value;
+
+    getKeys(n = 12) {
+        const res = [];
+        for (const key in localStorage) {
+            if (res.length >= n) break;
+            if (key.startsWith(this.prefix)) {
+                res.push(key);
             }
         }
-        return [];
+        res.forEach(k => localStorage.removeItem(k));
+        return res.map(r => r.slice(this.prefix.length));
     }
+
+    setKey(key) {
+        localStorage.setItem(`${this.prefix}${key}`, '');
+    }
+
     isLocked() {
-        const lock = this.read(this.lockKey);
-        const locktime = 10*60*1000;
+        const lock = localStorage.getItem(this.lockKey);
+        const locktime = 5*60*1000;
         return !(!lock || Date.now() - lock > locktime);
     }
+
     lock(value) {
         if (value) {
-            this.write(this.lockKey, Date.now());
+            localStorage.setItem(this.lockKey, Date.now());
         } else {
-            this.delete(this.lockKey);
+            localStorage.removeItem(this.lockKey);
         }
-    }
-    writeKey(key) {
-        const keys = [...this.readKeys(), key];
-        this.write(this.storageKey, keys);
-    }
-    readKeys() {
-        return this.read(this.storageKey) || [];
-    }
-    read(key) {
-        return JSON.parse(localStorage.getItem(key));
-    }
-    write(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-    }
-    delete(key) {
-        localStorage.removeItem(key);
     }
 }
 
-const lsmngr = new LSMNGR();
+const lsmngr = new LSMNGR_v2();
 
 function friendRequest(id) {
     const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
@@ -308,7 +301,7 @@ async function getMemberFriends(id) {
 
 async function processFriendship() {
     console.log('processFriendship');
-    const friendlist = lsmngr.getRandomKeyValue();
+    const friendlist = lsmngr.getKeys(60);
     if (friendlist.length > 0 && !lsmngr.isLocked()) {
         lsmngr.lock(true);
         const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
@@ -319,7 +312,7 @@ async function processFriendship() {
     }
 }
 setTimeout(processFriendship, 3000);
-setTimeout(processFriendship, 11*60*1000);
+setTimeout(processFriendship, 6*60*1000);
 
 function createFriendButton() {
     const button = parseDOM('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
