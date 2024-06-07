@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1
+// @version      1.1.1
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494205/pagination-manager.meta.js
@@ -13,14 +13,14 @@
 
 class PaginationManager {
     /**
- * @param {Vue.reactive} state
- * @param {Vue.reactive} stateLocale
- * @param {Rules} rules - WEBSITE_RULES class which have to implement methods:
- * URL_DATA { iteratable_url, offset },
- * PAGINATION_LAST
- * @param {Function} handleHtmlCallback
- * @param {number} delay - milliseconds
- */
+     * @param {Vue.reactive} state
+     * @param {Vue.reactive} stateLocale
+     * @param {Rules} rules - WEBSITE_RULES class which have to implement methods:
+     * URL_DATA { iteratable_url, offset },
+     * PAGINATION_LAST
+     * @param {Function} handleHtmlCallback
+     * @param {number} delay - milliseconds
+     */
     constructor(state, stateLocale, rules, handleHtmlCallback, delay) {
         this.state = state;
         this.stateLocale = stateLocale;
@@ -29,7 +29,6 @@ class PaginationManager {
 
         this.stateLocale.pagIndexLast = this.rules.PAGINATION_LAST;
         this.paginationGenerator = this.createNextPageGenerator();
-        this.isPaginationGeneratorAsync = /AsyncGenerator/.test(Object.prototype.toString.call(this.paginationGenerator));
         this.paginationObserver = Observer.observeWhile(this.rules.INTERSECTION_OBSERVABLE ||
                                                         this.rules.PAGINATION, this.generatorConsume, delay);
     }
@@ -39,8 +38,7 @@ class PaginationManager {
         const {
             value: { url, offset } = {},
             done,
-        } = (this.isPaginationGeneratorAsync ?
-             await this.paginationGenerator.next() : this.paginationGenerator.next());
+        } = await this.paginationGenerator.next();
         if (!done) {
             console.log(url);
             const nextPageHTML = await fetchHtml(url);
