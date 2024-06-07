@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.2.3
+// @version      1.2.4
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -17,14 +17,15 @@
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
+// @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
 // @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, Vue, waitForElementExists,
- timeToSeconds, parseDOM, fetchHtml, DefaultState, circularShift, getAllUniqueParents, range, retryFetch,
- DataManager, PaginationManager, VueUI, Tick, watchDomChangesWithThrottle, objectToFormData, wait */
+/* globals jQuery $ Vue VueUI Tick LSKDB
+ timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range retryFetch
+ DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData wait */
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -228,58 +229,7 @@ const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
     mode:       "async"
 });
 
-class LSMNGR_v2 {
-    lockKey = 'lsmngr-lock';
-    prefix = 'lsm-';
-
-    constructor() {
-        // migration
-        const old = localStorage.getItem('lsmngr');
-        if (!old) return;
-        const list = JSON.parse(old);
-        localStorage.removeItem('lsmngr');
-        list.forEach(l => {
-            const i = localStorage.getItem(l);
-            if (i) {
-                const v = JSON.parse(i);
-                v.forEach(x => this.setKey(x));
-            }
-            localStorage.removeItem(l);
-        });
-    }
-
-    getKeys(n = 12) {
-        const res = [];
-        for (const key in localStorage) {
-            if (res.length >= n) break;
-            if (key.startsWith(this.prefix)) {
-                res.push(key);
-            }
-        }
-        res.forEach(k => localStorage.removeItem(k));
-        return res.map(r => r.slice(this.prefix.length));
-    }
-
-    setKey(key) {
-        localStorage.setItem(`${this.prefix}${key}`, '');
-    }
-
-    isLocked() {
-        const lock = localStorage.getItem(this.lockKey);
-        const locktime = 5*60*1000;
-        return !(!lock || Date.now() - lock > locktime);
-    }
-
-    lock(value) {
-        if (value) {
-            localStorage.setItem(this.lockKey, Date.now());
-        } else {
-            localStorage.removeItem(this.lockKey);
-        }
-    }
-}
-
-const lsmngr = new LSMNGR_v2();
+const lskdb = new LSKDB();
 
 function friendRequest(id) {
     const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
@@ -296,19 +246,19 @@ async function getMemberFriends(id) {
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
     const friendlist = (await retryFetch(pages, fetchHtml, 150, 50, 2000)).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
-    friendlist.forEach(m => lsmngr.setKey(m));
+    friendlist.forEach(m => lskdb.setKey(m));
     await processFriendship();
 }
 
 async function processFriendship() {
     console.log('processFriendship');
-    if (!lsmngr.isLocked()) {
-        const friendlist = lsmngr.getKeys(60);
+    if (!lskdb.isLocked()) {
+        const friendlist = lskdb.getKeys(60);
         if (friendlist?.length < 1) return;
-        lsmngr.lock(true);
+        lskdb.lock(true);
         const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
         await retryFetch(urls, friendRequest, 250, 12, 10000);
-        lsmngr.lock(false);
+        lskdb.lock(false);
         await wait(5000);
         await processFriendship();
     }
