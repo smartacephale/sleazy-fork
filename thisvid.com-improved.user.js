@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.3.5
+// @version      4.3.8
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -15,15 +15,16 @@
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1378559
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
 // @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
+// @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030
 // @run-at       document-idle
-// @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
-// @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
+// @downloadURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
+// @updateURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, listenEvents, range, Tick, waitForElementExists, downloadBlob, isMob,
-     timeToSeconds, parseDOM, fetchHtml, parseCSSUrl, circularShift, fetchText, replaceElementTag,
-     DataManager, PaginationManager, VueUI, DefaultState */
+/* globals $ listenEvents range Tick waitForElementExists downloadBlob isMob
+     timeToSeconds parseDOM fetchHtml parseCSSUrl circularShift fetchText replaceElementTag
+     DataManager PaginationManager VueUI DefaultState LSKDB */
 
 const SponsaaLogo = `
      Kono bangumi ha(wa) goran no suponsaa no teikyou de okurishimasu⣿⣿⣿⣿
@@ -74,7 +75,7 @@ class THISVID_RULES {
 
         this.PAGE_HAS_VIDEO = !!document.querySelector('.tumbpu[title], .thumbs-items .thumb-holder');
         this.PAGINATION = $('.pagination');
-        this.PAGINATION_LAST = this.PAGINATION ? parseInt($('.pagination-next')?.previousElementSibling?.innerText) : 1;
+        this.PAGINATION_LAST = this.GET_PAGINATION_LAST();
 
         this.CONTAINER = Array.from(document.querySelectorAll('.thumbs-items')).pop();
 
@@ -93,6 +94,10 @@ class THISVID_RULES {
             const link = replaceElementTag(desc, 'a');
             link.href = videoUrl;
         }
+    }
+
+    GET_PAGINATION_LAST(doc) {
+        return parseInt((doc || document).querySelector('.pagination-next')?.previousElementSibling?.innerText) || 1;
     }
 
     GET_THUMBS(html) {
@@ -117,8 +122,8 @@ class THISVID_RULES {
         return url;
     }
 
-    URL_DATA() {
-        const { origin, pathname, search } = window.location;
+    URL_DATA(proxyLocation) {
+        const { origin, pathname, search } = proxyLocation || window.location;
 
         let offset = parseInt(pathname.split(/(\d+\/)$/)[1] || '1');
 
@@ -189,36 +194,42 @@ function friend(id, i = 0) {
 
 const FRIEND_REQUEST_URL = (id) => `${window.location.origin}/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
 
+const USERS_PER_PAGE = 24;
+
+async function getMemberFriends(memberId) {
+    const doc = await fetchHtml(`${window.location.origin}/members/${memberId}/`);
+    let friendsEl = doc.querySelector('#list_members_friends');
+    if (!friendsEl) return;
+    friendsEl = friendsEl.firstElementChild.innerText.match(/\d+/g);
+    const friendsCount = parseInt(friendsEl[friendsEl.length - 1]);
+    let friends;
+    if (friendsCount > 12) {
+        const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
+        const pages = range(offset).map(o => `${window.location.origin}/members/${memberId}/friends/${o}/`);
+        const pagesFetched = pages.map(p => fetchHtml(p));
+        friends = (await Promise.all(pagesFetched)).flatMap(getUsers);
+    } else {
+        friends = getUsers(document.body);
+    }
+    return friends;
+}
+
+function getUsers(el) {
+    const friendsList = el.querySelector('#list_members_friends_items');
+    if (!friendsList) return [];
+    return Array.from(friendsList.querySelectorAll('.tumbpu'))
+        .map(e => e.href.match(/\d+/)?.[0]).filter(_ => _);
+}
+
+async function friendMemberFriends() {
+    const memberId = window.location.pathname.match(/\d+/)[0];
+    friend(memberId);
+    const friends = await getMemberFriends(memberId);
+    await Promise.all(friends.map((fid, i) => friend(fid, i)));
+}
+
 function initFriendship() {
     createFriendButton();
-
-    function getUsers(el) {
-        const friendsList = el.querySelector('#list_members_friends_items');
-        if (!friendsList) return [];
-        return Array.from(friendsList.querySelectorAll('.tumbpu'))
-            .map(e => e.href.match(/\d+/)?.[0]).filter(_ => _);
-    }
-
-    const USERS_PER_PAGE = 24;
-
-    async function friendMemberFriends() {
-        const memberId = window.location.pathname.match(/\d+/)[0];
-        friend(memberId);
-        let friendsEl = $('#list_members_friends');
-        if (!friendsEl) return;
-        friendsEl = friendsEl.firstElementChild.innerText.match(/\d+/g);
-        const friendsCount = parseInt(friendsEl[friendsEl.length - 1]);
-        let friends;
-        if (friendsCount > 12) {
-            const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
-            const pages = range(offset).map(o => `${window.location.origin}/members/${memberId}/friends/${o}/`);
-            const pagesFetched = pages.map(p => fetchHtml(p));
-            friends = (await Promise.all(pagesFetched)).flatMap(getUsers);
-        } else {
-            friends = getUsers(document.body);
-        }
-        await Promise.all(friends.map((fid, i) => friend(fid, i)));
-    }
 
     function createFriendButton() {
         GM_addStyle('.buttons {display: flex; flex-wrap: wrap} .buttons * {align-self: center; padding: 3px; margin: 1px;}');
@@ -342,7 +353,152 @@ function highlightMessages() {
 
 //====================================================================================================
 
+const lskdb = new LSKDB();
+
+async function getMemberVideos(Id, type = 'private') {
+    const url = `${window.location.origin}/members/${Id}/${type}_videos/`;
+    const doc = await fetchHtml(url);
+    let name = doc.querySelector('.headline').innerText.trim();
+    const videosCount = parseInt(name.match(/(\d+) videos/)?.[1]) || 0;
+    name = name.match(/\w+/)[0];
+    const paginationLast = RULES.GET_PAGINATION_LAST(doc);
+    const pageIterator = n => `${url}${n}/`;
+    function* pageGenerator() {
+        for (let c = 1; c <= paginationLast; c++) {
+            const url = pageIterator(c);
+            yield { url, offset: c };
+        }
+    }
+    return {
+        name,
+        videosCount,
+        pageGenerator: pageGenerator()
+    }
+}
+
+function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private') {
+    let skipFlag = false;
+    const skipCurrentMemberGenerator = () => { skipFlag = true; }
+
+    async function* pageGenerator() {
+        let c = 0;
+        let currentGenerator;
+        while (c < membersIds.length-1) {
+            if (lskdb.hasKey(membersIds[c])) { c++; continue; }
+            if (!currentGenerator) {
+                const { pageGenerator, name, videosCount } = await getMemberVideos(membersIds[c], type);
+                if (pageGenerator && videosCount > 0) {
+                    currentGenerator = pageGenerator;
+                    memberGeneratorCallback(name, videosCount, membersIds[c]);
+                } else {
+                    c++;
+                }
+            } else {
+                const { value: { url } = {}, done } = currentGenerator.next();
+                if (done || skipFlag) {
+                    c++;
+                    currentGenerator = null;
+                    skipFlag = false;
+                } else {
+                    yield { url, offset: c };
+                }
+            }
+        }
+    }
+
+    return {
+        pageGenerator: () => pageGenerator(membersIds, type),
+        skipCurrentMemberGenerator
+    };
+}
+
+(function createMyFriendPrivateVideosButton() {
+    const ul = document.querySelectorAll('.sidebar ul')[1];
+    const button = parseDOM(`<li>
+					<a href="https://thisvid.com/my_wall/" class="selective">
+						<i class="ico-arrow"></i>
+						My Friends Private Videos
+					</a>
+				</li>`);
+    button.addEventListener('click', (e) => {
+        lskdb.setKey('test04');
+    });
+    ul.append(button);
+})();
+
+async function test0() {
+    if (!lskdb.hasKey('test04')) return;
+    lskdb.removeKey('test04');
+    if (!window.location.pathname.includes('my_wall')) return;
+    const container = parseDOM('<div class="thumbs-items"></div>');
+    const ignored = parseDOM('<div class="ignored"></div>');
+    const containerParent = document.querySelector('.main > .container > .content');
+    containerParent.innerHTML = '';
+    containerParent.nextElementSibling.remove()
+    containerParent.append(container);
+    container.before(ignored);
+    GM_addStyle(`.content { width: auto; }
+    .member-videos, .ignored { background: #b3b3b324; height: 3rem; margin: 1rem 0px; color: #fff; font-size: 1.24rem; display: flex; justify-content: center;
+      padding: 10px; width: 100%; }
+    .member-videos * {  padding: 5px; margin: 4px; }
+    .ignored * {  padding: 4px; margin: 5px; }
+    .member-videos button { }
+    .thumbs-items { display: flex; flex-wrap: wrap; }`);
+    const myId = document.querySelector('[target="_self"]').href.match(/\/(\d+)\//)[1];
+    const friends = await getMemberFriends(myId);
+    console.log(friends);
+
+    RULES.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
+    RULES.PAGINATION_LAST = friends.length;
+    RULES.CONTAINER = container;
+    const { pageGenerator, skipCurrentMemberGenerator } = getMembersVideos(friends, (name, videosCount, id) => {
+        container.append(parseDOM(`
+        <div class="member-videos" id="mem-${id}">
+          <h2>${name} ${videosCount} videos</h2>
+          <button onClick="hideMemberVideos(event)">ignore 🗡</button>
+        </div>`));
+    });
+
+    const ignoredMembers = lskdb.getAllKeys();
+    ignoredMembers.forEach(im => {
+        document.querySelector('.ignored').append(parseDOM(`<button id="#ir-${im}" onClick="unignore(event)">${im} 🗡</button>`));
+    });
+
+    unsafeWindow.hideMemberVideos = (e) => {
+        let id = e.target.parentElement.id;
+        if (!document.querySelector(`#${id} ~ div`)) {
+            skipCurrentMemberGenerator();
+        }
+        const box = document.getElementById(id);
+        let curr = box.nextElementSibling;
+        while (curr?.className === 'tumbpu') {
+            let temp = curr;
+            curr = curr.nextElementSibling;
+            temp.remove();
+        }
+        box.remove();
+        id = id.slice(4)
+        document.querySelector('.ignored').append(parseDOM(`<button id="irm-${id}" onClick="unignore(event)">${id} X</button>`));
+        lskdb.setKey(id);
+    }
+
+    unsafeWindow.unignore = (e) => {
+        const id = e.target.id.slice(4);
+        lskdb.removeKey(id);
+        e.target.remove();
+    }
+
+    PaginationManager.prototype.createNextPageGenerator = () => pageGenerator();
+    const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    new PreviewAnimation(document.body);
+    new VueUI(state, stateLocale, true, RULES.LOGGED_IN ? checkPrivateVidsAccess : false);
+}
+
+//====================================================================================================
+
 function route() {
+    test0();
+
     if (RULES.IS_MESSAGES_PAGE) {
         highlightMessages();
     }
