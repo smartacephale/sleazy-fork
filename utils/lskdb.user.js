@@ -4,21 +4,22 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.0
+// @version      1.1.1
 // @match        *://*/*
+// @downloadURL https://update.greasyfork.org/scripts/497286/lskdb.user.js
+// @updateURL https://update.greasyfork.org/scripts/497286/lskdb.meta.js
 // ==/UserScript==
 
 /*
   raison d'etre for this insane degenerative garbage:
-  if you have to store 1000+ unique keys, 
+  if you have to store 1000+ unique keys,
   you don't have to parse whole json array to check one value
 */
 
 class LSKDB {
-    lockKey = 'lsmngr-lock';
-    prefix = 'lsm-';
-
-    constructor() {
+    constructor(prefix = 'lsm-', lockKey = 'lsmngr-lock') {
+        this.prefix = prefix;
+        this.lockKey = lockKey;
         // migration
         const old = localStorage.getItem('lsmngr');
         if (!old) return;
@@ -32,6 +33,16 @@ class LSKDB {
             }
             localStorage.removeItem(l);
         });
+    }
+
+    getAllKeys() {
+        const res = [];
+        for (const key in localStorage) {
+            if (key.startsWith(this.prefix)) {
+                res.push(key);
+            }
+        }
+        return res.map(r => r.slice(this.prefix.length));
     }
 
     getKeys(n = 12) {
@@ -48,6 +59,10 @@ class LSKDB {
 
     hasKey(key) {
         return localStorage.hasOwnProperty(`${this.prefix}${key}`);
+    }
+
+    removeKey(key) {
+        localStorage.removeItem(`${this.prefix}${key}`);
     }
 
     setKey(key) {
