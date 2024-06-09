@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.3.8
+// @version      4.3.9
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -71,7 +71,8 @@ class THISVID_RULES {
         this.IS_PLAYLIST = /^\/playlist\/\d+\//.test(pathname);
         this.IS_VIDEO_PAGE = pathname.startsWith('/videos/');
 
-        this.LOGGED_IN = document.cookie.includes('kt_member');
+        this.MY_ID = document.querySelector('[target="_self"]')?.href.match(/\/(\d+)\//)[1] || null;
+        this.LOGGED_IN = this.MY_ID !== null;
 
         this.PAGE_HAS_VIDEO = !!document.querySelector('.tumbpu[title], .thumbs-items .thumb-holder');
         this.PAGINATION = $('.pagination');
@@ -79,7 +80,8 @@ class THISVID_RULES {
 
         this.CONTAINER = Array.from(document.querySelectorAll('.thumbs-items')).pop();
 
-        this.IS_OTHER_MEMBER_PAGE = !$('.my-avatar') && this.IS_MEMBER_PAGE;
+        this.IS_MY_MEMBER_PAGE = !!$('.my-avatar');
+        this.IS_OTHER_MEMBER_PAGE = !this.IS_MY_MEMBER_PAGE && this.IS_MEMBER_PAGE;
 
         // highlight friend page profile
         this.IS_MEMBER_FRIEND = this.IS_OTHER_MEMBER_PAGE && document.querySelector('.case-left')?.innerText.includes('is in your friends');
@@ -296,7 +298,7 @@ function downloader() {
         unsafeWindow.$('.fp-ui').click();
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
-            const name = document.querySelector('.headline').innerText + '.mp4';
+            const name = `${document.querySelector('.headline').innerText}.mp4`;
             const onprogress = (e) => {
                 const p = 100 * (e.loaded / e.total);
                 btn.css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
@@ -354,6 +356,7 @@ function highlightMessages() {
 //====================================================================================================
 
 const lskdb = new LSKDB();
+const PRIVATE_FEED_KEY = 'prv-feed';
 
 async function getMemberVideos(Id, type = 'private') {
     const url = `${window.location.origin}/members/${Id}/${type}_videos/`;
@@ -383,7 +386,7 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
     async function* pageGenerator() {
         let c = 0;
         let currentGenerator;
-        while (c < membersIds.length-1) {
+        while (c < membersIds.length - 1) {
             if (lskdb.hasKey(membersIds[c])) { c++; continue; }
             if (!currentGenerator) {
                 const { pageGenerator, name, videosCount } = await getMemberVideos(membersIds[c], type);
@@ -412,23 +415,17 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
     };
 }
 
-(function createMyFriendPrivateVideosButton() {
-    const ul = document.querySelectorAll('.sidebar ul')[1];
-    const button = parseDOM(`<li>
-					<a href="https://thisvid.com/my_wall/" class="selective">
-						<i class="ico-arrow"></i>
-						My Friends Private Videos
-					</a>
-				</li>`);
-    button.addEventListener('click', (e) => {
-        lskdb.setKey('test04');
-    });
-    ul.append(button);
-})();
+function createPrivateFeedButton() {
+    const container = document.querySelectorAll('.sidebar ul')[1];
+    const button = parseDOM(`<li><a href="https://thisvid.com/my_wall/" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`);
+    button.addEventListener('click', () => lskdb.setKey(PRIVATE_FEED_KEY));
+    container.append(button);
+};
 
-async function test0() {
-    if (!lskdb.hasKey('test04')) return;
-    lskdb.removeKey('test04');
+async function createPrivateFeed() {
+    createPrivateFeedButton();
+    if (!lskdb.hasKey(PRIVATE_FEED_KEY)) return;
+    lskdb.removeKey(PRIVATE_FEED_KEY);
     if (!window.location.pathname.includes('my_wall')) return;
     const container = parseDOM('<div class="thumbs-items"></div>');
     const ignored = parseDOM('<div class="ignored"></div>');
@@ -444,13 +441,13 @@ async function test0() {
     .ignored * {  padding: 4px; margin: 5px; }
     .member-videos button { }
     .thumbs-items { display: flex; flex-wrap: wrap; }`);
-    const myId = document.querySelector('[target="_self"]').href.match(/\/(\d+)\//)[1];
-    const friends = await getMemberFriends(myId);
-    console.log(friends);
+
+    const friends = await getMemberFriends(RULES.MY_ID);
 
     RULES.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
     RULES.PAGINATION_LAST = friends.length;
     RULES.CONTAINER = container;
+
     const { pageGenerator, skipCurrentMemberGenerator } = getMembersVideos(friends, (name, videosCount, id) => {
         container.append(parseDOM(`
         <div class="member-videos" id="mem-${id}">
@@ -472,9 +469,8 @@ async function test0() {
         const box = document.getElementById(id);
         let curr = box.nextElementSibling;
         while (curr?.className === 'tumbpu') {
-            let temp = curr;
             curr = curr.nextElementSibling;
-            temp.remove();
+            curr.previousElementSibling.remove();
         }
         box.remove();
         id = id.slice(4)
@@ -489,15 +485,17 @@ async function test0() {
     }
 
     PaginationManager.prototype.createNextPageGenerator = () => pageGenerator();
-    const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     new PreviewAnimation(document.body);
-    new VueUI(state, stateLocale, true, RULES.LOGGED_IN ? checkPrivateVidsAccess : false);
+    new VueUI(state, stateLocale, true, false);
 }
 
 //====================================================================================================
 
 function route() {
-    test0();
+    if (RULES.IS_MY_MEMBER_PAGE) {
+        createPrivateFeed();
+    }
 
     if (RULES.IS_MESSAGES_PAGE) {
         highlightMessages();
