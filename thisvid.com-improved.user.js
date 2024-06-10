@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.4.1
+// @version      4.4.2
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -378,7 +378,8 @@ async function getMemberVideos(Id, type = 'private') {
 
 function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private') {
     let skipFlag = false;
-    const skipCurrentMemberGenerator = () => { skipFlag = true; }
+    let skipN = 1;
+    const skipCurrentMemberGenerator = (n = 1) => { skipFlag = true; skipN = n; }
 
     async function* pageGenerator() {
         let c = 0;
@@ -396,7 +397,7 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
             } else {
                 const { value: { url } = {}, done } = currentGenerator.next();
                 if (done || skipFlag) {
-                    c++;
+                    c += skipN;
                     currentGenerator = null;
                     skipFlag = false;
                 } else {
@@ -425,21 +426,23 @@ async function createPrivateFeed() {
     lskdb.removeKey(PRIVATE_FEED_KEY);
     if (!window.location.pathname.includes('my_wall')) return;
     const container = parseDOM('<div class="thumbs-items"></div>');
-    const ignored = parseDOM('<div class="ignored"></div>');
+    const ignored = parseDOM('<div class="ignored"><h2>IGNORED:</h2></div>');
+    const controls = parseDOM('<div class="ignored"><button onClick="skip(event, 10)">skip 10</button><button onClick="skip(event, 100)">skip 100</button><button onClick="skip(event, 1000)">skip 1000</button></div>');
     const containerParent = document.querySelector('.main > .container > .content');
     containerParent.innerHTML = '';
     containerParent.nextElementSibling.remove()
     containerParent.append(container);
     container.before(ignored);
+    ignored.after(controls);
     GM_addStyle(`.content { width: auto; }
-    .member-videos, .ignored { background: #b3b3b324; height: 3rem; margin: 1rem 0px; color: #fff; font-size: 1.24rem; display: flex; justify-content: center;
+    .member-videos, .ignored { background: #b3b3b324; min-height: 3rem; margin: 1rem 0px; color: #fff; font-size: 1.24rem; display: flex; flex-wrap: wrap; justify-content: center;
       padding: 10px; width: 100%; }
     .member-videos * {  padding: 5px; margin: 4px; }
     .ignored * {  padding: 4px; margin: 5px; }
     .member-videos button { }
     .thumbs-items { display: flex; flex-wrap: wrap; }`);
 
-    const friends = (await getMemberFriends(RULES.MY_ID)).slice(1000);
+    const friends = await getMemberFriends(RULES.MY_ID);
 
     RULES.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
     RULES.PAGINATION_LAST = friends.length;
@@ -452,12 +455,17 @@ async function createPrivateFeed() {
           <button onClick="hideMemberVideos(event)">ignore 🗡</button>
           <button onClick="hideMemberVideos(event, false)">skip</button>
         </div>`));
-  });
+    });
 
     const ignoredMembers = lskdb.getAllKeys();
     ignoredMembers.forEach(im => {
         document.querySelector('.ignored').append(parseDOM(`<button id="#ir-${im}" onClick="unignore(event)">${im} 🗡</button>`));
     });
+
+    unsafeWindow.skip = (e, n) => {
+        skipCurrentMemberGenerator(n);
+        document.querySelector('.thumbs-items').innerHTML = '';
+    }
 
     unsafeWindow.hideMemberVideos = (e, ignore = true) => {
         let id = e.target.parentElement.id;
