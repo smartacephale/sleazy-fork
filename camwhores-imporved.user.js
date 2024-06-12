@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.2.4
+// @version      1.2.5
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -23,8 +23,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery $ Vue VueUI Tick LSKDB
- timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range retryFetch
+/* globals VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range retryFetch
  DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData wait */
 
 const LOGO = `camwhores admin should burn in hell
@@ -176,7 +175,7 @@ function rotateImg(src, count) {
 
 function animate() {
     const tick = new Tick(ANIMATION_DELAY);
-    $('img.thumb[data-cnt]').off()
+    unsafeWindow.$('img.thumb[data-cnt]').off()
     document.body.addEventListener('mouseover', (e) => {
         if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src')) return;
         const origin = e.target.src;
