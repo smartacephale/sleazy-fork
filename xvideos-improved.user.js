@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.1
+// @version      1.5.2
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -20,9 +20,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, Vue, createApp, watch, reactive, DefaultState,
- timeToSeconds, parseDOM, parseIntegerOr, fetchHtml, stringToWords, Observer
- LazyImgLoader, PersistentState, DataManager, PaginationManager, VueUI */
+/* globals $ timeToSeconds parseDOM DefaultState DataManager PaginationManager VueUI */
 
 const LOGO = `
 ⡐⠠⠀⠠⠐⡀⠆⡐⠢⡐⠢⡁⢆⠡⢂⠱⡈⠔⣈⠒⡌⠰⡈⠔⢢⢁⠒⡰⠐⢢⠐⠄⣂⠐⡀⠄⢂⠰⠀⢆⡐⠢⢐⠰⡀⠒⢄⠢⠐⣀⠂⠄⢀⢂⠒⡰⠐⡂⠔⠂⡔⠂⡔⠂⡔⠂⡔⠂⢆⠡
@@ -57,13 +55,13 @@ const LOGO = `
 class XVIDEOS_RULES {
     constructor() {
         this.PAGINATION = Array.from(document.querySelectorAll('.pagination')).pop();
-        this.PAGINATION_LAST = parseInt(document.querySelector('.last-page')?.innerText);
+        this.PAGINATION_LAST = parseInt(Array.from(document.querySelectorAll('.pagination a:not(.next-page)')).pop()?.innerText);
         this.CONTAINER = document.querySelector('#content')?.firstElementChild;
         this.HAS_VIDEOS = document.querySelector('div.thumb-block[id^=video_]');
     }
 
     GET_THUMBS(html) {
-        return html.querySelectorAll('div.thumb-block[id^=video_]:not(.thumb-ad)')
+        return html.querySelectorAll('div.thumb-block[id^=video_]:not(.thumb-ad)');
     }
 
     THUMB_IMG_DATA() { return ({}); };
@@ -102,7 +100,7 @@ class XVIDEOS_RULES {
         let iteratable_url;
 
         if (url.searchParams.get('k')) {
-            offset = parseInt(url.searchParams.get('p')) || 1;
+            offset = parseInt(url.searchParams.get('p')) || 0;
             iteratable_url = n => {
                 url.searchParams.set('p', n)
                 return url.href;
@@ -110,7 +108,7 @@ class XVIDEOS_RULES {
         } else {
             const mres = pathname.split(/\/(\d+)\/?$/);
             const basePathname = pathname === '/' ? '/new' : mres[0];
-            offset = parseInt(mres[1]) || 1;
+            offset = parseInt(mres[1]) || 0;
             iteratable_url = n => `${origin}${basePathname}/${n}`;
         }
 
