@@ -2,8 +2,8 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.0.2
-// @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page.
+// @version      2.0.3
+// @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xhamster.com/*
@@ -22,9 +22,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, Vue, createApp, watch, reactive, getAllUniqueParents, watchElementChildrenCount,
- timeToSeconds, parseDOM, parseIntegerOr, fetchHtml, stringToWords, Observer, DefaultState,
- LazyImgLoader, PersistentState, DataManager, PaginationManager, VueUI */
+/* globals getAllUniqueParents watchElementChildrenCount timeToSeconds Observer DefaultState DataManager PaginationManager VueUI */
 
 const LOGO = `
  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⡘⢲⣃⢖⡚⡴⢣⡞⠰⠁⡀⠀⠀⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -70,7 +68,6 @@ function expandMoreVideoPage() {
 function createPreviewVideoElement(src, mount) {
     const video = document.createElement('video');
     video.playsinline = true;
-    video.webkitplaysinline = true;
     video.autoplay = true;
     video.loop = true;
     video.classList.add('thumb-image-container__video');
