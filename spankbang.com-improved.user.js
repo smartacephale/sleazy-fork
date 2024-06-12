@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.6.1
+// @version      1.6.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -20,9 +20,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/493946/SpankBangcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493946/SpankBangcom%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, Vue, createApp, watch, reactive, DefaultState,
- timeToSeconds, parseDOM, parseIntegerOr, fetchHtml, stringToWords, Observer
- LazyImgLoader, PersistentState, DataManager, PaginationManager, VueUI */
+/* globals DefaultState parseDOM DataManager PaginationManager VueUI */
 
 const LOGO = `
 ⡕⡧⡳⡽⣿⣇⠀⢀⠀⠄⠐⡐⠌⡂⡂⠠⠀⠠⠀⠠⠀⠠⡐⡆⡇⣇⢎⢆⠆⠌⢯⡷⡥⡂⡐⠨⣻⣳⢽⢝⣵⡫⣗⢯⣺⢵⢹⡪⡳⣝⢮⡳⣿⣿⣿⣿⣿⣿⣿⣿
@@ -169,4 +167,3 @@ if (RULES.HAS_VIDEOS) {
 if (RULES.PAGINATION) {
     const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
-
