@@ -2,7 +2,7 @@
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.6.1
+// @version      1.6.2
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -20,9 +20,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, Vue, createApp, watch, reactive, findNextSibling, watchElementChildrenCount,
- timeToSeconds, parseDOM, parseIntegerOr, fetchHtml, stringToWords, Observer, getAllUniqueParents,
- LazyImgLoader, PersistentState, DataManager, PaginationManager, VueUI, DefaultState */
+/* globals findNextSibling watchElementChildrenCount timeToSeconds getAllUniqueParents DataManager PaginationManager VueUI DefaultState */
 
 const LOGO = `
 ⣞⣞⣞⣞⣞⣞⣞⣞⢞⣖⢔⠌⢆⠇⡇⢇⡓⡆⢠⠰⠠⡄⡄⡠⡀⡄⣄⠢⡂⡆⢆⢆⢒⢔⢕⢜⢔⢕⢕⢗⣗⢗⢗⢕⠕⠕⢔⢲⣲⢮⣺⣺⡺⡸⡪⡚⢎⢎⢺⢪
@@ -77,7 +75,7 @@ class PORNHUB_RULES {
     THUMB_IMG_DATA(thumb) {
         const img = thumb.querySelector('.js-videoThumb.thumb.js-videoPreview');
         const imgSrc = img?.getAttribute('data-mediumthumb') || img?.getAttribute('data-path').replace('{index}', '1');
-        if (!img?.complete || img.naturalWidth === 0) { return ({});}
+        if (!img?.complete || img.naturalWidth === 0) { return ({}); }
         return { img, imgSrc };
     }
 
@@ -119,7 +117,7 @@ const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
 defaultState.setWatchers(filter_);
 
 if (RULES.IS_VIDEO_PAGE) {
-    const containers = getAllUniqueParents(document.querySelectorAll('li.pcVideoListItem.js-pop.videoBox')).slice(2,);
+    const containers = getAllUniqueParents(document.querySelectorAll('li.pcVideoListItem.js-pop.videoBox')).slice(2);
     containers.forEach(c => handleLoadedHTML(c, c));
 }
 
