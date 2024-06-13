@@ -4,8 +4,8 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.3.2
-// @description  Infinite scroll (optional). Filter by duration. Filter by phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available.
+// @version      2.3.3
+// @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
@@ -21,9 +21,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
 // ==/UserScript==
-/* globals jQuery, $, Vue, createApp, watch, reactive, Tick, fetchMobHtml, replaceElementTag,
- timeToSeconds, parseDOM, parseIntegerOr, fetchHtml, stringToWords, Observer, DefaultState
- LazyImgLoader, PersistentState, DataManager, PaginationManager, VueUI, getAllUniqueParents */
+/* globals Tick fetchMobHtml replaceElementTag timeToSeconds DefaultState DataManager PaginationManager VueUI getAllUniqueParents */
 
 const LOGO = `
 ⡿⣹⡝⣯⡝⣯⡝⣯⠽⣭⢻⣭⢻⣭⢻⣭⢻⡭⢯⡽⡭⢏⡳⣍⡛⡜⡍⢎⡱⢊⠖⡱⢊⡖⣱⢊⠶⡱⢎⠶⣩⣿⢣⠝⣺⢿⣹⣷⣿⣿⣿⣿⢠⢃⠦⡑⢢⠜⣐⠢
@@ -68,10 +66,10 @@ class MOTHERLESS_RULES {
 
     THUMB_DATA(thumb) {
         const uploader = (thumb.querySelector('.uploader')?.innerText || "").toLowerCase();
-        const title = (thumb.querySelector('.title')?.innerText || "").toLowerCase() + " " + uploader;
+        const title = (thumb.querySelector('.title')?.innerText || "").toLowerCase();
         const duration = timeToSeconds(thumb.querySelector('.size')?.innerText || "0");
         return {
-            title,
+            title: `${title} ${uploader}`,
             duration
         }
     }
