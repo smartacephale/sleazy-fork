@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.4.3
+// @version      4.4.4
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -378,8 +378,11 @@ async function getMemberVideos(Id, type = 'private') {
 
 function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private') {
     let skipFlag = false;
-    let skipN = 1;
-    const skipCurrentMemberGenerator = (n = 1) => { skipFlag = true; skipN = n; }
+    let skipCount = 1;
+    let minVideosCount = 1;
+
+    const skipCurrentMember = (n = 1) => { skipFlag = true; skipCount = n; }
+    const filterVideosCount = (n = 1) => { minVideosCount = n; }
 
     async function* pageGenerator() {
         let c = 0;
@@ -388,7 +391,7 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
             if (lskdb.hasKey(membersIds[c])) { c++; continue; }
             if (!currentGenerator) {
                 const { pageGenerator, name, videosCount } = await getMemberVideos(membersIds[c], type);
-                if (pageGenerator && videosCount > 0) {
+                if (pageGenerator && videosCount >= minVideosCount) {
                     currentGenerator = pageGenerator;
                     memberGeneratorCallback(name, videosCount, membersIds[c]);
                 } else {
@@ -397,8 +400,8 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
             } else {
                 const { value: { url } = {}, done } = currentGenerator.next();
                 if (done || skipFlag) {
-                    c += skipN;
-                    skipN = 1;
+                    c += skipCount;
+                    skipCount = 1;
                     currentGenerator = null;
                     skipFlag = false;
                 } else {
@@ -410,7 +413,8 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
 
     return {
         pageGenerator: () => pageGenerator(membersIds, type),
-        skipCurrentMemberGenerator
+        skipCurrentMember,
+        filterVideosCount
     };
 }
 
@@ -428,7 +432,13 @@ async function createPrivateFeed() {
     if (!window.location.pathname.includes('my_wall')) return;
     const container = parseDOM('<div class="thumbs-items"></div>');
     const ignored = parseDOM('<div class="ignored"><h2>IGNORED:</h2></div>');
-    const controls = parseDOM('<div class="ignored"><button onClick="skip(event, 10)">skip 10</button><button onClick="skip(event, 100)">skip 100</button><button onClick="skip(event, 1000)">skip 1000</button></div>');
+    const controls = parseDOM(`<div class="ignored">
+         <button onClick="skip(event, 10)">skip 10</button>
+         <button onClick="skip(event, 100)">skip 100</button>
+         <button onClick="skip(event, 1000)">skip 1000</button>
+         <button onClick="filterVidsCount(event, 50)">filter >50 videos</button>
+         <button onClick="filterVidsCount(event, 100)">filter >100 videos</button>
+         </div>`);
     const containerParent = document.querySelector('.main > .container > .content');
     containerParent.innerHTML = '';
     containerParent.nextElementSibling.remove()
@@ -449,7 +459,7 @@ async function createPrivateFeed() {
     RULES.PAGINATION_LAST = friends.length;
     RULES.CONTAINER = container;
 
-    const { pageGenerator, skipCurrentMemberGenerator } = getMembersVideos(friends, (name, videosCount, id) => {
+    const { pageGenerator, skipCurrentMember, filterVideosCount } = getMembersVideos(friends, (name, videosCount, id) => {
         container.append(parseDOM(`
         <div class="member-videos" id="mem-${id}">
           <h2>${name} ${videosCount} videos</h2>
@@ -464,14 +474,14 @@ async function createPrivateFeed() {
     });
 
     unsafeWindow.skip = (e, n) => {
-        skipCurrentMemberGenerator(n);
+        skipCurrentMember(n);
         document.querySelector('.thumbs-items').innerHTML = '';
     }
 
     unsafeWindow.hideMemberVideos = (e, ignore = true) => {
         let id = e.target.parentElement.id;
         if (!document.querySelector(`#${id} ~ div`)) {
-            skipCurrentMemberGenerator();
+            skipCurrentMember();
         }
         const box = document.getElementById(id);
         const toDelete = [box];
@@ -490,6 +500,10 @@ async function createPrivateFeed() {
         const id = e.target.id.slice(4);
         lskdb.removeKey(id);
         e.target.remove();
+    }
+
+    unsafeWindow.filterVidsCount = (e, count) => {
+        filterVideosCount(count);
     }
 
     PaginationManager.prototype.createNextPageGenerator = () => pageGenerator();
