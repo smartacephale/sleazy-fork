@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.2
+// @version      2.2.3
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -41,9 +41,12 @@ const LOGO = `
 ⣷⣵⣮⣧⣧⣷⣾⣾⣾⣯⣯⣯⣯⣷⣿⣾⣷⣷⣵⣶⣵⣵⣿⣾⣾⣷⣯⣿⣼⣼⣼⣼⣼⣼⣶⣷⣿⣽⣾⣿⣷⣷⣷⣯⣷⣾⣾⣾⣾⣾⣾⣾⣾⣮⣾⣶⣵⣵⣮⣷`;
 console.log(LOGO);
 
-// skip 18+ dialog
-$('#disclaimer').remove();
-$('body').css('overflow', 'visible');
+(function disableDisclaimer(){
+    if ($('#disclaimer').length === 0) return;
+    $.ajax({ type: 'POST', url : '/user/disclaimer', async: true });
+    $('#disclaimer').remove();
+    $('body').css('overflow', 'visible');
+})();
 
 const PINK = '#eb6395';
 const GREY = '#a09f9d';
@@ -68,7 +71,6 @@ function hidePhotoOnlyAlbums() {
 }
 
 function infiniteScrollAndLazyLoading() {
-    // taken from index.html of erome mobile version
     if (!document.querySelector('.pagination')) return;
     const url = new URL(window.location.href);
     let next_page = parseInt(url.searchParams.get('page')) || 2;
@@ -77,7 +79,6 @@ function infiniteScrollAndLazyLoading() {
     const infinite = $('#page').infiniteScroll({
         path: () => {
             url.searchParams.set('page', next_page);
-            console.log(url.href);
             return url.href;
         },
         append: '.page-content',
