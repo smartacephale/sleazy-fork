@@ -63,7 +63,7 @@ function togglePhotoElements() {
 
 function hidePhotoOnlyAlbums() {
     document.querySelectorAll('div[id^=album]').forEach(a => {
-        if (!a.querySelector('.album-videos') || parseInt(a.querySelector('.album-videos').innerText) < 5) {
+        if (!a.querySelector('.album-videos')) {
             $(a).toggle(config.showPhotoAlbums);
         }
     });
