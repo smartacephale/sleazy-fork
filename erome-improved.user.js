@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.3
+// @version      2.2.4
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -63,41 +63,34 @@ function togglePhotoElements() {
 
 function hidePhotoOnlyAlbums() {
     document.querySelectorAll('div[id^=album]').forEach(a => {
-        if (!a.querySelector('.album-videos')) {
+        if (!a.querySelector('.album-videos') || parseInt(a.querySelector('.album-videos').innerText) < 5) {
             $(a).toggle(config.showPhotoAlbums);
         }
     });
     $('#togglePhotoAlbums').css('color', isActiveColor(!config.showPhotoAlbums));
+    window.dispatchEvent(new Event('scroll'));
 }
 
 function infiniteScrollAndLazyLoading() {
     if (!document.querySelector('.pagination')) return;
     const url = new URL(window.location.href);
     let next_page = parseInt(url.searchParams.get('page')) || 2;
+    const nextPageUrl = () => {
+        url.searchParams.set('page', next_page);
+        return url.href;
+    }
     const limit = parseInt($('.pagination li:last-child()').prev().text()) || 50;
 
-    const infinite = $('#page').infiniteScroll({
-        path: () => {
-            url.searchParams.set('page', next_page);
-            return url.href;
-        },
-        append: '.page-content',
-        scrollThreshold: 800
-    });
+    const infinite = $('#page').infiniteScroll({ path: nextPageUrl, append: '.page-content', scrollThreshold: 800 });
 
     $('#page').on('append.infiniteScroll', (event, body, path, items, response) => {
         hidePhotoOnlyAlbums();
         new LazyLoad();
-        scrollFix();
         next_page++;
         if (next_page > limit) {
             infinite.destroy();
         }
     });
-}
-
-function scrollFix() {
-    setTimeout(() => window.dispatchEvent(new Event('scroll')), 1000);
 }
 
 /******************************************* STATE ***********************************************/
@@ -147,4 +140,3 @@ if (IS_ALBUM_PAGE) {
 
 window.addEventListener('focus', pageAction);
 pageAction();
-scrollFix();
