@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.4.4
+// @version      4.5
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -196,95 +196,127 @@ const FRIEND_REQUEST_URL = (id) => `${window.location.origin}/members/${id}/?act
 const USERS_PER_PAGE = 24;
 
 async function getMemberFriends(memberId) {
-    const doc = await fetchHtml(`${window.location.origin}/members/${memberId}/`);
-    let friendsEl = doc.querySelector('#list_members_friends');
-    if (!friendsEl) return;
-    friendsEl = friendsEl.firstElementChild.innerText.match(/\d+/g);
-    const friendsCount = parseInt(friendsEl[friendsEl.length - 1]);
-    let friends;
-    if (friendsCount > 12) {
-        const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
-        const pages = range(offset).map(o => `${window.location.origin}/members/${memberId}/friends/${o}/`);
-        const pagesFetched = pages.map(p => fetchHtml(p));
-        friends = (await Promise.all(pagesFetched)).flatMap(getUsers);
-    } else {
-        friends = getUsers(document.body);
-    }
+    const { friendsCount } = await getMemberData(memberId);
+    const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
+    const pages = range(offset).map(o => `${window.location.origin}/members/${memberId}/friends/${o}/`);
+    const pagesFetched = pages.map(p => fetchHtml(p));
+    const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
     return friends;
 }
 
-function getUsers(el) {
+function getMembers(el) {
     const friendsList = el.querySelector('#list_members_friends_items');
     if (!friendsList) return [];
     return Array.from(friendsList.querySelectorAll('.tumbpu'))
         .map(e => e.href.match(/\d+/)?.[0]).filter(_ => _);
 }
 
-async function friendMemberFriends() {
+async function friendMemberFriends(orientationFilter) {
     const memberId = window.location.pathname.match(/\d+/)[0];
     friend(memberId);
     const friends = await getMemberFriends(memberId);
-    await Promise.all(friends.map((fid, i) => friend(fid, i)));
+    let count = 0;
+    await Promise.all(friends.map((fid, i) => {
+        if (!orientationFilter) {
+            return friend(fid, i);
+        } else {
+            return getMemberData(fid).then(({ orientation }) => {
+                if (orientation === orientationFilter) {
+                    count++;
+                    console.log(fid, orientation, orientationFilter, orientation === orientationFilter);
+                    return friend(fid, i);
+                }
+            });
+        }
+    }));
+    console.log(count, '/', friends.length);
 }
 
 function initFriendship() {
-    createFriendButton();
+    GM_addStyle('.buttons {display: flex; flex-wrap: wrap} .buttons button, .buttons a {align-self: center; padding: 4px; margin: 5px;}');
 
-    function createFriendButton() {
-        GM_addStyle('.buttons {display: flex; flex-wrap: wrap} .buttons * {align-self: center; padding: 3px; margin: 1px;}');
-        const button = parseDOM('<button style="background: radial-gradient(red, blueviolet);">friend everyone</button>');
-        document.querySelector('.buttons').appendChild(button);
-        button.addEventListener('click', () => {
-            button.style.background = 'radial-gradient(#ff6114, #5babc4)';
-            button.innerText = 'processing requests';
-            friendMemberFriends().then(() => {
-                button.style.background = 'radial-gradient(blue, lightgreen)';
-                button.innerText = 'friend requests sent';
-            });
-        }, { once: true });
+    const buttonAll = parseDOM('<button style="background: radial-gradient(red, blueviolet);">friend everyone</button>');
+    const buttonStraightOnly = parseDOM('<button style="background: radial-gradient(red, #a18cb5);">friend everyone straight</button>');
+    const buttonGayOnly = parseDOM('<button style="background: radial-gradient(red, #46baff);">friend everyone gay</button>');
+    const buttonBisexualOnly = parseDOM('<button style="background: radial-gradient(red, #4ebaaf);">friend everyone bi</button>');
+
+    document.querySelector('.buttons').append(buttonAll, buttonStraightOnly, buttonGayOnly, buttonBisexualOnly);
+
+    buttonAll.addEventListener('click', (e) => handleClick(e), { once: true });
+    buttonStraightOnly.addEventListener('click', (e) => handleClick(e, 'Straight'), { once: true });
+    buttonGayOnly.addEventListener('click', (e) => handleClick(e, 'Gay'), { once: true });
+    buttonBisexualOnly.addEventListener('click', (e) => handleClick(e, 'Bisexual'), { once: true });
+
+    function handleClick (e, orientationFilter) {
+        const button = e.target;
+        button.style.background = 'radial-gradient(#ff6114, #5babc4)';
+        button.innerText = 'processing requests';
+        friendMemberFriends(orientationFilter).then(() => {
+            button.style.background = 'radial-gradient(blue, lightgreen)';
+            button.innerText = 'friend requests sent';
+        });
     }
 }
 
 //====================================================================================================
 
-async function getUserData(id) {
+async function getMemberData(id) {
     const url = id.includes('member') ? id : `/members/${id}/`;
-    return fetchHtml(url).then(html => {
-        const memberVideos = unsafeWindow.$(html).find("span:contains('Videos uploaded')").children();
-        const privateVideosCount = parseInt(memberVideos[1].innerText);
-        const publicVideosCount = parseInt(memberVideos[0].innerText);
-        return {
-            publicVideosCount,
-            privateVideosCount
-        };
+    const doc = await fetchHtml(url);
+    const data = {};
+
+    doc.querySelectorAll('.profile span').forEach(s => {
+        if (s.innerText.includes('Name:')) {
+            data.name = s.firstElementChild.innerText.trim();
+        }
+        if (s.innerText.includes('Orientation:')) {
+            data.orientation = s.firstElementChild.innerText.trim();
+        }
+        if (s.innerText.includes('Videos uploaded:')) {
+            data.uploadedPublic = parseInt(s.children[0].innerText);
+            data.uploadedPrivate = parseInt(s.children[1].innerText);
+        }
     });
+
+    data.friendsCount = parseInt(document.querySelector('#list_members_friends')?.firstElementChild.innerText.match(/\d+/g).pop()) || 0;
+
+    return data;
 }
 
 //====================================================================================================
 
-function requestPrivateAccess(e, memberid) {
+unsafeWindow.requestPrivateAccess = function (e, memberid) {
     e.preventDefault();
     friend(memberid);
     e.target.innerText = e.target.innerText.replace('🚑', '🍆');
 }
 
-unsafeWindow.requestPrivateAccess = requestPrivateAccess;
+async function checkPrivateVideoAccess(url) {
+    const html = await fetchHtml(url);
+    const holder = html.querySelector('.video-holder > p');
+
+    const access = !holder;
+
+    const uploaderEl = holder ? holder.querySelector('a') : html.querySelector('a.author');
+    const uploaderURL = uploaderEl.href.replace(/.*\/(\d+)\/$/, (a, b) => b);
+    const uploaderName = uploaderEl.innerText;
+
+    return {
+        access,
+        uploaderURL,
+        uploaderName
+    }
+}
 
 function checkPrivateVidsAccess() {
-    document.querySelectorAll('.tumbpu > .private').forEach(t => {
+    document.querySelectorAll('.tumbpu > .private').forEach(async t => {
         const thumb = t.parentElement;
-        const url = thumb.href;
-        fetchHtml(url).then(html => {
-            const holder = html.querySelector('.video-holder > p');
-            const haveAccess = !holder;
-            thumb.style.background = haveAccess ? haveAccessColor : haveNoAccessColor;
-            thumb.querySelector('.title').innerText += haveAccess ? '✅' : '❌';
-            const uploaderEl = holder ? holder.querySelector('a') : html.querySelector('a.author');
-            const uploader = uploaderEl.href.replace(/.*\/(\d+)\/$/, (a, b) => b);
-            thumb.querySelector('.title').appendChild(parseDOM(holder ?
-                                                               `<span onclick="requestPrivateAccess(event, ${uploader});"> 🚑 ${uploaderEl.innerText}</span>` :
-                                                               `<span> 💅🏿 ${uploaderEl.innerText}</span>`));
-        });
+        const { access, uploaderURL, uploaderName } = await checkPrivateVideoAccess(thumb.href);
+
+        thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
+        thumb.querySelector('.title').innerText += access ? '✅' : '❌';
+        thumb.querySelector('.title').appendChild(parseDOM(access ? `<span> 💅🏿 ${uploaderName}</span>` :
+                                                           `<span onclick="requestPrivateAccess(event, ${uploaderURL});"> 🚑 ${uploaderName}</span>`));
     });
 }
 
@@ -339,13 +371,13 @@ class PreviewAnimation {
 
 function highlightMessages() {
     for (const member of document.querySelectorAll('.user-avatar > a')) {
-        getUserData(member.href).then(({ publicVideosCount, privateVideosCount }) => {
-            if (privateVideosCount > 0) {
+        getMemberData(member.href).then(({ uploadedPublic, uploadedPrivate }) => {
+            if (uploadedPrivate > 0) {
                 const success = !member.parentElement.nextElementSibling.innerText.includes('declined');
                 member.parentElement.parentElement.style.background = success ? succColor : failColor;
             }
             member.parentElement.parentElement.querySelector('.user-comment p').innerText +=
-                `  |  videos: ${publicVideosCount} public, ${privateVideosCount} private`;
+                `  |  videos: ${uploadedPublic} public, ${uploadedPrivate} private`;
         });
     }
 }
@@ -355,23 +387,22 @@ function highlightMessages() {
 const lskdb = new LSKDB();
 const PRIVATE_FEED_KEY = 'prv-feed';
 
-async function getMemberVideos(Id, type = 'private') {
-    const url = `${window.location.origin}/members/${Id}/${type}_videos/`;
-    const doc = await fetchHtml(url);
-    let name = doc.querySelector('.headline').innerText.trim();
-    const videosCount = parseInt(name.match(/(\d+) videos/)?.[1]) || 0;
-    name = name.match(/\w+/)[0];
-    const paginationLast = RULES.GET_PAGINATION_LAST(doc);
+async function getMemberVideos(id, type = 'private') {
+    const url = `${window.location.origin}/members/${id}/${type}_videos/`;
+    const { uploadedPrivate, name } = await getMemberData(id);
+    const paginationLast = Math.ceil(uploadedPrivate / 48);
     const pageIterator = n => `${url}${n}/`;
+
     function* pageGenerator() {
         for (let c = 1; c <= paginationLast; c++) {
             const url = pageIterator(c);
             yield { url, offset: c };
         }
     }
+
     return {
         name,
-        videosCount,
+        videosCount: uploadedPrivate,
         pageGenerator: pageGenerator()
     }
 }
@@ -436,6 +467,7 @@ async function createPrivateFeed() {
          <button onClick="skip(event, 10)">skip 10</button>
          <button onClick="skip(event, 100)">skip 100</button>
          <button onClick="skip(event, 1000)">skip 1000</button>
+         <button onClick="filterVidsCount(event, 10)">filter >10 videos</button>
          <button onClick="filterVidsCount(event, 50)">filter >50 videos</button>
          <button onClick="filterVidsCount(event, 100)">filter >100 videos</button>
          </div>`);
