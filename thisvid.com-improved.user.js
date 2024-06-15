@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5
+// @version      4.5.1
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -223,7 +223,6 @@ async function friendMemberFriends(orientationFilter) {
             return getMemberData(fid).then(({ orientation }) => {
                 if (orientation === orientationFilter) {
                     count++;
-                    console.log(fid, orientation, orientationFilter, orientation === orientationFilter);
                     return friend(fid, i);
                 }
             });
