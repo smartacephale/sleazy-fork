@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.1
+// @version      4.5.2
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -220,8 +220,8 @@ async function friendMemberFriends(orientationFilter) {
         if (!orientationFilter) {
             return friend(fid, i);
         } else {
-            return getMemberData(fid).then(({ orientation }) => {
-                if (orientation === orientationFilter) {
+            return getMemberData(fid).then(({ orientation, uploadedPrivate }) => {
+                if (orientation === orientationFilter && uploadedPrivate > 0) {
                     count++;
                     return friend(fid, i);
                 }
@@ -246,7 +246,7 @@ function initFriendship() {
     buttonGayOnly.addEventListener('click', (e) => handleClick(e, 'Gay'), { once: true });
     buttonBisexualOnly.addEventListener('click', (e) => handleClick(e, 'Bisexual'), { once: true });
 
-    function handleClick (e, orientationFilter) {
+    function handleClick(e, orientationFilter) {
         const button = e.target;
         button.style.background = 'radial-gradient(#ff6114, #5babc4)';
         button.innerText = 'processing requests';
