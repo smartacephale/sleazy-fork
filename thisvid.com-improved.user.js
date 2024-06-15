@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.2
+// @version      4.5.3
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -277,7 +277,7 @@ async function getMemberData(id) {
         }
     });
 
-    data.friendsCount = parseInt(document.querySelector('#list_members_friends')?.firstElementChild.innerText.match(/\d+/g).pop()) || 0;
+    data.friendsCount = parseInt(doc.querySelector('#list_members_friends')?.firstElementChild.innerText.match(/\d+/g).pop()) || 0;
 
     return data;
 }
@@ -481,7 +481,6 @@ async function createPrivateFeed() {
       padding: 10px; width: 100%; }
     .member-videos * {  padding: 5px; margin: 4px; }
     .ignored * {  padding: 4px; margin: 5px; }
-    .member-videos button { }
     .thumbs-items { display: flex; flex-wrap: wrap; }`);
 
     const friends = await getMemberFriends(RULES.MY_ID);
