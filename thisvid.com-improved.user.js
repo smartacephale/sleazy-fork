@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.3
+// @version      4.5.4
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -385,11 +385,13 @@ function highlightMessages() {
 
 const lskdb = new LSKDB();
 const PRIVATE_FEED_KEY = 'prv-feed';
+const PUBLIC_FEED_KEY = 'pub-feed';
 
 async function getMemberVideos(id, type = 'private') {
     const url = `${window.location.origin}/members/${id}/${type}_videos/`;
-    const { uploadedPrivate, name } = await getMemberData(id);
-    const paginationLast = Math.ceil(uploadedPrivate / 48);
+    const { uploadedPrivate, uploadedPublic, name } = await getMemberData(id);
+    const videosCount = type === 'private' ? uploadedPrivate : uploadedPublic;
+    const paginationLast = Math.ceil(videosCount / 48);
     const pageIterator = n => `${url}${n}/`;
 
     function* pageGenerator() {
@@ -401,7 +403,7 @@ async function getMemberVideos(id, type = 'private') {
 
     return {
         name,
-        videosCount: uploadedPrivate,
+        videosCount,
         pageGenerator: pageGenerator()
     }
 }
@@ -450,15 +452,21 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
 
 function createPrivateFeedButton() {
     const container = document.querySelectorAll('.sidebar ul')[1];
-    const button = parseDOM(`<li><a href="https://thisvid.com/my_wall/" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`);
-    button.addEventListener('click', () => lskdb.setKey(PRIVATE_FEED_KEY));
-    container.append(button);
+    const buttonPrv = parseDOM(`<li><a href="https://thisvid.com/my_wall/" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`);
+    const buttonPub = parseDOM(`<li><a href="https://thisvid.com/my_wall/" class="selective"><i class="ico-arrow"></i>My Friends Public Videos</a></li>`);
+    buttonPrv.addEventListener('click', () => lskdb.setKey(PRIVATE_FEED_KEY));
+    buttonPub.addEventListener('click', () => lskdb.setKey(PUBLIC_FEED_KEY));
+    container.append(buttonPub, buttonPrv);
 };
 
 async function createPrivateFeed() {
     createPrivateFeedButton();
-    if (!lskdb.hasKey(PRIVATE_FEED_KEY)) return;
+    const key = lskdb.hasKey(PRIVATE_FEED_KEY) || lskdb.hasKey(PUBLIC_FEED_KEY);
+    if (!key) return;
+    const isPubKey = !!lskdb.hasKey(PUBLIC_FEED_KEY);
     lskdb.removeKey(PRIVATE_FEED_KEY);
+    lskdb.removeKey(PUBLIC_FEED_KEY);
+
     if (!window.location.pathname.includes('my_wall')) return;
     const container = parseDOM('<div class="thumbs-items"></div>');
     const ignored = parseDOM('<div class="ignored"><h2>IGNORED:</h2></div>');
@@ -496,7 +504,7 @@ async function createPrivateFeed() {
           <button onClick="hideMemberVideos(event)">ignore 🗡</button>
           <button onClick="hideMemberVideos(event, false)">skip</button>
         </div>`));
-    });
+    }, isPubKey ? 'public' : 'private');
 
     const ignoredMembers = lskdb.getAllKeys();
     ignoredMembers.forEach(im => {
