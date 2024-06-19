@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.4
+// @version      4.5.5
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -488,6 +488,7 @@ async function createPrivateFeed() {
     .member-videos, .ignored { background: #b3b3b324; min-height: 3rem; margin: 1rem 0px; color: #fff; font-size: 1.24rem; display: flex; flex-wrap: wrap; justify-content: center;
       padding: 10px; width: 100%; }
     .member-videos * {  padding: 5px; margin: 4px; }
+    .member-videos h2 a { font-size: 1.24rem; margin: 0; padding: 0; display: inline; }
     .ignored * {  padding: 4px; margin: 5px; }
     .thumbs-items { display: flex; flex-wrap: wrap; }`);
 
@@ -500,7 +501,7 @@ async function createPrivateFeed() {
     const { pageGenerator, skipCurrentMember, filterVideosCount } = getMembersVideos(friends, (name, videosCount, id) => {
         container.append(parseDOM(`
         <div class="member-videos" id="mem-${id}">
-          <h2>${name} ${videosCount} videos</h2>
+          <h2><a href="/members/${id}/">${name}</a> ${videosCount} videos</h2>
           <button onClick="hideMemberVideos(event)">ignore 🗡</button>
           <button onClick="hideMemberVideos(event, false)">skip</button>
         </div>`));
