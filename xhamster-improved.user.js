@@ -8,7 +8,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.desi/*
-// @exclude      https://cluster|blackbox.xhamster.com/*
+// @exclude      https://cluster.xhamster.com/*
 // @exclude      https://blackbox.xhamster.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
