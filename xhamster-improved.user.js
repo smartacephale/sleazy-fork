@@ -2,7 +2,7 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.0.5
+// @version      2.0.6
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -16,7 +16,7 @@
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1378559
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1398472
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
 // @run-at       document-idle
@@ -104,11 +104,8 @@ animate();
 class XHAMSTER_RULES {
     constructor() {
         this.IS_VIDEO_PAGE = /^\/videos\//.test(window.location.pathname);
-
         this.PAGINATION = document.querySelector('.prev-next-list, .test-pager');
-        this.PAGINATION_LAST = parseInt(document.querySelector('.page-limit-button')?.innerText ||
-                                        Array.from(document.querySelectorAll('.page-button-link')).pop()?.innerText ||
-                                        Array.from(document.querySelectorAll('.xh-paginator-button')).pop()?.innerText);
+        this.PAGINATION_LAST = parseInt(Array.from(this.PAGINATION.querySelectorAll('.page-button-link, .xh-paginator-button')).pop()?.innerText);
         this.CONTAINER = Array.from(document.querySelectorAll('.thumb-list')).pop();
     }
 
@@ -170,7 +167,7 @@ const RULES = new XHAMSTER_RULES();
 
 function parseInPLace() {
     const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
-    containers.forEach(c => handleLoadedHTML(c, c));
+    containers.forEach(c => handleLoadedHTML(c, c, false, false));
 }
 
 function route() {
