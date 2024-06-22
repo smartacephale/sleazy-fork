@@ -2,7 +2,7 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.0.7
+// @version      2.0.8
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -143,7 +143,7 @@ class XHAMSTER_RULES {
 
         if (/^\/search\//.test(pathname)) {
             const url = new URL(href);
-            offset = url.searchParams.get('page') || 1;
+            offset = parseInt(url.searchParams.get('page')) || 1;
             iteratable_url = n => {
                 url.searchParams.set('page', n);
                 return url.href;
