@@ -2,7 +2,7 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.0.8
+// @version      2.0.9
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -56,51 +56,6 @@ const LOGO = `
  ⢆⠰⢈⠆⠱⣀⠣⢒⠌⡓⡌⠳⢄⠹⢤⠓⡘⢭⠲⡱⢎⠶⣩⠚⡥⢛⡌⢎⡱⠚⣄⢋⠆⡣⢉⠖⡨⠣⢍⠚⠥⢓⠬⡑⢎⠲⠱⣙⠲⣉⠞⣌⠣⢎⡱⢜⠲⣉⠦⡙⢦⡙⠤⢓⡘⣐⠢⢌⡐⢀
  ⢀⠂⠡⢈⠐⠠⠑⣈⠢⠑⡈⢁⠊⡐⠂⠉⠜⡀⠣⠑⠊⠆⡅⢋⠔⠡⠘⠠⠂⠑⠀⡈⠀⠁⡀⢀⠀⢁⠀⠌⠠⢁⠂⠡⢈⠰⠁⢂⠡⠐⠈⠄⡉⢂⠱⢈⠱⢈⠒⠩⡐⠌⡑⠌⠰⢀⠃⠂⠄⢃
  ⢀⠈⠄⠂⠈⠄⠡⠀⠄⠁⡀⠂⠀⠀⠀⠀⠀⠀⠁⠈⡐⠠⠀⠂⠐⠠⠀⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠂⠐⠠⠈⠐⢀⠂⠐⠈⡐⠀⡈⠐⠈⠀`;
-
-function expandMoreVideoPage() {
-    const getExpandButton = () => document.querySelector('button[data-role="show-more-next"]');
-    const observer = new Observer((target) => {
-        target.click();
-    });
-    observer.observe(getExpandButton());
-}
-
-//====================================================================================================
-
-function createPreviewVideoElement(src, mount) {
-    const video = document.createElement('video');
-    video.playsinline = true;
-    video.autoplay = true;
-    video.loop = true;
-    video.classList.add('thumb-image-container__video');
-    video.src = src;
-    video.addEventListener('loadeddata', () => {
-        mount.before(video);
-    }, false);
-    return {
-        video,
-        removeVideo: () => {
-            video.removeAttribute('src');
-            video.load();
-            video.remove();
-        }
-    };
-}
-
-function handleThumbHover(e) {
-    if (!e.target.classList.contains('thumb-image-container__image')) return;
-    const videoSrc = e.target.parentElement.getAttribute('data-previewvideo');
-    const { video, removeVideo } = createPreviewVideoElement(videoSrc, e.target);
-    e.target.parentElement.parentElement.addEventListener('mouseleave', removeVideo, { once: true });
-}
-
-function animate() {
-    document.body.addEventListener('mouseover', handleThumbHover);
-}
-
-animate();
-
-//====================================================================================================
 
 class XHAMSTER_RULES {
     constructor() {
@@ -166,12 +121,57 @@ const RULES = new XHAMSTER_RULES();
 
 //====================================================================================================
 
+function expandMoreVideoPage() {
+    const getExpandButton = () => document.querySelector('button[data-role="show-more-next"]');
+    const observer = new Observer((target) => {
+        target.click();
+    });
+    observer.observe(getExpandButton());
+}
+
+//====================================================================================================
+
+function createPreviewVideoElement(src, mount) {
+    const video = document.createElement('video');
+    video.playsinline = true;
+    video.autoplay = true;
+    video.loop = true;
+    video.classList.add('thumb-image-container__video');
+    video.src = src;
+    video.addEventListener('loadeddata', () => {
+        mount.before(video);
+    }, false);
+    return {
+        video,
+        removeVideo: () => {
+            video.removeAttribute('src');
+            video.load();
+            video.remove();
+        }
+    };
+}
+
+function handleThumbHover(e) {
+    if (!e.target.classList.contains('thumb-image-container__image')) return;
+    const videoSrc = e.target.parentElement.getAttribute('data-previewvideo');
+    const { video, removeVideo } = createPreviewVideoElement(videoSrc, e.target);
+    e.target.parentElement.parentElement.addEventListener('mouseleave', removeVideo, { once: true });
+}
+
+function animate() {
+    document.body.addEventListener('mouseover', handleThumbHover);
+}
+
+//====================================================================================================
+
 function parseInPLace() {
     const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
     containers.forEach(c => handleLoadedHTML(c, c, false, false));
 }
 
 function route() {
+    animate();
+
     if (RULES.IS_VIDEO_PAGE) {
         expandMoreVideoPage();
         watchElementChildrenCount(RULES.CONTAINER, (_, count) => {
