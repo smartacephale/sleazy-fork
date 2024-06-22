@@ -2,14 +2,12 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.0.9
+// @version      2.1
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.desi/*
-// @exclude      https://cluster.xhamster.com/*
-// @exclude      https://blackbox.xhamster.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
@@ -25,6 +23,8 @@
 // @updateURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.meta.js
 // ==/UserScript==
 /* globals getAllUniqueParents watchElementChildrenCount timeToSeconds Observer DefaultState DataManager PaginationManager VueUI */
+
+if (!/^(\w{2}.)?xhamster.(com|desi)/.test(window.location.host)) return;
 
 const LOGO = `
  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⡘⢲⣃⢖⡚⡴⢣⡞⠰⠁⡀⠀⠀⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -192,11 +192,10 @@ function route() {
 
 const SCROLL_RESET_DELAY = 350;
 
-console.log(LOGO);
-
 const defaultState = new DefaultState();
 const { state, stateLocale } = defaultState;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
 defaultState.setWatchers(filter_);
 
+console.log(LOGO);
 route();
