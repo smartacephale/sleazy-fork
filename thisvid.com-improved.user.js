@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.6
+// @version      4.5.7
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -234,9 +234,9 @@ function initFriendship() {
     GM_addStyle('.buttons {display: flex; flex-wrap: wrap} .buttons button, .buttons a {align-self: center; padding: 4px; margin: 5px;}');
 
     const buttonAll = parseDOM('<button style="background: radial-gradient(red, blueviolet);">friend everyone</button>');
-    const buttonStraightOnly = parseDOM('<button style="background: radial-gradient(red, #a18cb5);">friend everyone straight</button>');
-    const buttonGayOnly = parseDOM('<button style="background: radial-gradient(red, #46baff);">friend everyone gay</button>');
-    const buttonBisexualOnly = parseDOM('<button style="background: radial-gradient(red, #4ebaaf);">friend everyone bi</button>');
+    const buttonStraightOnly = parseDOM('<button style="background: radial-gradient(red, #a18cb5);">friend straights</button>');
+    const buttonGayOnly = parseDOM('<button style="background: radial-gradient(red, #46baff);">friend gays</button>');
+    const buttonBisexualOnly = parseDOM('<button style="background: radial-gradient(red, #4ebaaf);">friend bisexuals</button>');
 
     document.querySelector('.buttons').append(buttonAll, buttonStraightOnly, buttonGayOnly, buttonBisexualOnly);
 
