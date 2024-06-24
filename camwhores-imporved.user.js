@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.2.5
+// @version      1.2.6
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -65,6 +65,7 @@ class CAMWHORES_RULES {
         this.IS_MINE_MEMBER_PAGE = /\/my\/$/.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
         this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
+        this.IS_LOGGED_IN = document.cookie.includes('kt_member');
 
         this.CALC_CONTAINER();
 
@@ -80,11 +81,7 @@ class CAMWHORES_RULES {
 
     CALC_CONTAINER = () => {
         this.PAGINATION = Array.from(document.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
-
-        this.PAGINATION_LAST = parseInt(this.PAGINATION?.querySelector('.last')?.firstElementChild.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
-        this.PAGINATION?.parentElement.querySelector('.list-videos>div') ||
-            document.querySelector('.list-videos>div');
-
+        this.PAGINATION_LAST = parseInt(this.PAGINATION?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         this.CONTAINER = (this.PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
                           this.PAGINATION?.parentElement.querySelector('.list-videos>div') ||
                           document.querySelector('.list-videos>div'));
@@ -262,8 +259,6 @@ async function processFriendship() {
         await processFriendship();
     }
 }
-setTimeout(processFriendship, 3000);
-setTimeout(processFriendship, 6*60*1000);
 
 function createFriendButton() {
     const button = parseDOM('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
@@ -282,6 +277,13 @@ function createFriendButton() {
 //====================================================================================================
 
 function route() {
+    if (RULES.IS_LOGGED_IN) {
+        setTimeout(processFriendship, 3000);
+        if (RULES.IS_MEMBER_PAGE) {
+            createFriendButton();
+        }
+    }
+
     if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
         const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
         shouldReload();
@@ -296,10 +298,6 @@ function route() {
 
     if (RULES.IS_VIDEO_PAGE) {
         downloader();
-    }
-
-    if (RULES.IS_MEMBER_PAGE) {
-        createFriendButton();
     }
 }
 
