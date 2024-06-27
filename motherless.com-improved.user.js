@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.3.3
+// @version      2.3.4
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -100,7 +100,6 @@ const RULES = new MOTHERLESS_RULES();
 
 //====================================================================================================
 
-// reverse-engineering
 function animate() {
     unsafeWindow.$("a, div, span, ul, li, p, button").off();
 
@@ -116,8 +115,9 @@ function animate() {
     }
 
     document.body.addEventListener('mouseover', (e) => {
-        if (!(e.target.tagName === 'IMG' && e.target.classList.contains('static'))) return;
-        if (e.target.classList.contains('animating')) return;
+        if (!(e.target.tagName === 'IMG' && e.target.classList.contains('static')) ||
+            e.target.classList.contains('animating') ||
+            e.target.getAttribute('src') === e.target.getAttribute('data-strip-src')) return;
 
         e.target.classList.toggle('animating');
 
@@ -138,18 +138,11 @@ function animate() {
         const h = e.target.getAttribute('data-strip-src');
         m.show();
 
-        // t.trigger("resize"); u && u.slideDown(150), !b) {
-        //var strip = unsafeWindow.$("<img>");
-        //strip.load(function() {
-        //    2500 !== this.naturalWidth && void 0 !== this.naturalWidth || (g = !0), b = !0
-        //});
-        //strip.attr("src", h);
-
-        tick.start(function() {
+        tick.start(() => {
             const v = Math.floor(1000.303 * c.width() / 100);
             const k = Math.floor(228.6666 * c.height() / 100);
             m.css("width", d.width());
-            p ? m.css("height", "170px") : m.css("height", c.height() + "px");
+            m.css("height", c.height());
             m.css("background-image", "url('" + h + "')");
             m.css("background-size", v + "px " + k + "px ");
             j * d.width() > v && (j = 0);
