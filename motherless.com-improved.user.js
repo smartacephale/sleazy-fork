@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.3.5
+// @version      2.3.6
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -55,12 +55,15 @@ class MOTHERLESS_RULES {
     GROUP_TAG = '.group-minibio';
 
     constructor() {
-        this.PAGINATION = document.querySelector('.pagination_link');
-        this.PAGINATION_LAST = parseInt(document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText);
+        this.PAGINATION = document.querySelector('.pagination_link, .ml-pagination');
+        this.PAGINATION_LAST = parseInt(
+            document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText ||
+            document.querySelector('.ml-pagination li:last-child').innerText
+        );
         this.CONTAINER = document.querySelector('.content-inner');
     }
 
-    GET_THUMBS(html) { return html.querySelectorAll('.thumb-container'); }
+    GET_THUMBS(html) { return html.querySelectorAll('.thumb-container, .mobile-thumb'); }
 
     THUMB_URL(thumb) { return thumb.firstElementChild.getAttribute('data-codename'); };
 
