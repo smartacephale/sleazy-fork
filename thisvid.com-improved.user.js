@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.7
+// @version      4.5.8
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -62,26 +62,26 @@ class THISVID_RULES {
             /\/my_(\w+)_videos\//
         ].some(r => r.test(href));
 
-        this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
+        this.IS_MEMBER_PAGE = /^\/members\/\d+\/$/.test(pathname);
         this.IS_WATCHLATER_KIND = /^\/my_(\w+)_videos\//.test(pathname);
-        this.IS_MESSAGES_PAGE = /\/my_messages\//.test(pathname);
+        this.IS_MESSAGES_PAGE = /^\/my_messages\//.test(pathname);
         this.IS_PLAYLIST = /^\/playlist\/\d+\//.test(pathname);
-        this.IS_VIDEO_PAGE = pathname.startsWith('/videos/');
+        this.IS_VIDEO_PAGE = /^\/videos\//.test(pathname);
 
-        this.MY_ID = document.querySelector('[target="_self"]')?.href.match(/\/(\d+)\//)[1] || null;
-        this.LOGGED_IN = this.MY_ID !== null;
+        this.PAGE_HAS_VIDEO = this.GET_THUMBS(document).length > 0;
 
-        this.PAGE_HAS_VIDEO = !!document.querySelector('.tumbpu[title], .thumbs-items .thumb-holder');
         this.PAGINATION = document.querySelector('.pagination');
         this.PAGINATION_LAST = this.GET_PAGINATION_LAST();
 
         this.CONTAINER = Array.from(document.querySelectorAll('.thumbs-items')).pop();
 
-        this.IS_MY_MEMBER_PAGE = !!document.querySelector('.my-avatar');
+        this.MY_ID = document.querySelector('[target="_self"]')?.href.match(/\/(\d+)\//)[1] || null;
+        this.LOGGED_IN = !!this.MY_ID;
+        this.IS_MY_MEMBER_PAGE = this.LOGGED_IN && !!document.querySelector('.my-avatar');
         this.IS_OTHER_MEMBER_PAGE = !this.IS_MY_MEMBER_PAGE && this.IS_MEMBER_PAGE;
+        this.IS_MEMBER_FRIEND = this.IS_OTHER_MEMBER_PAGE && document.querySelector('.case-left')?.innerText.includes('is in your friends');
 
         // highlight friend page profile
-        this.IS_MEMBER_FRIEND = this.IS_OTHER_MEMBER_PAGE && document.querySelector('.case-left')?.innerText.includes('is in your friends');
         if (this.IS_MEMBER_FRIEND) {
             document.querySelector('.profile').style.background = friendProfileColor;
         }
@@ -349,7 +349,7 @@ class PreviewAnimation {
     constructor(element, delay = ANIMATION_DELAY) {
         unsafeWindow.$('img[alt!="Private"]').off();
         this.tick = new Tick(delay);
-        listenEvents(element, ['mouseout', 'mouseover', 'touchstart', 'touchend'], this.animatePreview);
+        listenEvents(element, ['mouseover', 'touchstart'], this.animatePreview);
     }
 
     animatePreview = (e) => {
@@ -361,6 +361,7 @@ class PreviewAnimation {
             this.tick.start(
                 () => { RULES.ITERATE_PREVIEW_IMG(el); },
                 () => { el.src = orig; });
+            el.addEventListener(type === 'mouseover' ? 'mouseleave' : 'touchend', () => this.tick.stop(), { once: true });
         }
     };
 }
@@ -553,6 +554,8 @@ async function createPrivateFeed() {
 //====================================================================================================
 
 function route() {
+    console.log(SponsaaLogo);
+
     if (RULES.IS_MY_MEMBER_PAGE) {
         createPrivateFeed();
     }
