@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.6.2
+// @version      1.6.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -50,12 +50,12 @@ const LOGO = `
 
 class SPANKBANG_RULES {
     constructor() {
-        this.PAGINATION = document.querySelector('.paginate-bar') || document.querySelector('.pagination');
+        this.PAGINATION = document.querySelector('.paginate-bar, .pagination');
         this.PAGINATION_LAST = parseInt(
             document.querySelector('.paginate-bar .status span')?.innerText.match(/\d+/)?.[0] ||
             document.querySelector('.pagination .next')?.previousElementSibling?.innerText);
         this.CONTAINER = document.querySelectorAll('.results .video-list')[0];
-        this.HAS_VIDEOS = document.querySelector('.video-list');
+        this.HAS_VIDEOS = !!this.GET_THUMBS(document.body).length > 0;
     }
 
     GET_THUMBS(html) {
@@ -74,7 +74,7 @@ class SPANKBANG_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = (thumb.querySelector('span.n') || thumb.querySelector('a.n')).innerText.toLowerCase();
+        const title = thumb.querySelector('span.n, a.n')?.innerText.toLowerCase() || "";
         const duration = (parseInt(thumb.querySelector('span.l')?.innerText) || 1) * 60;
         return {
             title,
@@ -136,13 +136,11 @@ function animate() {
     function handleThumbHover(e) {
         if (!(e.target.classList.contains('cover') && e.target.getAttribute('data-preview'))) return;
         const videoSrc = e.target.getAttribute('data-preview');
-        const { elem, removeElem } = createPreviewElement(videoSrc, e.target.parentElement.parentElement);
+        const { removeElem } = createPreviewElement(videoSrc, e.target.parentElement.parentElement);
         e.target.parentElement.parentElement.addEventListener('mouseleave', removeElem, { once: true });
     }
 
-    if (RULES.PAGINATION || document.querySelectorAll('.video-list').length > 0) {
-        (RULES.CONTAINER || document.body).addEventListener('mouseover', handleThumbHover);
-    }
+    document.body.addEventListener('mouseover', handleThumbHover);
 }
 
 //====================================================================================================
