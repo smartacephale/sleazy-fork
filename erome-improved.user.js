@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.4
+// @version      2.2.5
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -10,8 +10,8 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @run-at       document-idle
 // @grant        none
-// @downloadURL  https://update.sleazyfork.org/scripts/492883/Erome%20Improved.user.js
-// @updateURL    https://update.sleazyfork.org/scripts/492883/Erome%20Improved.meta.js
+// @downloadURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.meta.js
 // ==/UserScript==
 /* globals $ LazyLoad */
 
@@ -62,10 +62,8 @@ function togglePhotoElements() {
 }
 
 function hidePhotoOnlyAlbums() {
-    document.querySelectorAll('div[id^=album]').forEach(a => {
-        if (!a.querySelector('.album-videos')) {
-            $(a).toggle(config.showPhotoAlbums);
-        }
+    document.querySelectorAll('div[id^=album]:not(:has(.album-videos))').forEach(a => {
+        $(a).toggle(config.showPhotoAlbums);
     });
     $('#togglePhotoAlbums').css('color', isActiveColor(!config.showPhotoAlbums));
     window.dispatchEvent(new Event('scroll'));
