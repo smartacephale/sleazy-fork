@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.3.7
+// @version      2.3.8
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -117,26 +117,24 @@ function animate() {
         preview.classList.remove('animating');
     }
 
-    document.body.addEventListener('mouseover', (e) => {
-        if (!(e.target.tagName === 'IMG' && e.target.classList.contains('static')) ||
-            e.target.classList.contains('animating') ||
-            e.target.getAttribute('src') === e.target.getAttribute('data-strip-src')) return;
+    function handleOn(e) {
+        const { target, type } = e;
+        if (!(target.tagName === 'IMG' && target.classList.contains('static')) ||
+            target.classList.contains('animating') ||
+            target.getAttribute('src') === target.getAttribute('data-strip-src')) return;
+        target.classList.toggle('animating');
 
-        e.target.classList.toggle('animating');
-
-        container = e.target.parentElement.parentElement;
-        container.addEventListener('mouseleave', handleLeave, {once: true});
+        container = target.parentElement.parentElement;
+        container.addEventListener(type === 'mouseover' ? 'mouseleave' : 'touchend', handleLeave, { once: true });
 
         let j = 0;
         const d = unsafeWindow.$(container.querySelector('.img-container'));
-
-        const m = unsafeWindow.$(e.target.nextElementSibling || '<div style="z-index: 8; position: absolute; top: -11px;"></div>');
-        if (!e.target.nextElementSibling) {
-            unsafeWindow.$(e.target.parentElement).append(m);
+        const m = unsafeWindow.$(target.nextElementSibling || '<div style="z-index: 8; position: absolute; top: -11px;"></div>');
+        if (!target.nextElementSibling) {
+            unsafeWindow.$(target.parentElement).append(m);
         }
-
-        const c = unsafeWindow.$(e.target);
-        const h = e.target.getAttribute('data-strip-src');
+        const c = unsafeWindow.$(target);
+        const h = target.getAttribute('data-strip-src');
         m.show();
 
         tick.start(() => {
@@ -149,8 +147,11 @@ function animate() {
             j * d.width() > v && (j = 0);
             m.css("background-position", j * d.width() + "px 0");
             j++;
-        })
-    });
+        });
+    }
+
+    document.body.addEventListener('mouseover', handleOn);
+    document.body.addEventListener('touchstart', handleOn);
 }
 
 //====================================================================================================
