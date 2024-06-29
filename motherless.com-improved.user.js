@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.4.1
+// @version      2.4.2
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -153,13 +153,10 @@ function animate() {
 //====================================================================================================
 
 function fixGalleriesURLs() {
-    const galleries = Array.from(document.querySelectorAll(('.gallery-container .info span:first-child')));
-    galleries.forEach(s => {
-        const videosCount = parseInt(s.innerText);
-        const header = videosCount > 0 ? '/GV' : '/GI';
-        const href = s.parentElement.parentElement.href.replace(/\/G/, () => header);
-        s.parentElement.parentElement.href = href;
-        s.parentElement.parentElement.parentElement.previousElementSibling.href = href;
+    document.querySelectorAll(('.gallery-container')).forEach(g => {
+        const hasVideos = !/0 Videos/.test(g.innerText);
+        const header = hasVideos ? '/GV' : '/GI';
+        g.querySelectorAll('a').forEach(a => { a.href = a.href.replace(/\/G/, () => header); });
     });
 }
 
@@ -177,7 +174,7 @@ function displayAll() {
 }
 
 function mobileGalleryToDesktop(e) {
-    e.firstElementChild.nextElementSibling.nextElementSibling.remove();
+    e.querySelector('.clear-left').remove();
     e.firstElementChild.appendChild(e.firstElementChild.nextElementSibling);
     e.className = 'thumb-container gallery-container';
     e.firstElementChild.className = 'desktop-thumb image medium';
@@ -188,7 +185,7 @@ function mobileGalleryToDesktop(e) {
 async function desktopAddMobGalleries() {
     const galleries = document.querySelector('.media-related-galleries');
     if (galleries) {
-        const galleriesContainer = galleries.firstElementChild.nextElementSibling.firstElementChild;
+        const galleriesContainer = galleries.querySelector('.content-inner');
         const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
         const mobDom = await fetchMobHtml(window.location.href);
         const mobGalleries = mobDom.querySelectorAll('.ml-gallery-thumb');
