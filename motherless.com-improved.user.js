@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.3.6
+// @version      2.3.7
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -236,7 +236,7 @@ if (RULES.PAGINATION) {
 
 if (RULES.GET_THUMBS(document.body).length > 0) {
     const ui = new VueUI(state, stateLocale);
-    getAllUniqueParents(document.querySelectorAll('.thumb-container')).forEach(c => {
+    getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => {
         handleLoadedHTML(c, c);
     });
 }
