@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.2.7
+// @version      1.2.8
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -23,7 +23,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
-/* globals VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range retryFetch
+/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range retryFetch
  DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData wait */
 
 const LOGO = `camwhores admin should burn in hell
@@ -121,8 +121,8 @@ class CAMWHORES_RULES {
         const url = new URL(href);
         let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const pag = (document_ && Array.from(document_?.querySelectorAll('.pagination')).pop() || this.PAGINATION);
-        const pag_last = parseInt(pag?.querySelector('.last')?.firstElementChild.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
+        const pag = document_ && Array.from(document_?.querySelectorAll('.pagination')).pop() || this.PAGINATION;
+        const pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         const el = pag?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
 
@@ -173,7 +173,7 @@ function rotateImg(src, count) {
 
 function animate() {
     const tick = new Tick(ANIMATION_DELAY);
-    unsafeWindow.$('img.thumb[data-cnt]').off()
+    $('img.thumb[data-cnt]').off()
     document.body.addEventListener('mouseover', (e) => {
         if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src')) return;
         const origin = e.target.src;
@@ -201,8 +201,8 @@ function downloader() {
         });
     }
 
-    const btn = unsafeWindow.$('<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>');
-    unsafeWindow.$('.tabs-menu > ul').append(btn);
+    const btn = $('<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>');
+    $('.tabs-menu > ul').append(btn);
     btn.on('click', tryDownloadVideo);
 }
 
@@ -280,8 +280,8 @@ function createFriendButton() {
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
     const last = document.querySelector('.pagination-holder .last > a').href.match(/\d+/);
-    for (let i = 1; i <= last; i++) {
-        wait(14000*(i-1)).then(() => fetchHtml(messagesURL(i)).then(html_ => {
+    for (let i = 100; i <= last; i++) {
+        wait(12000*(i-1)).then(() => fetchHtml(messagesURL(i)).then(html_ => {
             const messages = Array.from(html_.querySelectorAll('#list_members_my_conversations_items .item > a')).map(a => a.href);
             messages.forEach((m,i) => wait(100*i).then(() => checkMessageHistory(m)));
         }));
