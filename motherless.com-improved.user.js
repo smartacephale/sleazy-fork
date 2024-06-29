@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.4.2
+// @version      2.4.3
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -21,7 +21,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
 // ==/UserScript==
-/* globals Tick fetchMobHtml replaceElementTag timeToSeconds DefaultState DataManager PaginationManager VueUI getAllUniqueParents */
+/* globals $ Tick fetchMobHtml replaceElementTag timeToSeconds DefaultState DataManager PaginationManager VueUI getAllUniqueParents */
 
 const LOGO = `
 ⡿⣹⡝⣯⡝⣯⡝⣯⠽⣭⢻⣭⢻⣭⢻⣭⢻⡭⢯⡽⡭⢏⡳⣍⡛⡜⡍⢎⡱⢊⠖⡱⢊⡖⣱⢊⠶⡱⢎⠶⣩⣿⢣⠝⣺⢿⣹⣷⣿⣿⣿⣿⢠⢃⠦⡑⢢⠜⣐⠢
@@ -99,8 +99,7 @@ const RULES = new MOTHERLESS_RULES();
 //====================================================================================================
 
 function animate() {
-    unsafeWindow.$("a, div, span, ul, li, p, button").off();
-
+    RULES.CONTAINER.querySelectorAll("a, div, span, ul, li, p, button").forEach(e => $(e).off());
     const ANIMATION_INTERVAL = 500;
     const tick = new Tick(ANIMATION_INTERVAL);
     let container;
@@ -109,7 +108,7 @@ function animate() {
         tick.stop();
         const preview = e.target.className.includes('desktop') ? e.target.querySelector('.static') :
         (e.target.classList.contains('static') ? e.target : undefined);
-        unsafeWindow.$(preview.nextElementSibling).hide();
+        $(preview.nextElementSibling).hide();
         preview.classList.remove('animating');
     }
 
@@ -124,12 +123,12 @@ function animate() {
         container.addEventListener(type === 'mouseover' ? 'mouseleave' : 'touchend', handleLeave, { once: true });
 
         let j = 0;
-        const d = unsafeWindow.$(container.querySelector('.img-container'));
-        const m = unsafeWindow.$(target.nextElementSibling || '<div style="z-index: 8; position: absolute; top: -11px;"></div>');
+        const d = $(container.querySelector('.img-container'));
+        const m = $(target.nextElementSibling || '<div style="z-index: 8; position: absolute; top: -11px;"></div>');
         if (!target.nextElementSibling) {
-            unsafeWindow.$(target.parentElement).append(m);
+            $(target.parentElement).append(m);
         }
-        const c = unsafeWindow.$(target);
+        const c = $(target);
         const h = target.getAttribute('data-strip-src');
         m.show();
 
@@ -152,15 +151,13 @@ function animate() {
 
 //====================================================================================================
 
-function fixGalleriesURLs() {
+function fixURLs() {
     document.querySelectorAll(('.gallery-container')).forEach(g => {
         const hasVideos = !/0 Videos/.test(g.innerText);
         const header = hasVideos ? '/GV' : '/GI';
         g.querySelectorAll('a').forEach(a => { a.href = a.href.replace(/\/G/, () => header); });
     });
-}
 
-function fixHrefs() {
     document.querySelectorAll('a[href^="/term/"]').forEach(a => {
         a.href = a.href.replace(/[\w|+]+$/, (v) => `videos/${v}?term=${v}&range=0&size=0&sort=date`);
     });
@@ -169,8 +166,8 @@ function fixHrefs() {
 //====================================================================================================
 
 function displayAll() {
-    unsafeWindow.$('.group-minibio').attr('style', 'display: block !important');
-    unsafeWindow.$('.gallery-container').attr('style', 'display: block !important');
+    $('.group-minibio').attr('style', 'display: block !important');
+    $('.gallery-container').attr('style', 'display: block !important');
 }
 
 function mobileGalleryToDesktop(e) {
@@ -180,6 +177,7 @@ function mobileGalleryToDesktop(e) {
     e.firstElementChild.className = 'desktop-thumb image medium';
     e.firstElementChild.firstElementChild.nextElementSibling.className = 'gallery-captions';
     replaceElementTag(e.firstElementChild.firstElementChild, 'a');
+    return e;
 }
 
 async function desktopAddMobGalleries() {
@@ -191,8 +189,7 @@ async function desktopAddMobGalleries() {
         const mobGalleries = mobDom.querySelectorAll('.ml-gallery-thumb');
         for (const [i, x] of mobGalleries.entries()) {
             if (i > galleriesCount - 1) {
-                mobileGalleryToDesktop(x);
-                galleriesContainer.appendChild(x);
+                galleriesContainer.append(mobileGalleryToDesktop(x));
             }
         }
         displayAll();
@@ -221,7 +218,7 @@ const { state, stateLocale } = defaultState;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
 defaultState.setWatchers(filter_);
 
-desktopAddMobGalleries().then(() => fixGalleriesURLs());
+desktopAddMobGalleries().then(() => fixURLs());
 
 if (RULES.PAGINATION) {
     const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
@@ -234,5 +231,3 @@ if (RULES.GET_THUMBS(document.body).length > 0) {
         handleLoadedHTML(c, c);
     });
 }
-
-fixHrefs();
