@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.2.6
+// @version      1.2.7
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -63,6 +63,7 @@ class CAMWHORES_RULES {
         this.IS_FAVOURITES = /\/my\/\w+\/videos/.test(pathname);
         this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
         this.IS_MINE_MEMBER_PAGE = /\/my\/$/.test(pathname);
+        this.IS_MESSAGES = /^\/my\/messages\//.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
         this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
         this.IS_LOGGED_IN = document.cookie.includes('kt_member');
@@ -276,6 +277,44 @@ function createFriendButton() {
 
 //====================================================================================================
 
+function clearMessages() {
+    const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
+    const last = document.querySelector('.pagination-holder .last > a').href.match(/\d+/);
+    for (let i = 1; i <= last; i++) {
+        wait(14000*(i-1)).then(() => fetchHtml(messagesURL(i)).then(html_ => {
+            const messages = Array.from(html_.querySelectorAll('#list_members_my_conversations_items .item > a')).map(a => a.href);
+            messages.forEach((m,i) => wait(100*i).then(() => checkMessageHistory(m)));
+        }));
+    }
+
+    function checkMessageHistory(url) {
+        fetchHtml(url).then(html => {
+            const orig = html.querySelector('.original-text') || html.querySelector('input[value=confirm_add_to_friends]');
+            if (!orig) {
+                const id = url.match(/\d+/)[0];
+                const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
+                fetch(deleteURL).then(r => console.log(r.status, 'delete', id));
+            } else {
+                console.log(orig?.innerText, url);
+            }
+        });
+    }
+}
+
+
+/* confirm
+https://www.camwhores.tv/my/messages/11111111111/
+action	"confirm_add_to_friends"
+message_from_user_id	"11111111111"
+function	"get_block"
+block_id	"list_messages_my_conversation_messages"
+confirm	"Confirm"
+format	"json"
+mode	"async"
+*/
+
+//====================================================================================================
+
 function route() {
     if (RULES.IS_LOGGED_IN) {
         setTimeout(processFriendship, 3000);
@@ -298,6 +337,12 @@ function route() {
 
     if (RULES.IS_VIDEO_PAGE) {
         downloader();
+    }
+
+    if (RULES.IS_MESSAGES) {
+        const button = parseDOM(`<button>clear messages</button>`);
+        document.querySelector('.headline').append(button);
+        button.addEventListener('click', clearMessages);
     }
 }
 
