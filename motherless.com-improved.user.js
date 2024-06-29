@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.3.9
+// @version      2.4.1
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -49,16 +49,11 @@ const LOGO = `
 
 
 class MOTHERLESS_RULES {
-    GALLERY_TAG = '.gallery-container';
-    GALLERY_MOB_TAG = '.ml-gallery-thumb';
-
-    GROUP_TAG = '.group-minibio';
-
     constructor() {
         this.PAGINATION = document.querySelector('.pagination_link, .ml-pagination');
         this.PAGINATION_LAST = parseInt(
             document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText ||
-            document.querySelector('.ml-pagination li:last-child').innerText
+            document.querySelector('.ml-pagination li:last-child')?.innerText
         );
         this.CONTAINER = document.querySelector('.content-inner');
     }
@@ -112,8 +107,8 @@ function animate() {
 
     function handleLeave(e) {
         tick.stop();
-        const preview = e.target.querySelector('.static') ||
-              e.target.classList.contains('static') ? e.target : undefined;
+        const preview = e.target.className.includes('desktop') ? e.target.querySelector('.static') :
+        (e.target.classList.contains('static') ? e.target : undefined);
         unsafeWindow.$(preview.nextElementSibling).hide();
         preview.classList.remove('animating');
     }
@@ -177,8 +172,8 @@ function fixHrefs() {
 //====================================================================================================
 
 function displayAll() {
-    unsafeWindow.$(RULES.GROUP_TAG).attr('style', 'display: block !important');
-    unsafeWindow.$(RULES.GALLERY_TAG).attr('style', 'display: block !important');
+    unsafeWindow.$('.group-minibio').attr('style', 'display: block !important');
+    unsafeWindow.$('.gallery-container').attr('style', 'display: block !important');
 }
 
 function mobileGalleryToDesktop(e) {
@@ -194,9 +189,9 @@ async function desktopAddMobGalleries() {
     const galleries = document.querySelector('.media-related-galleries');
     if (galleries) {
         const galleriesContainer = galleries.firstElementChild.nextElementSibling.firstElementChild;
-        const galleriesCount = galleries.querySelectorAll(RULES.GALLERY_TAG).length;
+        const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
         const mobDom = await fetchMobHtml(window.location.href);
-        const mobGalleries = mobDom.querySelectorAll(RULES.GALLERY_MOB_TAG);
+        const mobGalleries = mobDom.querySelectorAll('.ml-gallery-thumb');
         for (const [i, x] of mobGalleries.entries()) {
             if (i > galleriesCount - 1) {
                 mobileGalleryToDesktop(x);
