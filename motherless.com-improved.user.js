@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.4.3
+// @version      2.4.31
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -116,6 +116,7 @@ function animate() {
         const { target, type } = e;
         if (!(target.tagName === 'IMG' && target.classList.contains('static')) ||
             target.classList.contains('animating') ||
+            target.parentElement.parentElement.classList.contains('image') ||
             target.getAttribute('src') === target.getAttribute('data-strip-src')) return;
         target.classList.toggle('animating');
 
