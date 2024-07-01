@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.2.91
+// @version      1.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -13,10 +13,10 @@
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1380190
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
+// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1403633
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
@@ -278,10 +278,11 @@ function createFriendButton() {
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
     const last = document.querySelector('.pagination-holder .last > a').href.match(/\d+/);
-    for (let i = 0; i <= last; i++) {
-        wait(12000*(i-1)).then(() => fetchHtml(messagesURL(i)).then(html_ => {
+    const offset = 100;
+    for (let i = 1; i <= last; i++) {
+        wait(12000*(i-1)).then(() => fetchHtml(messagesURL(i+offset)).then(html_ => {
             const messages = Array.from(html_.querySelectorAll('#list_members_my_conversations_items .item > a')).map(a => a.href);
-            messages.forEach((m,i) => wait(100*i).then(() => checkMessageHistory(m)));
+            messages.forEach((m,j) => wait(100*j).then(() => checkMessageHistory(m)));
         }));
     }
 
@@ -327,7 +328,7 @@ function route() {
     if (RULES.HAS_VIDEOS) {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
-        const ui = new VueUI(state, stateLocale, true);
+        const ui = new VueUI(state, stateLocale);
         animate();
     }
 
@@ -347,7 +348,7 @@ function route() {
 const SCROLL_RESET_DELAY = 500;
 const ANIMATION_DELAY = 500;
 
-const defaultState = new DefaultState(true);
+const defaultState = new DefaultState({ PRIVACY_FILTER: true });
 const { state, stateLocale } = defaultState;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
 defaultState.setWatchers(filter_);
