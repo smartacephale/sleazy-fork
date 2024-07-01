@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2
+// @version      1.2.1
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @updateURL https://update.greasyfork.org/scripts/494207/persistent-state.meta.js
@@ -68,11 +68,14 @@ class DefaultState {
         }
     }
 
-    constructor(options = {
+    DEFAULT_OPTIONS = {
         PRIVACY_FILTER: false,
         DURATION_FILTER: true
-    }) {
-        Object.keys(options).forEach(key => {
+    }
+
+    constructor(options = this.DEFAULT_OPTIONS) {
+        Object.assign(this.DEFAULT_OPTIONS, options);
+        Object.keys(this.DEFAULT_OPTIONS).forEach(key => {
             if (options[key]) {
                 Object.assign(this.DEFAULT_STATE, this.OPTIONAL_FILTERS[key]);
             }
@@ -116,3 +119,4 @@ class DefaultState {
         }, { deep: true });
     }
 }
+
