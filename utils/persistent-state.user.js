@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2.3
+// @version      1.2.4
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @updateURL https://update.greasyfork.org/scripts/494207/persistent-state.meta.js
@@ -93,14 +93,14 @@ class DefaultState {
     }
 
     setWatchers(applyFilter) {
-        const { state } = this;
+        const { state, stateLocale } = this;
 
-        if (Object.hasOwn(state, 'filterPrivate')) {
+        if (stateLocale.filterOptions.PRIVACY_FILTER) {
             watch(() => state.filterPrivate, () => applyFilter({ filterPrivate: true }));
             watch(() => state.filterPublic, () => applyFilter({ filterPublic: true }));
         }
 
-        if (Object.hasOwn(state, 'filterDurationFrom')) {
+        if (stateLocale.filterOptions.DURATION_FILTER) {
             watch([() => state.filterDurationFrom, () => state.filterDurationTo], (a, b) => {
                 state.filterDurationFrom = parseIntegerOr(a[0], b[0]);
                 state.filterDurationTo = parseIntegerOr(a[1], b[1]);
