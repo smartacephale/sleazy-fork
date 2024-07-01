@@ -4,10 +4,12 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.1a
+// @version      1.2
 // @match        *://*/*
+// @downloadURL https://update.greasyfork.org/scripts/494207/persistent-state.user.js
+// @updateURL https://update.greasyfork.org/scripts/494207/persistent-state.meta.js
 // ==/UserScript==
-/* globals reactive, watch */
+/* globals reactive watch parseIntegerOr */
 
 class PersistentState {
     constructor(state, key = "state_acephale") {
@@ -46,9 +48,6 @@ class PersistentState {
 
 class DefaultState {
     DEFAULT_STATE = {
-        filterDurationFrom: 0,
-        filterDurationTo: 600,
-        filterDuration: false,
         filterExcludeWords: "",
         filterExclude: false,
         filterIncludeWords: "",
@@ -57,15 +56,27 @@ class DefaultState {
         uiEnabled: true,
     };
 
-    DEFAAULT_STATE_PRIVATE_FILTERS = {
-        filterPrivate: false,
-        filterPublic: false
+    OPTIONAL_FILTERS = {
+        DURATION_FILTER: {
+            filterDurationFrom: 0,
+            filterDurationTo: 600,
+            filterDuration: false
+        },
+        PRIVACY_FILTER: {
+            filterPrivate: false,
+            filterPublic: false
+        }
     }
 
-    constructor(privateFilter = false) {
-        if (privateFilter) {
-            Object.assign(this.DEFAULT_STATE, this.DEFAAULT_STATE_PRIVATE_FILTERS);
-        }
+    constructor(options = {
+        PRIVACY_FILTER: false,
+        DURATION_FILTER: true
+    }) {
+        Object.keys(options).forEach(key => {
+            if (options[key]) {
+                Object.assign(this.DEFAULT_STATE, this.OPTIONAL_FILTERS[key]);
+            }
+        });
 
         const { state } = new PersistentState(this.DEFAULT_STATE);
 
@@ -77,30 +88,31 @@ class DefaultState {
         });
     }
 
-    setWatchers(filter_) {
+    setWatchers(applyFilter) {
         const { state } = this;
 
         if (Object.hasOwn(state, 'filterPrivate')) {
-            watch(() => state.filterPrivate, () => filter_({ filterPrivate: true }));
-            watch(() => state.filterPublic, () => filter_({ filterPublic: true }));
+            watch(() => state.filterPrivate, () => applyFilter({ filterPrivate: true }));
+            watch(() => state.filterPublic, () => applyFilter({ filterPublic: true }));
         }
 
-        watch([() => state.filterDurationFrom, () => state.filterDurationTo], (a, b) => {
-            state.filterDurationFrom = parseIntegerOr(a[0], b[0]);
-            state.filterDurationTo = parseIntegerOr(a[1], b[1]);
-            if (state.filterDuration) filter_({ filterDuration: true });
-        });
-        watch(() => state.filterDuration, () => filter_({ filterDuration: true }));
+        if (Object.hasOwn(state, 'filterDurationFrom')) {
+            watch([() => state.filterDurationFrom, () => state.filterDurationTo], (a, b) => {
+                state.filterDurationFrom = parseIntegerOr(a[0], b[0]);
+                state.filterDurationTo = parseIntegerOr(a[1], b[1]);
+                if (state.filterDuration) applyFilter({ filterDuration: true });
+            });
+            watch(() => state.filterDuration, () => applyFilter({ filterDuration: true }));
+        }
 
-        watch(() => state.filterExclude, () => filter_({ filterExclude: true }));
+        watch(() => state.filterExclude, () => applyFilter({ filterExclude: true }));
         watch(() => state.filterExcludeWords, () => {
-            if (state.filterExclude) filter_({ filterExclude: true });
+            if (state.filterExclude) applyFilter({ filterExclude: true });
         }, { deep: true });
 
-        watch(() => state.filterInclude, () => filter_({ filterInclude: true }));
+        watch(() => state.filterInclude, () => applyFilter({ filterInclude: true }));
         watch(() => state.filterIncludeWords, () => {
-            if (state.filterInclude) filter_({ filterInclude: true });
+            if (state.filterInclude) applyFilter({ filterInclude: true });
         }, { deep: true });
     }
 }
-
