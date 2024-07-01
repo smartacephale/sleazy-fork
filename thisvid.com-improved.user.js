@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.91
+// @version      4.6
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -13,10 +13,10 @@
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
+// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1378559
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
-// @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
+// @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js?version=1403633
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
@@ -312,7 +312,7 @@ function checkPrivateVidsAccess() {
         const { access, uploaderURL, uploaderName } = await checkPrivateVideoAccess(thumb.href);
 
         thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
-        thumb.querySelector('.title').innerText += access ? '✅' : '❌';
+        thumb.querySelector('.title').innerText += access ? ' ✅ ' : ' ❌ ';
         thumb.querySelector('.title').appendChild(parseDOM(access ? `<span>${uploaderName}</span>` :
                                                            `<span onclick="requestPrivateAccess(event, ${uploaderURL});"> 🚑 ${uploaderName}</span>`));
     });
@@ -548,7 +548,7 @@ async function createPrivateFeed() {
     PaginationManager.prototype.createNextPageGenerator = () => pageGenerator();
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     new PreviewAnimation(document.body);
-    new VueUI(state, stateLocale, true, false);
+    new VueUI(state, stateLocale);
 }
 
 //====================================================================================================
@@ -606,6 +606,10 @@ function clearMessagesButton() {
 function route() {
     console.log(SponsaaLogo);
 
+    if (RULES.LOGGED_IN) {
+        unsafeWindow.checkAccess = checkPrivateVidsAccess;
+    }
+
     if (RULES.IS_MY_MEMBER_PAGE) {
         createPrivateFeed();
     }
@@ -626,7 +630,7 @@ function route() {
     });
 
     new PreviewAnimation(document.body);
-    new VueUI(state, stateLocale, true, RULES.LOGGED_IN ? checkPrivateVidsAccess : false);
+    new VueUI(state, stateLocale, true);
 
 
     if (RULES.IS_OTHER_MEMBER_PAGE) {
@@ -645,7 +649,7 @@ function route() {
 const SCROLL_RESET_DELAY = 350;
 const ANIMATION_DELAY = 750;
 
-const defaultState = new DefaultState(true);
+const defaultState = new DefaultState({ PRIVACY_FILTER: true });
 const { state, stateLocale } = defaultState;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
 defaultState.setWatchers(filter_);
