@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2.2
+// @version      1.2.3
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @updateURL https://update.greasyfork.org/scripts/494207/persistent-state.meta.js
@@ -88,6 +88,7 @@ class DefaultState {
         this.stateLocale = reactive({
             pagIndexLast: 1,
             pagIndexCur: 1,
+            filterOptions: opted
         });
     }
 
