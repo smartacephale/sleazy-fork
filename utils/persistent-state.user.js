@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2.1
+// @version      1.2.2
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @updateURL https://update.greasyfork.org/scripts/494207/persistent-state.meta.js
@@ -74,9 +74,9 @@ class DefaultState {
     }
 
     constructor(options = this.DEFAULT_OPTIONS) {
-        Object.assign(this.DEFAULT_OPTIONS, options);
-        Object.keys(this.DEFAULT_OPTIONS).forEach(key => {
-            if (options[key]) {
+        const opted = Object.assign(this.DEFAULT_OPTIONS, options);
+        Object.keys(opted).forEach(key => {
+            if (opted[key]) {
                 Object.assign(this.DEFAULT_STATE, this.OPTIONAL_FILTERS[key]);
             }
         });
