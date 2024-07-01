@@ -2,7 +2,7 @@
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.6.2
+// @version      1.6.3
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -15,7 +15,7 @@
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
