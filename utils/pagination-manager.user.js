@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.1a
+// @version      1.1.2
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494205/pagination-manager.meta.js
@@ -52,10 +52,10 @@ class PaginationManager {
 
     createNextPageGenerator() {
         const { offset, iteratable_url } = this.rules.URL_DATA();
-        const offsetLast = this.rules.PAGINATION_LAST;
+        const { PAGINATION_LAST } = this.rules;
         this.stateLocale.pagIndexCur = offset;
         function* nextPageGenerator() {
-            for (let c = offset + 1; c <= offsetLast; c++) {
+            for (let c = offset + 1; c <= PAGINATION_LAST; c++) {
                 const url = iteratable_url(c);
                 yield { url, offset: c };
             }
