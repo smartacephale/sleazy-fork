@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.5.9
+// @version      4.5.91
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -191,14 +191,14 @@ function friend(id, i = 0) {
     return fetchText(FRIEND_REQUEST_URL(id)).then((text) => console.log(`#${i} * ${id}`, text));
 }
 
-const FRIEND_REQUEST_URL = (id) => `${window.location.origin}/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
+const FRIEND_REQUEST_URL = (id) => `https://thisvid.com/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
 
 const USERS_PER_PAGE = 24;
 
 async function getMemberFriends(memberId) {
     const { friendsCount } = await getMemberData(memberId);
     const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
-    const pages = range(offset).map(o => `${window.location.origin}/members/${memberId}/friends/${o}/`);
+    const pages = range(offset).map(o => `https://thisvid.com/members/${memberId}/friends/${o}/`);
     const pagesFetched = pages.map(p => fetchHtml(p));
     const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
     return friends;
@@ -313,7 +313,7 @@ function checkPrivateVidsAccess() {
 
         thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
         thumb.querySelector('.title').innerText += access ? '✅' : '❌';
-        thumb.querySelector('.title').appendChild(parseDOM(access ? `<span> 💅🏿 ${uploaderName}</span>` :
+        thumb.querySelector('.title').appendChild(parseDOM(access ? `<span>${uploaderName}</span>` :
                                                            `<span onclick="requestPrivateAccess(event, ${uploaderURL});"> 🚑 ${uploaderName}</span>`));
     });
 }
@@ -322,7 +322,7 @@ function checkPrivateVidsAccess() {
 
 function downloader() {
     function getVideoAndDownload() {
-        unsafeWindow.$('.fp-ui').click();
+        $('.fp-ui').click();
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
             const name = `${document.querySelector('.headline').innerText}.mp4`;
@@ -338,8 +338,8 @@ function downloader() {
         });
     }
 
-    const btn = unsafeWindow.$('<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>');
-    unsafeWindow.$('.share_btn').after(btn);
+    const btn = $('<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>');
+    $('.share_btn').after(btn);
     btn.on('click', getVideoAndDownload);
 }
 
@@ -347,7 +347,7 @@ function downloader() {
 
 class PreviewAnimation {
     constructor(element, delay = ANIMATION_DELAY) {
-        unsafeWindow.$('img[alt!="Private"]').off();
+        $('img[alt!="Private"]').off();
         this.tick = new Tick(delay);
         listenEvents(element, ['mouseover', 'touchstart'], this.animatePreview);
     }
@@ -388,7 +388,7 @@ const PRIVATE_FEED_KEY = 'prv-feed';
 const PUBLIC_FEED_KEY = 'pub-feed';
 
 async function getMemberVideos(id, type = 'private') {
-    const url = `${window.location.origin}/members/${id}/${type}_videos/`;
+    const url = `https://thisvid.com/members/${id}/${type}_videos/`;
     const { uploadedPrivate, uploadedPublic, name } = await getMemberData(id);
     const videosCount = type === 'private' ? uploadedPrivate : uploadedPublic;
     const paginationLast = Math.ceil(videosCount / 48);
