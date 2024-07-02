@@ -2,7 +2,7 @@
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.0
+// @version      1.1
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -16,7 +16,7 @@
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/vue-ui.user.js
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @run-at       document-idle
 // ==/UserScript==
 /* globals DataManager PaginationManager VueUI DefaultState parseDOM */
@@ -156,23 +156,20 @@ const { state, stateLocale } = defaultState;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
 defaultState.setWatchers(filter_);
 
-var proxyFn = new Proxy(handleLoadedHTML, {
-    apply (target, ctx, args) {
+const proxyHTMLHandle = new Proxy(handleLoadedHTML, {
+    apply(target, ctx, args) {
         setTimeout(filterByLang, 100);
         return Reflect.apply(...arguments)
     }
 });
 
-
-if (RULES.IS_VIDEO_PAGE) {}
-
 if (RULES.CONTAINER) {
-    proxyFn(RULES.CONTAINER);
+    proxyHTMLHandle(RULES.CONTAINER);
 }
 
 if (RULES.PAGINATION) {
     filterByLanguageUI();
-    const paginationManager = new PaginationManager(state, stateLocale, RULES, proxyFn, SCROLL_RESET_DELAY);
+    const paginationManager = new PaginationManager(state, stateLocale, RULES, proxyHTMLHandle, SCROLL_RESET_DELAY);
 }
 
 const ui = new VueUI(state, stateLocale);
