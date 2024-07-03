@@ -2,8 +2,8 @@
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.1
-// @description  Infinite scroll (optional). Filter by include/exclude phrases and languages
+// @version      1.2
+// @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.nhentai.net/*
@@ -18,6 +18,8 @@
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @run-at       document-idle
+// @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
 // ==/UserScript==
 /* globals DataManager PaginationManager VueUI DefaultState parseDOM */
 
@@ -162,6 +164,18 @@ const proxyHTMLHandle = new Proxy(handleLoadedHTML, {
         return Reflect.apply(...arguments)
     }
 });
+
+if (RULES.IS_VIDEO_PAGE) {
+    let tags = Array.from(document.querySelectorAll('.tags .tag[href^="/tag/"] .name')).map(tag => tag.innerText).join(" ").split(" ");
+    tags = Array.from(new Set(tags)).sort((a,b) => a.length < b.length);
+    const searchSimilarVeryQuery = `/search/?q=${tags.join("+")}`;
+    const searchSimilarQuery = `/search/?q=${tags.slice(0,10).join("+")}`;
+    const searchSimilarLessQuery = `/search/?q=${tags.slice(0,5).join("+")}`;
+    document.querySelector('.buttons').append(
+        parseDOM(`<a href="${searchSimilarVeryQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Very Similar</a>`),
+        parseDOM(`<a href="${searchSimilarQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Similar</a>`),
+        parseDOM(`<a href="${searchSimilarLessQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Less Similar</a>`));
+}
 
 if (RULES.CONTAINER) {
     proxyHTMLHandle(RULES.CONTAINER);
