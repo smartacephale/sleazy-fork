@@ -2,7 +2,7 @@
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.4
+// @version      1.5
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -125,11 +125,17 @@ const DEFAULT_NHENTAI_STATE = {
     english: true,
     japanese: false,
     chinese: false,
-    gayFilter: false,
+    gay: false,
     fullColor: false
 }
 
-const LANGUAGES = { english: '🇬🇧', japanese: '🇯🇵', chinese: '🇨🇳' };
+const filterDescriptors = {
+    english: { query: 'english', name: '🇬🇧' },
+    japanese: { query: 'japanese', name: '🇯🇵' },
+    chinese: { query: 'chinese', name: '🇨🇳' },
+    gay: { query: '-gay', name: 'Exclude Gay' },
+    fullColor: { query: 'full+color', name: 'Full Color' }
+}
 
 function checkParamInQuery(param, state, url_) {
     let url = url_ || window.location.search;
@@ -142,34 +148,32 @@ function checkParamInQuery(param, state, url_) {
     return url;
 }
 
-function filterByLanguageUI(state) {
+function checkURL(url_) {
+    let url = url_;
+    Object.keys(filterDescriptors).forEach(k => {
+        url = checkParamInQuery(filterDescriptors[k].query, state.custom[k], url);
+    });
+    return url;
+}
+
+function filtersUI(state) {
     const btnContainer = Array.from(document.querySelectorAll('.sort-type')).pop();
-    const btns = parseDOM(`<div class="sort-type"></div>`);
-    Object.keys(LANGUAGES).forEach(lang => {
-        const btn = parseDOM(`<a href="#" ${state.custom[lang] ? 'style="background: rgba(59, 49, 70, 1)"' : ''}>${LANGUAGES[lang]}</a>`);
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            state.custom[lang] = !state.custom[lang];
-            window.location.href = checkParamInQuery(lang, state.custom[lang]);
+    const descs = Array.from(Object.keys(filterDescriptors));
+    [descs.slice(0,3), [descs[3]], [descs[4]]].forEach(groupOfButtons => {
+        console.log(groupOfButtons);
+        const btns = parseDOM(`<div class="sort-type"></div>`);
+        groupOfButtons.forEach(k => {
+            const btn = parseDOM(`<a href="#" ${state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''}>${filterDescriptors[k].name}</a>`);
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                state.custom[k] = !state.custom[k];
+                window.location.href = checkURL(window.location.href);
+            });
+            btns.append(btn);
         });
-        btns.append(btn);
+        btnContainer.after(btns);
     });
-    btnContainer.after(btns);
 }
-
-function filterByFullColor(state) {
-    const btnContainer = Array.from(document.querySelectorAll('.sort-type')).pop();
-    const btns = parseDOM(`<div class="sort-type"></div>`);
-    const btn = parseDOM(`<a href="#" ${state.custom.fullColor ? 'style="background: rgba(59, 49, 70, 1)"' : ''}>Full Color</a>`);
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        state.custom.fullColor = !state.custom.fullColor;
-        window.location.href = checkParamInQuery('full+color', state.custom.fullColor);
-    });
-    btns.append(btn);
-    btnContainer.after(btns);
-}
-
 
 function findSimilar(state) {
     let tags = Array.from(document.querySelectorAll('.tags .tag[href^="/tag/"] .name')).map(tag => tag.innerText).join(" ").split(" ");
@@ -183,11 +187,11 @@ function findSimilar(state) {
     }
 
     Object.keys(urls).forEach(url => {
-        let res_url = urls[url];
-        Object.keys(LANGUAGES).forEach(lang => {
-            res_url = checkParamInQuery(lang, state.custom[lang], res_url);
-        });
-        urls[url] = res_url;
+        urls[url] = checkURL(urls[url]);
+    });
+
+    Array.from(document.links).filter(l => /\/(search|category|tag|character|artist|group)\/\w+/.test(l.href)).forEach(l => {
+        l.href = checkURL(l.href.replace(/(search|category|tag|character|artist|group)\//, 'search/?q=').replace(/\/$/, ''));
     });
 
     document.querySelector('.buttons').append(
@@ -217,8 +221,7 @@ if (RULES.CONTAINER) {
 }
 
 if (RULES.IS_SEARCH_PAGE) {
-    filterByLanguageUI(state);
-    filterByFullColor(state);
+    filtersUI(state);
 }
 
 if (RULES.PAGINATION) {
