@@ -2,7 +2,7 @@
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.5
+// @version      1.5.1
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -12,7 +12,7 @@
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
+// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1404894
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
@@ -122,7 +122,7 @@ const RULES = new NHENTAI_RULES();
 //====================================================================================================
 
 const DEFAULT_NHENTAI_STATE = {
-    english: true,
+    english: false,
     japanese: false,
     chinese: false,
     gay: false,
@@ -190,8 +190,8 @@ function findSimilar(state) {
         urls[url] = checkURL(urls[url]);
     });
 
-    Array.from(document.links).filter(l => /\/(search|category|tag|character|artist|group)\/\w+/.test(l.href)).forEach(l => {
-        l.href = checkURL(l.href.replace(/(search|category|tag|character|artist|group)\//, 'search/?q=').replace(/\/$/, ''));
+    Array.from(document.links).filter(l => /\/(search|category|tag|character|artist|group|parody)\/\w+/.test(l.href)).forEach(l => {
+        l.href = checkURL(l.href.replace(/(search|category|tag|character|artist|group|parody)\//, 'search/?q=').replace(/\/$/, ''));
     });
 
     document.querySelector('.buttons').append(
