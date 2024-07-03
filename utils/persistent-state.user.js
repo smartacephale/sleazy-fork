@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2.4
+// @version      1.3
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @updateURL https://update.greasyfork.org/scripts/494207/persistent-state.meta.js
@@ -73,7 +73,7 @@ class DefaultState {
         DURATION_FILTER: true
     }
 
-    constructor(options = this.DEFAULT_OPTIONS) {
+    constructor(options = this.DEFAULT_OPTIONS, custom = {}) {
         const opted = Object.assign(this.DEFAULT_OPTIONS, options);
         Object.keys(opted).forEach(key => {
             if (opted[key]) {
@@ -81,6 +81,7 @@ class DefaultState {
             }
         });
 
+        Object.assign(this.DEFAULT_STATE, { custom });
         const { state } = new PersistentState(this.DEFAULT_STATE);
 
         this.state = state;
@@ -120,4 +121,3 @@ class DefaultState {
         }, { deep: true });
     }
 }
-
