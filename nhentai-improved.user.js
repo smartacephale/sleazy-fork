@@ -2,7 +2,7 @@
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.2
+// @version      1.2.1
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -171,10 +171,12 @@ if (RULES.IS_VIDEO_PAGE) {
     const searchSimilarVeryQuery = `/search/?q=${tags.join("+")}`;
     const searchSimilarQuery = `/search/?q=${tags.slice(0,10).join("+")}`;
     const searchSimilarLessQuery = `/search/?q=${tags.slice(0,5).join("+")}`;
+    const searchSimilarKindofQuery = `/search/?q=${tags.reverse().slice(0,5).join("+")}`;
     document.querySelector('.buttons').append(
         parseDOM(`<a href="${searchSimilarVeryQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Very Similar</a>`),
         parseDOM(`<a href="${searchSimilarQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Similar</a>`),
-        parseDOM(`<a href="${searchSimilarLessQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Less Similar</a>`));
+        parseDOM(`<a href="${searchSimilarLessQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Less Similar</a>`),
+        parseDOM(`<a href="${searchSimilarKindofQuery}" class="btn" style="background: #3b3146"><i class="fa fa-search"></i> Kindof Similar</a>`));
 }
 
 if (RULES.CONTAINER) {
