@@ -278,7 +278,7 @@ function createFriendButton() {
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
     const last = document.querySelector('.pagination-holder .last > a').href.match(/\d+/);
-    const offset = 100;
+    const offset = 0;
     for (let i = 1; i <= last; i++) {
         wait(12000*(i-1)).then(() => fetchHtml(messagesURL(i+offset)).then(html_ => {
             const messages = Array.from(html_.querySelectorAll('#list_members_my_conversations_items .item > a')).map(a => a.href);
