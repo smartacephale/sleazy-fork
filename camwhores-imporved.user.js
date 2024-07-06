@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.3.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -275,24 +275,48 @@ function createFriendButton() {
 
 //====================================================================================================
 
+function reqsPullDelay(interval = 150) {
+    const pull = [];
+
+    let lock = false;
+    setInterval(async () => {
+        if (pull.length > 0 && !lock) {
+            lock = true;
+            const req = pull.pop();
+            await req();
+            await wait(interval);
+            lock = false;
+        }
+    }, interval);
+
+    return { pull }
+}
+
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
     const last = document.querySelector('.pagination-holder .last > a').href.match(/\d+/);
     const offset = 0;
+
+    const { pull } = reqsPullDelay();
+
     for (let i = 1; i <= last; i++) {
-        wait(12000*(i-1)).then(() => fetchHtml(messagesURL(i+offset)).then(html_ => {
+        pull.push(() =>
+        fetchHtml(messagesURL(i+offset)).then(html_ => {
             const messages = Array.from(html_.querySelectorAll('#list_members_my_conversations_items .item > a')).map(a => a.href);
-            messages.forEach((m,j) => wait(100*j).then(() => checkMessageHistory(m)));
+            messages.forEach((m,j) => { pull.push(() => checkMessageHistory(m)) });
         }));
     }
 
+    let c = 0;
     function checkMessageHistory(url) {
         fetchHtml(url).then(html => {
             const orig = html.querySelector('.original-text') || html.querySelector('input[value=confirm_add_to_friends]');
             if (!orig) {
                 const id = url.match(/\d+/)[0];
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
-                fetch(deleteURL).then(r => console.log(r.status, 'delete', id));
+                pull.push(() => fetch(deleteURL).then(r => {
+                    console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
+                }));
             } else {
                 console.log(orig?.innerText, url);
             }
