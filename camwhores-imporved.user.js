@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.3.2
+// @version      1.3.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -20,8 +20,8 @@
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
-// @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
-// @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
+// @downloadURL  https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
+// @updateURL    https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
 /* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range retryFetch
  DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData wait */
@@ -295,13 +295,12 @@ function reqsPullDelay(interval = 150) {
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
     const last = document.querySelector('.pagination-holder .last > a').href.match(/\d+/);
-    const offset = 0;
 
     const { pull } = reqsPullDelay();
 
-    for (let i = 1; i <= last; i++) {
+    for (let i = last; i > 0; i--) {
         pull.push(() =>
-                  fetchHtml(messagesURL(i+offset)).then(html_ => {
+                  fetchHtml(messagesURL(i)).then(html_ => {
             const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
             messages.forEach((m,j) => { pull.push(() => checkMessageHistory(m)) });
         }));
