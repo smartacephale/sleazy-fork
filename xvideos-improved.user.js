@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.3
+// @version      1.5.4
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xvideos.com/*
+// @exclude      https://*.xvideos.com/embedframe/*
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
