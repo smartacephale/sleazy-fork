@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.3.3
+// @version      1.3.4
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -275,35 +275,50 @@ function createFriendButton() {
 
 //====================================================================================================
 
-function reqsPullDelay(interval = 150) {
-    const pull = [];
+class SyncPull {
+    pull = [];
+    lock = false;
 
-    let lock = false;
-    setInterval(async () => {
-        if (pull.length > 0 && !lock) {
-            lock = true;
-            const req = pull.pop();
-            await req();
-            await wait(interval);
-            lock = false;
+    getHighPriorityFirst(p = 0) {
+        if (p > 3 || this.pull.length === 0) return null;
+        const i = this.pull.findIndex(e => e.p === p);
+        if (i >= 0) {
+            const res = this.pull[i].v;
+            this.pull = this.pull.slice(0,i).concat(this.pull.slice(i+1));
+            return res;
         }
-    }, interval);
+        else return this.getHighPriorityFirst(p+1);
+    }
 
-    return { pull }
+    async processPull() {
+        if (this.pull.length > 0 && !this.lock) {
+            this.lock = true;
+            const req = this.getHighPriorityFirst();
+            await req();
+            this.lock = false;
+            await this.processPull();
+        }
+    }
+
+    push(x) {
+        this.pull.push(x);
+        this.processPull();
+    }
 }
 
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
-    const last = document.querySelector('.pagination-holder .last > a').href.match(/\d+/);
+    const last = parseInt(document.querySelector('.pagination-holder .last > a').href.match(/\d+/)?.[0]);
+    if (!last) return;
 
-    const { pull } = reqsPullDelay();
+    const syncpull = new SyncPull();
 
-    for (let i = last; i > 0; i--) {
-        pull.push(() =>
-                  fetchHtml(messagesURL(i)).then(html_ => {
-            const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
-            messages.forEach((m,j) => { pull.push(() => checkMessageHistory(m)) });
-        }));
+    for (let i = 0; i < last; i++) {
+        syncpull.push({v: () =>
+                       fetchHtml(messagesURL(i)).then(html_ => {
+                           const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
+                           messages.forEach((m,j) => syncpull.push({v: () => checkMessageHistory(m), p: 1}));
+                       }), p: 2});
     }
 
     let c = 0;
@@ -313,9 +328,9 @@ function clearMessages() {
             if (!orig) {
                 const id = url.match(/\d+/)[0];
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
-                pull.push(() => fetch(deleteURL).then(r => {
+                syncpull.push({v: () => fetch(deleteURL).then(r => {
                     console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
-                }));
+                }), p: 0});
             } else {
                 console.log(orig?.innerText, url);
             }
