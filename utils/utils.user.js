@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.6
+// @version      1.7
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -47,7 +47,7 @@ class SyncPull {
     lock = false;
 
     getHighPriorityFirst(p = 0) {
-        if (p > 3 || this.pull.length === 0) return null;
+        if (p > 3 || this.pull.length === 0) return undefined;
         const i = this.pull.findIndex(e => e.p === p);
         if (i >= 0) {
             const res = this.pull[i].v;
@@ -57,42 +57,35 @@ class SyncPull {
         else return this.getHighPriorityFirst(p+1);
     }
 
-    async process() {
-        if (this.pull.length > 0 && !this.lock) {
-            console.log(this.pull);
-            this.lock = true;
-            const req = this.getHighPriorityFirst();
-            const res = await req();
-            this.lock = false;
-            return res;
-        } else return null;
+    *pullGenerator() {
+        while(this.pull.length > 0) {
+            yield this.getHighPriorityFirst();
+        }
     }
 
     async processPull() {
-        const res = await this.process();
-        if (res) {
-            await this.processPull();
-        }
-    }
-
-    async processBatch(batch) {
-        batch.forEach(e => this.pull.push({ v: e, p: 0}));
-        const res = [];
-        const processBatch_ = async () => {
-            if (res.length === batch.length) {
-                return res;
+        if (!this.lock) {
+            this.lock = true;
+            for await (const f of this.pullGenerator()) {
+                await f();
             }
-            const r = await this.process();
-            res.push(r);
-            return await processBatch_();
+            this.lock = false;
         }
-        return await processBatch_();
     }
 
     push(x) {
         this.pull.push(x);
         this.processPull();
     }
+}
+
+// https://2ality.com/2016/10/asynchronous-iteration.html
+async function computeAsyncOneAtTime(iterable) {
+    const res = [];
+    for await (const f of iterable) {
+        res.push(await f());
+    }
+    return res;
 }
 
 function timeToSeconds(t) {
