@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.3.4
+// @version      1.4
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -11,7 +11,7 @@
 // @grant        GM_addStyle
 // @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1380190
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1410641
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
@@ -23,8 +23,8 @@
 // @downloadURL  https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
 // @updateURL    https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
-/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range retryFetch
- DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData wait */
+/* globals $ VueUI Tick LSKDB  timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range
+ DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData wait SyncPull */
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -119,7 +119,7 @@ class CAMWHORES_RULES {
         const url = new URL(href);
         let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const pag = document_ && Array.from(document_?.querySelectorAll('.pagination')).pop() || this.PAGINATION;
+        const pag = document_ ? Array.from(document_?.querySelectorAll('.pagination')).pop() : this.PAGINATION;
         const pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         const el = pag?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
@@ -225,6 +225,7 @@ const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
 });
 
 const lskdb = new LSKDB();
+const spull = new SyncPull();
 
 function friendRequest(id) {
     const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
@@ -240,7 +241,7 @@ async function getMemberFriends(id) {
     const document_ = await fetchHtml(url);
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
-    const friendlist = (await retryFetch(pages, fetchHtml, 150, 50, 2000)).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
+    const friendlist = (await spull.processBatch(pages.map(p => () => fetchHtml(p)))).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
     friendlist.forEach(m => lskdb.setKey(m));
     await processFriendship();
 }
@@ -248,13 +249,12 @@ async function getMemberFriends(id) {
 async function processFriendship() {
     console.log('processFriendship');
     if (!lskdb.isLocked()) {
-        const friendlist = lskdb.getKeys(60);
+        const friendlist = lskdb.getKeys(30);
         if (friendlist?.length < 1) return;
         lskdb.lock(true);
         const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
-        await retryFetch(urls, friendRequest, 250, 12, 10000);
+        await spull.processBatch(urls.map(url => () => friendRequest(url)));
         lskdb.lock(false);
-        await wait(5000);
         await processFriendship();
     }
 }
@@ -275,50 +275,17 @@ function createFriendButton() {
 
 //====================================================================================================
 
-class SyncPull {
-    pull = [];
-    lock = false;
-
-    getHighPriorityFirst(p = 0) {
-        if (p > 3 || this.pull.length === 0) return null;
-        const i = this.pull.findIndex(e => e.p === p);
-        if (i >= 0) {
-            const res = this.pull[i].v;
-            this.pull = this.pull.slice(0,i).concat(this.pull.slice(i+1));
-            return res;
-        }
-        else return this.getHighPriorityFirst(p+1);
-    }
-
-    async processPull() {
-        if (this.pull.length > 0 && !this.lock) {
-            this.lock = true;
-            const req = this.getHighPriorityFirst();
-            await req();
-            this.lock = false;
-            await this.processPull();
-        }
-    }
-
-    push(x) {
-        this.pull.push(x);
-        this.processPull();
-    }
-}
-
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
     const last = parseInt(document.querySelector('.pagination-holder .last > a').href.match(/\d+/)?.[0]);
     if (!last) return;
 
-    const syncpull = new SyncPull();
-
     for (let i = 0; i < last; i++) {
-        syncpull.push({v: () =>
-                       fetchHtml(messagesURL(i)).then(html_ => {
-                           const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
-                           messages.forEach((m,j) => syncpull.push({v: () => checkMessageHistory(m), p: 1}));
-                       }), p: 2});
+        spull.push({v: () =>
+                    fetchHtml(messagesURL(i)).then(html_ => {
+                        const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
+                        messages.forEach((m,j) => spull.push({v: () => checkMessageHistory(m), p: 1}));
+                    }), p: 2});
     }
 
     let c = 0;
@@ -328,7 +295,7 @@ function clearMessages() {
             if (!orig) {
                 const id = url.match(/\d+/)[0];
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
-                syncpull.push({v: () => fetch(deleteURL).then(r => {
+                spull.push({v: () => fetch(deleteURL).then(r => {
                     console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
                 }), p: 0});
             } else {
