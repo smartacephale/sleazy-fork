@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.5c
+// @version      1.6
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -41,49 +41,58 @@ function wait(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
-async function retryFetch(links, fetchCallback, interval = 250, batchSize = 12, batchTimeout = 20000) {
-    const results = [];
-    const total = links.length;
+// do async one at time
+class SyncPull {
+    pull = [];
+    lock = false;
 
-    const processlinks = async (links) => {
-        const failed = links.slice(batchSize);
-        const batch = links.slice(0, batchSize);
-        if (links.length > 0) {
-            await Promise.all(batch.map(async (l, i) => {
-                await wait(i*interval);
-                try {
-                    const res = await fetchCallback(l);
-                    const isResponse = res instanceof Response;
-                    if (res.ok || !isResponse) {
-                        /*
-                        if (typeof res.text === 'function') {
-                            const t = await res.text();
-                            console.log(l, t);
-                        }
-                        if (!isResponse) { console.log(l, res); }
-                        */
-                        results.push(res);
-                    } else {
-                        if (res.status !== 404) {
-                            failed.push(l);
-                        }
-                    }
-                } catch (error) {
-                    console.error(error);
-                }
-            }));
-            console.log(`progress: ${results.length}/${total}`);
-            if (failed.length > 0) {
-                const failedRatio = (1 - ((links.length-failed.length) / batchSize));
-                const timeout = failedRatio * batchTimeout + batchTimeout / 3;
-                await wait(timeout);
-                return processlinks(failed);
-            }
+    getHighPriorityFirst(p = 0) {
+        if (p > 3 || this.pull.length === 0) return null;
+        const i = this.pull.findIndex(e => e.p === p);
+        if (i >= 0) {
+            const res = this.pull[i].v;
+            this.pull = this.pull.slice(0,i).concat(this.pull.slice(i+1));
+            return res;
+        }
+        else return this.getHighPriorityFirst(p+1);
+    }
+
+    async process() {
+        if (this.pull.length > 0 && !this.lock) {
+            console.log(this.pull);
+            this.lock = true;
+            const req = this.getHighPriorityFirst();
+            const res = await req();
+            this.lock = false;
+            return res;
+        } else return null;
+    }
+
+    async processPull() {
+        const res = await this.process();
+        if (res) {
+            await this.processPull();
         }
     }
 
-    await processlinks(links);
-    return results;
+    async processBatch(batch) {
+        batch.forEach(e => this.pull.push({ v: e, p: 0}));
+        const res = [];
+        const processBatch_ = async () => {
+            if (res.length === batch.length) {
+                return res;
+            }
+            const r = await this.process();
+            res.push(r);
+            return await processBatch_();
+        }
+        return await processBatch_();
+    }
+
+    push(x) {
+        this.pull.push(x);
+        this.processPull();
+    }
 }
 
 function timeToSeconds(t) {
