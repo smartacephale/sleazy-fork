@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4
+// @version      1.4.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -11,7 +11,7 @@
 // @grant        GM_addStyle
 // @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1410641
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1410788
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
@@ -20,11 +20,11 @@
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
-// @downloadURL  https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
-// @updateURL    https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
+// @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
 /* globals $ VueUI Tick LSKDB  timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range
- DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData wait SyncPull */
+ DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime */
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -241,7 +241,7 @@ async function getMemberFriends(id) {
     const document_ = await fetchHtml(url);
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
-    const friendlist = (await spull.processBatch(pages.map(p => () => fetchHtml(p)))).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
+    const friendlist = (await computeAsyncOneAtTime(pages.map(p => () => fetchHtml(p)))).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
     friendlist.forEach(m => lskdb.setKey(m));
     await processFriendship();
 }
@@ -253,7 +253,7 @@ async function processFriendship() {
         if (friendlist?.length < 1) return;
         lskdb.lock(true);
         const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
-        await spull.processBatch(urls.map(url => () => friendRequest(url)));
+        await computeAsyncOneAtTime(urls.map(url => () => friendRequest(url)));
         lskdb.lock(false);
         await processFriendship();
     }
