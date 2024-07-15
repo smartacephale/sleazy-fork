@@ -11,26 +11,6 @@
 // ==/UserScript==
 /* globals parseDOM createApp unsafeWindow GM_addStyle tempVue */
 
-/* 
-@todo redo ui
-@body
-    * replace tailwind with pure css
-    * generative [{ col1: [] }, { ... }]
-    * replace vue with preact and signals
-*/
-
-/* tailwind cannot be compiled into normal css without js
-
-  you have to do this in style.css to prevent collisions and than you fucking with million other problems
-    #tapermonkey-app {
-      @tailwind base;
-      @tailwind utilities;
-    }
-
-  prefixes doesn't work properly without js too.
-  it's a hell, should be removed.
-*/
-
 class VueUI {
     template = `
   <div class="fixed bottom-0 right-0 z-9999 rounded bg-zinc-800 max-w-full p-2 m-2"
