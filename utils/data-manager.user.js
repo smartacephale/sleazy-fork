@@ -85,7 +85,8 @@ class DataManager {
     }
 
     /*
-    @todo redo filters:
+    @todo redo filters
+    @body
         * word, word*, word1|word2*|word3*
         * not hide but delete by -word*
         * filter uploaders: -a:word
