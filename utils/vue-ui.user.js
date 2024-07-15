@@ -11,6 +11,14 @@
 // ==/UserScript==
 /* globals parseDOM createApp unsafeWindow GM_addStyle tempVue */
 
+/* 
+@todo redo ui
+@body
+    * replace tailwind with pure css
+    * generative [{ col1: [] }, { ... }]
+    * replace vue with preact and signals
+*/
+
 /* tailwind cannot be compiled into normal css without js
 
   you have to do this in style.css to prevent collisions and than you fucking with million other problems
