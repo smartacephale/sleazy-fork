@@ -1,5 +1,15 @@
 # sleazy-fork
 
+__TODO__
+* redo filters:
+  - word, word*, word1|word2*|word3*  
+  - not hide but delete by -word*
+  - filter uploaders: -a:word
+* redo ui
+  - replace tailwind with pure css
+  - generative [{ col1: [] }, { ... }]
+  - replace vue with preact and signals
+
 ```
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⢤⠴⠴⠖⠶⠲⠖⠦⡤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠨⠫⡪⢃⠣⡃⢅⠣⠅⢕⢡⢡⢡⢡⢑⠅⠕⡡⠡⠅⡅⠅⢅⠅⢅⠡⠡⠡⡁⠅⠡⢁⠊⠨⠐
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⡲⡓⡩⣰⡲⣲⡢⡠⡤⣔⢤⡀⠈⠉⠳⢦⣀⠀⠀⠀⠀⠀⠀⠀⠀⢈⠪⢐⠡⡊⡐⡡⠡⡑⡑⡒⡂⡒⠢⡑⠌⢕⢈⠪⡈⠆⢕⠡⢊⠔⠌⢌⠢⢂⢅⢑⠄⢅⠡⡁
