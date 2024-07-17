@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.5
+// @version      1.2
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494204/data-manager.meta.js
@@ -65,9 +65,9 @@ class DataManager {
         filterExclude: {
             tag: 'filtered-exclude',
             createFilter() {
-                const tags = stringToWords(this.state.filterExcludeWords);
+                const tags = this.filterDSLToRegex(this.state.filterExcludeWords);
                 return (v) => {
-                    const containTags = tags.some(tag => v.title.includes(tag));
+                    const containTags = tags.some(tag => tag.test(v.title));
                     return [this.tag, this.state.filterExclude && containTags];
                 }
             }
@@ -75,15 +75,27 @@ class DataManager {
         filterInclude: {
             tag: 'filtered-include',
             createFilter() {
-                const tags = stringToWords(this.state.filterIncludeWords);
+                const tags = this.filterDSLToRegex(this.state.filterIncludeWords);
                 return (v) => {
-                    const containTagsNot = tags.some(tag => !v.title.includes(tag));
+                    const containTagsNot = tags.some(tag => !tag.test(v.title));
                     return [this.tag, this.state.filterInclude && containTagsNot];
                 }
             }
         }
     }
-    
+
+    filterDSLToRegex(str) {
+        const toFullWord = w => `(^|\ )${w}($|\ )`;
+        const words = stringToWords(str).map(expr => {
+            let w = expr;
+            if (w.startsWith('f:')) {
+                w = toFullWord(w.replace('f:', ''));
+            }
+            return new RegExp(w, 'i');
+        });
+        return words;
+    }
+
     setupFilters() {
         Object.keys(this.dataFilters).forEach(k => {
             if (!Object.hasOwn(this.state, k)) {
@@ -97,6 +109,7 @@ class DataManager {
         Object.values(this.dataFilters).forEach(f => {
             f.state = this.state;
             f.rules = this.rules;
+            f.filterDSLToRegex = this.filterDSLToRegex;
         });
     }
 
