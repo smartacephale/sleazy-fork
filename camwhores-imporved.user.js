@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4.1
+// @version      1.4.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -275,6 +275,28 @@ function createFriendButton() {
 
 //====================================================================================================
 
+function getUserInfo(document) {
+    const uploadedCount = parseInt(document.querySelector('#list_videos_uploaded_videos strong')?.innerText.match(/\d+/)[0]) || 0;
+    const friendsCount = parseInt(document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/)[0]) || 0;
+    return {
+        uploadedCount,
+        friendsCount
+    }
+}
+
+async function acceptFriendRequest(id) {
+    const url = `https://www.camwhores.tv/my/messages/${id}/`;
+    await fetch(url, {
+        "headers": {
+            "Accept": "*/*",
+            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        "body": `action=confirm_add_to_friends&message_from_user_id=${id}&function=get_block&block_id=list_messages_my_conversation_messages&confirm=Confirm&format=json&mode=async`,
+        "method": "POST",
+    });
+    await fetchHtml(`https://www.camwhores.tv/members/${id}/`).then(doc => console.log('userInfo', getUserInfo(doc)));
+}
+
 function clearMessages() {
     const messagesURL = id => `https://www.camwhores.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
     const last = parseInt(document.querySelector('.pagination-holder .last > a').href.match(/\d+/)?.[0]);
@@ -291,15 +313,19 @@ function clearMessages() {
     let c = 0;
     function checkMessageHistory(url) {
         fetchHtml(url).then(html => {
-            const orig = html.querySelector('.original-text') || html.querySelector('input[value=confirm_add_to_friends]');
-            if (!orig) {
-                const id = url.match(/\d+/)[0];
+            const hasFriendRequest = html.querySelector('input[value=confirm_add_to_friends]');
+            const hasOriginalText = html.querySelector('.original-text')?.innerText;
+            const id = url.match(/\d+/)[0];
+            if (!(hasOriginalText || hasFriendRequest)) {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
                 spull.push({v: () => fetch(deleteURL).then(r => {
                     console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
                 }), p: 0});
             } else {
-                console.log(orig?.innerText, url);
+                console.log(hasOriginalText, url);
+                if (hasFriendRequest) {
+                    spull.push({ v: () => acceptFriendRequest(id), p: 0 });
+                }
             }
         });
     }
