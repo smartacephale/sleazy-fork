@@ -4,10 +4,10 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2
+// @version      1.3
 // @match        *://*/*
-// @downloadURL https://update.greasyfork.org/scripts/494203/vue-ui.user.js
-// @updateURL https://update.greasyfork.org/scripts/494203/vue-ui.meta.js
+// @downloadURL https://update.greasyfork.org/scripts/494203/menu-ui.user.js
+// @updateURL https://update.greasyfork.org/scripts/494203/menu-ui.meta.js
 // ==/UserScript==
 /* globals parseDOM createApp unsafeWindow GM_addStyle tempVue */
 
@@ -19,7 +19,10 @@ class VueUI {
     <!-- SHOW/HIDE BUTTON -->
     <div class="flex items-center cursor-pointer py-1 px-2 m-1 rounded"
       :class="!state.hidden ? 'hover:bg-zinc-900' : ''" @click="state.hidden = !state.hidden">
-      <span class="m-auto">
+      <span class="m-auto flex mono">
+        <span v-if="state.hidden && stateLocale.pagIndexLast > 1" class="px-3 py-2 mr-2 bg-gray-700 text-zinc-300 font-mono rounded ">
+          {{ stateLocale.pagIndexCur }}/{{ stateLocale.pagIndexLast }}
+        </span>
         <svg v-if="state.hidden" class="h-7 w-7 fill-gray-600 stroke-gray-400" xmlns="http://www.w3.org/2000/svg"
           fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round"
