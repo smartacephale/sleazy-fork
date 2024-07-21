@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2
+// @version      1.2.1
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494204/data-manager.meta.js
@@ -86,14 +86,8 @@ class DataManager {
 
     filterDSLToRegex(str) {
         const toFullWord = w => `(^|\ )${w}($|\ )`;
-        const words = stringToWords(str).map(expr => {
-            let w = expr;
-            if (w.startsWith('f:')) {
-                w = toFullWord(w.replace('f:', ''));
-            }
-            return new RegExp(w, 'i');
-        });
-        return words;
+        const str_ = str.replace(/f\:(\w+)/g, (_, w) => toFullWord(w));
+        return stringToWords(str_).map(expr => new RegExp(expr, 'i'));
     }
 
     setupFilters() {
