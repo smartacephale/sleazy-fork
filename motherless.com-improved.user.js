@@ -4,16 +4,16 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.6.1
+// @version      2.6.4
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1414482
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
+// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js4
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
@@ -52,8 +52,8 @@ class MOTHERLESS_RULES {
     constructor() {
         this.PAGINATION = document.querySelector('.pagination_link, .ml-pagination');
         this.PAGINATION_LAST = parseInt(
-            document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText ||
-            document.querySelector('.ml-pagination li:last-child')?.innerText
+            document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText.replace(',', '') ||
+            document.querySelector('.ml-pagination li:last-child')?.innerText.replace(',', '')
         );
         this.CONTAINER = document.querySelector('.content-inner');
         this.IS_SEARCH = /^\/term\//.test(window.location.pathname);
@@ -88,6 +88,7 @@ class MOTHERLESS_RULES {
             return url.href;
         }
 
+        console.log(offset, url.href, iteratable_url(33));
         return {
             offset,
             iteratable_url
@@ -249,12 +250,13 @@ if (RULES.GET_THUMBS(document.body).length > 0) {
     });
 }
 
+
 if (RULES.IS_SEARCH) {
-    let url = window.location.pathname + " ";
+    let url = window.location.pathname;
     const wordsToFilter = state.filterExcludeWords.replace(/f\:/g, '').match(/\w+/g);
     wordsToFilter.forEach(w => {
         if (!url.includes(w)) {
-            url += ` -${w.trim()}`;
+            url += `+-${w.trim()}`;
         }
     });
     if (wordsToFilter.some(w => !window.location.href.includes(w))) {
