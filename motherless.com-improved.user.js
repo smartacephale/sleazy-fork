@@ -4,8 +4,8 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.5
-// @description  Infinite scroll (optional). Filter by duration and key phrases. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
+// @version      2.6.1
+// @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
@@ -14,7 +14,7 @@
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @run-at       document-idle
@@ -56,6 +56,7 @@ class MOTHERLESS_RULES {
             document.querySelector('.ml-pagination li:last-child')?.innerText
         );
         this.CONTAINER = document.querySelector('.content-inner');
+        this.IS_SEARCH = /^\/term\//.test(window.location.pathname);
     }
 
     GET_THUMBS(html) { return html.querySelectorAll('.thumb-container, .mobile-thumb'); }
@@ -199,6 +200,21 @@ async function desktopAddMobGalleries() {
 
 //====================================================================================================
 
+function downloader() {
+    function getVideoAndDownload(e) {
+        e.stopPropagation();
+        const video = document.querySelector('#ml-main-video_html5_api, video');
+        const url = video.getAttribute('src');
+        window.location.href = url;
+    }
+    $('#button-download').off();
+    $('#button-download').on('click', getVideoAndDownload);
+}
+
+downloader();
+
+//====================================================================================================
+
 GM_addStyle('.img-container, .desktop-thumb { min-height: 150px; max-height: 150px; }');
 
 GM_addStyle(`
@@ -231,4 +247,17 @@ if (RULES.GET_THUMBS(document.body).length > 0) {
     getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => {
         handleLoadedHTML(c, c);
     });
+}
+
+if (RULES.IS_SEARCH) {
+    let url = window.location.pathname + " ";
+    const wordsToFilter = state.filterExcludeWords.replace(/f\:/g, '').match(/\w+/g);
+    wordsToFilter.forEach(w => {
+        if (!url.includes(w)) {
+            url += ` -${w.trim()}`;
+        }
+    });
+    if (wordsToFilter.some(w => !window.location.href.includes(w))) {
+        window.location.href = url;
+    }
 }
