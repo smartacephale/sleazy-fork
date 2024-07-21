@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.6.31
+// @version      4.6.32
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -13,7 +13,7 @@
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1414482
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1378559
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
 // @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1403633
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030
