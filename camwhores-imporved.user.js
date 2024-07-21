@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4.2
+// @version      1.4.31
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -9,9 +9,8 @@
 // @match        https://*.camwhores.tv/*
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
-// @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1410788
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1414482
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
@@ -190,12 +189,7 @@ function downloader() {
     function tryDownloadVideo() {
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
-            const name = document.querySelector('.headline').innerText + '.mp4';
-            const onprogress = (e) => {
-                const p = 100 * (e.loaded/e.total);
-                btn.children().css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
-            }
-            GM_download({ url, name, saveAs: true, onprogress });
+            window.location.href = url;
         });
     }
 
@@ -277,7 +271,7 @@ function createFriendButton() {
 
 function getUserInfo(document) {
     const uploadedCount = parseInt(document.querySelector('#list_videos_uploaded_videos strong')?.innerText.match(/\d+/)[0]) || 0;
-    const friendsCount = parseInt(document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/)[0]) || 0;
+    const friendsCount = parseInt(document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/).pop()) || 0;
     return {
         uploadedCount,
         friendsCount
@@ -294,7 +288,7 @@ async function acceptFriendRequest(id) {
         "body": `action=confirm_add_to_friends&message_from_user_id=${id}&function=get_block&block_id=list_messages_my_conversation_messages&confirm=Confirm&format=json&mode=async`,
         "method": "POST",
     });
-    await fetchHtml(`https://www.camwhores.tv/members/${id}/`).then(doc => console.log('userInfo', getUserInfo(doc)));
+    await fetchHtml(`https://www.camwhores.tv/members/${id}/`).then(doc => console.log('userInfo', getUserInfo(doc), url));
 }
 
 function clearMessages() {
@@ -302,7 +296,7 @@ function clearMessages() {
     const last = parseInt(document.querySelector('.pagination-holder .last > a').href.match(/\d+/)?.[0]);
     if (!last) return;
 
-    for (let i = 0; i < last; i++) {
+    for (let i = 110; i < last; i++) {
         spull.push({v: () =>
                     fetchHtml(messagesURL(i)).then(html_ => {
                         const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
