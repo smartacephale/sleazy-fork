@@ -2,7 +2,7 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.2.2
+// @version      2.2.3
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
