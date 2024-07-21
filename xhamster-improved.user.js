@@ -2,7 +2,7 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.2.3
+// @version      2.2.31
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -16,7 +16,7 @@
 // @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1398472
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @run-at       document-idle
