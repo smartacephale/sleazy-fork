@@ -2,16 +2,15 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.6.1
+// @version      4.6.2
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @grant        GM_download
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1410788
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1378559
@@ -325,19 +324,9 @@ function downloader() {
         $('.fp-ui').click();
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
-            const name = `${document.querySelector('.headline').innerText}.mp4`;
-            const onprogress = (e) => {
-                const p = 100 * (e.loaded / e.total);
-                btn.css('background', `linear-gradient(90deg, #636f5d, transparent ${p}%)`);
-            }
-            if (!isMob()) {
-                GM_download({ url, name, saveAs: true, onprogress });
-            } else {
-                downloadBlob(url, name);
-            }
+            window.location.href = url;
         });
     }
-
     const btn = $('<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>');
     $('.share_btn').after(btn);
     btn.on('click', getVideoAndDownload);
