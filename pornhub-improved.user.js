@@ -2,7 +2,7 @@
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.6.4
+// @version      1.6.5
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
