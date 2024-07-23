@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.6.41
+// @version      2.6.5
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -61,11 +61,11 @@ class MOTHERLESS_RULES {
 
     GET_THUMBS(html) { return html.querySelectorAll('.thumb-container, .mobile-thumb'); }
 
-    THUMB_URL(thumb) { return thumb.firstElementChild.getAttribute('data-codename'); };
+    THUMB_URL(thumb) { return thumb.querySelector('.img-container').href; };
 
     THUMB_DATA(thumb) {
-        const uploader = (thumb.querySelector('.uploader')?.innerText || "").toLowerCase();
-        const title = (thumb.querySelector('.title')?.innerText || "").toLowerCase();
+        const uploader = (thumb.querySelector('.uploader')?.innerText || "").toLowerCase().trim();
+        const title = (thumb.querySelector('.title')?.innerText || "").toLowerCase().replace(/\n/, ' ').replace(/\ {2,}/, ' ');
         const duration = timeToSeconds(thumb.querySelector('.size')?.innerText || "0");
         return {
             title: `${title} ${uploader}`,
@@ -88,7 +88,6 @@ class MOTHERLESS_RULES {
             return url.href;
         }
 
-        console.log(offset, url.href, iteratable_url(33));
         return {
             offset,
             iteratable_url
