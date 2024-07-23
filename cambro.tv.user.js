@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.11
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -20,7 +20,7 @@
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cambro.tv
 // ==/UserScript==
-/* globals $ VueUI Tick LSKDB  timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range
+/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range
  DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime */
 
 const LOGO = `
