@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.6.7
+// @version      2.6.8
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -154,6 +154,7 @@ function animate() {
 //====================================================================================================
 
 function fixURLs() {
+    document.querySelector('a[href^="https://motherless.com/random/image"]').href = "https://motherless.com/m/calypso_jim_asi";
     document.querySelectorAll(('.gallery-container')).forEach(g => {
         const hasVideos = parseInt(g.innerText.match(/(\d+) videos/gi)?.[0]) > 0;
         const header = hasVideos ? '/GV' : '/GI';
