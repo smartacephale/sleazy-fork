@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.11
+// @version      0.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @exclude      *.cambro.tv/*mode=async*
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1414482
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1416745
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
@@ -19,8 +19,10 @@
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cambro.tv
+// @downloadURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.meta.js
 // ==/UserScript==
-/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range
+/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range parseDataParams
  DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime */
 
 const LOGO = `
@@ -58,8 +60,6 @@ const LOGO = `
 ⣜⢜⢜⢜⢜⢜⢌⢎⢎⢮⣪⢗⣷⣳⢷⣻⣾⣿⣻⣿⣷⣿⣾⣽⣟⣿⣻⣻⣽⣿⢿⣾⣷⣿⢿⣯⣿⣾⡧⣣⢇⢇⢇⢏⢎⢞⢜⢎⢧⢫
 ⢮⣳⡱⡱⡱⡱⡱⣱⢹⡪⣞⡽⡾⣽⣻⡿⣯⣿⣿⣻⣷⣿⣿⣻⣿⣿⣿⣿⣿⣽⣿⣿⣿⢿⣿⡿⣿⣾⣿⣷⢳⡱⣣⢣⡳⡱⣣⢳⡱⣣
 ⢸⢜⣞⣕⢧⢳⡹⣜⢵⣝⣗⣟⣯⣿⣽⣿⣿⣿⣻⣿⢿⣷⣿⡿⣟⣯⣿⣷⡿⣯⣿⣿⣾⣿⣿⢿⣿⢿⣷⣿⣿⡺⣜⢵⡱⣝⢜⡎⣞⢼`;
-
-GM_addStyle('.item.private .thumb, .item .thumb.private { opacity: 1 !important; }');
 
 class CAMWHORES_RULES {
     constructor() {
@@ -121,6 +121,7 @@ class CAMWHORES_RULES {
         }
     }
 
+
     URL_DATA(url_, document_) {
         const { href, pathname, search, origin } = url_ || window.location;
         const url = new URL(href);
@@ -130,37 +131,22 @@ class CAMWHORES_RULES {
         const pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         const el = pag?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
+        const parsedDataParams = parseDataParams(dataParameters);
 
         const attrs = {
-            'mode':               'async',
-            'function':           'get_block',
-            'block_id':           el?.getAttribute('data-block-id'),
-            'q':                  dataParameters.match(/q\:([\w+|\+]*)/)?.[1],
-            'category_ids':       dataParameters.match(/category_ids\:([\w+|\+]*)/)?.[1],
-            'sort_by':            dataParameters.match(/sort_by\:([\w+|\+]*)/)?.[1],
-            'fav_type':           dataParameters.match(/fav_type\:([\w+|\+]*)/)?.[1],
-            'playlist_id':        dataParameters.match(/playlist_id\:([\w+|\+]*)/)?.[1],
+            mode: 'async',
+            function: 'get_block',
+            block_id: el?.getAttribute('data-block-id')
         };
 
-        const attrs_iterators = {
-            'from_videos':        dataParameters.match(/from_videos[\+from_albums)]*\:([\w+|\+]*)/)?.[1],
-            'from_albums':        dataParameters.match(/from_albums\:([\w+|\+]*)/)?.[1],
-            'from':               dataParameters.match(/from\:([\w+|\+]*)/)?.[1],
-            'from_my_fav_videos': dataParameters.match(/from_my_fav_videos\:([\w+|\+]*)/)?.[1],
-            'from_fav_videos':    dataParameters.match(/from_fav_videos\:([\w+|\+]*)/)?.[1],
-            'from_friends':       dataParameters.match(/from_friends\:([\w+|\+]*)/)?.[1]
-        }
-
         Object.keys(attrs).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
-        Object.keys(attrs_iterators).forEach(k => !attrs_iterators[k] && delete attrs_iterators[k]);
+        Object.keys(parsedDataParams).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
 
         const iteratable_url = n => {
-            Object.keys(attrs_iterators).forEach(a => url.searchParams.set(a, n));
+            Object.keys(parsedDataParams).forEach(k => k.includes('from') && url.searchParams.set(k, n));
             url.searchParams.set('_', Date.now());
             return url.href;
         }
-
-        console.log(offset, iteratable_url(22), pag_last);
 
         return {
             offset,
@@ -222,7 +208,7 @@ function shouldReload() {
 const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
     message:    "",
     action:     "add_to_friends_complete",
-    "function": "get_block",
+    function: "get_block",
     block_id:   "member_profile_view_view_profile",
     format:     "json",
     mode:       "async"
