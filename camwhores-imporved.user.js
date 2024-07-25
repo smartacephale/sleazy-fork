@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4.33
+// @version      1.4.4
 // @license      MIT
-// @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
+// @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.camwhores.tv/*
