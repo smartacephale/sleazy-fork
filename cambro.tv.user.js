@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -69,7 +69,7 @@ class CAMWHORES_RULES {
         this.IS_MINE_MEMBER_PAGE = /\/my\/$/.test(pathname);
         this.IS_MESSAGES = /^\/my\/messages\//.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
-        this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
+        this.IS_VIDEO_PAGE = /^\/\d+\//.test(pathname);
         this.IS_LOGGED_IN = document.querySelector('.member-links').innerText.includes('Log out');
 
         this.CALC_CONTAINER();
@@ -85,7 +85,7 @@ class CAMWHORES_RULES {
 
     CALC_CONTAINER = () => {
         this.PAGINATION = Array.from(document.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
-        this.PAGINATION_LAST = parseInt(Array.from(this.PAGINATION?.querySelectorAll('.pagination-holder > ul > .page > a')).pop()
+        this.PAGINATION_LAST = parseInt(Array.from(this.PAGINATION?.querySelectorAll('.pagination-holder > ul > .page > a') || []).pop()
                                         ?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         if (this.PAGINATION_LAST === 9) this.PAGINATION_LAST = 999;
         this.CONTAINER = (this.PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
@@ -183,12 +183,12 @@ function animate() {
 
 function downloader() {
     function tryDownloadVideo() {
+        $('.fp-ui').click();
         waitForElementExists(document.body, 'video', (video) => {
             const url = video.getAttribute('src');
             window.location.href = url;
         });
     }
-
     const btn = $('<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>');
     $('.tabs-menu > ul').append(btn);
     btn.on('click', tryDownloadVideo);
@@ -206,12 +206,12 @@ function shouldReload() {
 //====================================================================================================
 
 const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
-    message:    "",
-    action:     "add_to_friends_complete",
+    message:  "",
+    action:   "add_to_friends_complete",
     function: "get_block",
-    block_id:   "member_profile_view_view_profile",
-    format:     "json",
-    mode:       "async"
+    block_id: "member_profile_view_view_profile",
+    format:   "json",
+    mode:     "async"
 });
 
 const lskdb = new LSKDB();
@@ -343,6 +343,7 @@ function route() {
         animate();
     }
 
+    console.log(RULES.IS_VIDEO_PAGE, 'RULES.IS_VIDEO_PAGE');
     if (RULES.IS_VIDEO_PAGE) {
         downloader();
     }
