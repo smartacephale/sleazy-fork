@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.6.8
+// @version      2.6.9
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -55,7 +55,7 @@ class MOTHERLESS_RULES {
             document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText.replace(',', '') ||
             document.querySelector('.ml-pagination li:last-child')?.innerText.replace(',', '')
         );
-        this.CONTAINER = document.querySelector('.content-inner');
+        this.CONTAINER = Array.from(document.querySelectorAll('.content-inner')).pop();
         this.IS_SEARCH = /^\/term\//.test(window.location.pathname);
     }
 
