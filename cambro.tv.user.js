@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.41
+// @version      0.42
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -133,7 +133,7 @@ class CAMWHORES_RULES {
 
         if (RULES.IS_COMMUNITY_LIST) {
             pag = document.querySelector('.pagination');
-            pag_last = 5;
+            pag_last = 5000;
         }
 
         const el = pag?.querySelector('a[data-block-id][data-parameters]');
