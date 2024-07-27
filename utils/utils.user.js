@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.7.2
+// @version      1.7.3
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -278,7 +278,7 @@ function objectToFormData(object) {
 function parseDataParams(str) {
     const params = str.split(';').flatMap(s => {
         const parsed = s.match(/([\+\w+]+):(\w+)?/);
-        const value = parsed[2];
+        const value = parsed?.[2];
         if (value) return parsed[1].split('+').map(p => ({[p]: value}));
     }).filter(_ => _);
     return Object.assign({}, ...params);
