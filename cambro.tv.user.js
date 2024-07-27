@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.31
+// @version      0.41
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -70,6 +70,7 @@ class CAMWHORES_RULES {
         this.IS_MESSAGES = /^\/my\/messages\//.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
         this.IS_VIDEO_PAGE = /^\/\d+\//.test(pathname);
+        this.IS_COMMUNITY_LIST = /\/members\/$/.test(pathname);
         this.IS_LOGGED_IN = document.querySelector('.member-links').innerText.includes('Log out');
 
         this.CALC_CONTAINER();
@@ -127,11 +128,18 @@ class CAMWHORES_RULES {
         const url = new URL(href);
         let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const pag = document_ ? Array.from(document_?.querySelectorAll('.pagination')).pop() : this.PAGINATION;
-        const pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
+        let pag = document_ ? Array.from(document_?.querySelectorAll('.pagination')).pop() : this.PAGINATION;
+        let pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]) || 99;
+
+        if (RULES.IS_COMMUNITY_LIST) {
+            pag = document.querySelector('.pagination');
+            pag_last = 5;
+        }
+
         const el = pag?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
         const parsedDataParams = parseDataParams(dataParameters);
+
 
         const attrs = {
             mode: 'async',
@@ -142,10 +150,13 @@ class CAMWHORES_RULES {
         Object.keys(attrs).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
         Object.keys(parsedDataParams).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
 
+        const paggeable = Object.keys(parsedDataParams).some(k => k.includes('from'));
+        if (!paggeable) pag_last = 1;
+
         const iteratable_url = n => {
             Object.keys(parsedDataParams).forEach(k => k.includes('from') && url.searchParams.set(k, n));
             url.searchParams.set('_', Date.now());
-            return url.href;
+            return paggeable ? url.href : (url_ || window.location.href);
         }
 
         return {
@@ -223,11 +234,12 @@ function friendRequest(id) {
 }
 
 function getMemberLinks(document) {
-    return Array.from(document.querySelectorAll('.item > a')).map(l => l.href).filter(l => /\/members\/\d+\/$/.test(l));
+    return Array.from(document?.querySelectorAll('.item > a') || []).map(l => l.href).filter(l => /\/members\/\d+\/$/.test(l));
 }
 
 async function getMemberFriends(id) {
-    const url = `${window.location.origin}/members/${id}/friends/`;
+    const url = RULES.IS_COMMUNITY_LIST ?
+          `${window.location.origin}/members/` : `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
@@ -251,8 +263,8 @@ async function processFriendship() {
 
 function createFriendButton() {
     const button = parseDOM('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
-    document.querySelector('.main-container-user > .headline').append(button);
-    const memberid = window.location.pathname.match(/\d+/)[0];
+    (document.querySelector('.main-container-user > .headline') || document.querySelector('.headline')).append(button);
+    const memberid = window.location.pathname.match(/\d+/)?.[0];
     button.addEventListener('click', () => {
         button.style.background = 'radial-gradient(#ff6114, #5babc4)';
         button.innerText = 'processing requests';
@@ -326,7 +338,7 @@ function clearMessages() {
 function route() {
     if (RULES.IS_LOGGED_IN) {
         setTimeout(processFriendship, 3000);
-        if (RULES.IS_MEMBER_PAGE) {
+        if (RULES.IS_MEMBER_PAGE || RULES.IS_COMMUNITY_LIST) {
             createFriendButton();
         }
     }
