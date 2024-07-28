@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.42
+// @version      0.5
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -301,7 +301,7 @@ async function acceptFriendRequest(id) {
 
 function clearMessages() {
     const messagesURL = id => `https://www.cambro.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
-    const last = parseInt(document.querySelector('.pagination-holder .last > a').href.match(/\d+/)?.[0]);
+    const last = Math.ceil(parseInt(document.body.innerText.match(/my messages .\d+./gi)[0].match(/\d+/)[0])/10);
     if (!last) return;
 
     for (let i = 0; i < last; i++) {
