@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.51
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -321,7 +321,8 @@ function clearMessages() {
             if (!(hasOriginalText || hasFriendRequest)) {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
                 spull.push({v: () => fetch(deleteURL).then(r => {
-                    console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
+                    console.log(r.status == 200 ? ++c : '', r.status, 'delete', id,
+                               html.querySelector('.list-messages').innerText.replace(/\n|\t/g, ' ').replace(/\ {2,}/g, ' ').trim());
                 }), p: 0});
             } else {
                 console.log(hasOriginalText, url);
