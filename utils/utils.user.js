@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.7.3
+// @version      1.7.4
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -282,4 +282,8 @@ function parseDataParams(str) {
         if (value) return parsed[1].split('+').map(p => ({[p]: value}));
     }).filter(_ => _);
     return Object.assign({}, ...params);
+}
+
+function sanitizeStr(str) {
+    return str.replace(/\n|\t/, ' ').replace(/ {2,}/, ' ').trim().toLowerCase();
 }
