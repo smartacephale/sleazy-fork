@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4.7
+// @version      1.4.71
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -115,7 +115,7 @@ class CAMWHORES_RULES {
         const url = new URL((url_ || window.location).href);
         let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const { PAGINATION, PAGINATION_LAST } = this.CALC_CONTAINER(document_);
+        const { PAGINATION, PAGINATION_LAST } = this.CALC_CONTAINER(document_ || document);
         const el = PAGINATION?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
 
@@ -277,7 +277,6 @@ function clearMessages() {
     const last = parseInt(document.querySelector('.pagination-holder .last > a').href.match(/\d+/)?.[0]);
     if (!last) return;
 
-    console.log({last});
     for (let i = 0; i < last; i++) {
         spull.push({v: () =>
                     fetchHtml(messagesURL(i)).then(html_ => {
