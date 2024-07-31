@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4.5
+// @version      1.4.7
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1416745
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1419832
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
@@ -23,7 +23,7 @@
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
 /* globals $ VueUI Tick LSKDB  timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range parseDataParams
- DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime */
+ DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime sanitizeStr */
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -66,23 +66,24 @@ class CAMWHORES_RULES {
         this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
         this.IS_LOGGED_IN = document.querySelector('.member-links').innerText.includes('Log out');
 
-        this.CALC_CONTAINER();
+        Object.assign(this, this.CALC_CONTAINER());
         this.HAS_VIDEOS = !!this.CONTAINER;
 
         if (this.IS_FAVOURITES || this.IS_MEMBER_VIDEOS) {
             this.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
             watchDomChangesWithThrottle(document.querySelector('.content'), () => {
-                this.CALC_CONTAINER();
+                Object.assign(this, this.CALC_CONTAINER());
             }, 10);
         }
     }
 
-    CALC_CONTAINER = () => {
-        this.PAGINATION = Array.from(document.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
-        this.PAGINATION_LAST = parseInt(this.PAGINATION?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
-        this.CONTAINER = (this.PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
-                          this.PAGINATION?.parentElement.querySelector('.list-videos>div') ||
+    CALC_CONTAINER = (document_ = document) => {
+        const PAGINATION = Array.from(document_.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
+        const PAGINATION_LAST = parseInt(PAGINATION?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
+        const CONTAINER = (PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
+                          PAGINATION?.parentElement.querySelector('.list-videos>div') ||
                           document.querySelector('.list-videos>div'));
+        return { PAGINATION, PAGINATION_LAST, CONTAINER };
     }
 
     IS_PRIVATE(thumb) {
@@ -105,36 +106,30 @@ class CAMWHORES_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('.title').innerText.toLowerCase();
+        const title = sanitizeStr(thumb.querySelector('.title').innerText);
         const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText || '0');
-        return {
-            title,
-            duration
-        }
+        return { title, duration };
     }
 
     URL_DATA(url_, document_) {
-        const { href, pathname, search, origin } = url_ || window.location;
-        const url = new URL(href);
+        const url = new URL((url_ || window.location).href);
         let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const pag = document_ ? Array.from(document_?.querySelectorAll('.pagination')).pop() : this.PAGINATION;
-        const pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
-        const el = pag?.querySelector('a[data-block-id][data-parameters]');
+        const { PAGINATION, PAGINATION_LAST } = this.CALC_CONTAINER(document_);
+        const el = PAGINATION?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
-        const parsedDataParams = parseDataParams(dataParameters);
 
         const attrs = {
             mode: 'async',
             function: 'get_block',
-            block_id: el?.getAttribute('data-block-id')
+            block_id: el?.getAttribute('data-block-id'),
+            ...parseDataParams(dataParameters)
         };
 
-        Object.keys(attrs).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
-        Object.keys(parsedDataParams).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
+        Object.keys(attrs).forEach(k => url.searchParams.set(k, attrs[k]));
 
         const iteratable_url = n => {
-            Object.keys(parsedDataParams).forEach(k => k.includes('from') && url.searchParams.set(k, n));
+            Object.keys(attrs).forEach(k => k.includes('from') && url.searchParams.set(k, n));
             url.searchParams.set('_', Date.now());
             return url.href;
         }
@@ -142,7 +137,7 @@ class CAMWHORES_RULES {
         return {
             offset,
             iteratable_url,
-            pag_last
+            pag_last: PAGINATION_LAST
         };
     }
 }
@@ -175,8 +170,7 @@ function animate() {
 function downloader() {
     function tryDownloadVideo() {
         waitForElementExists(document.body, 'video', (video) => {
-            const url = video.getAttribute('src');
-            window.location.href = url;
+            window.location.href = video.getAttribute('src');
         });
     }
 
@@ -283,6 +277,7 @@ function clearMessages() {
     const last = parseInt(document.querySelector('.pagination-holder .last > a').href.match(/\d+/)?.[0]);
     if (!last) return;
 
+    console.log({last});
     for (let i = 0; i < last; i++) {
         spull.push({v: () =>
                     fetchHtml(messagesURL(i)).then(html_ => {
