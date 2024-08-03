@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.6.5
+// @version      1.6.6
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -20,7 +20,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/493946/SpankBangcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493946/SpankBangcom%20Improved.meta.js
 // ==/UserScript==
-/* globals DefaultState parseDOM DataManager PaginationManager VueUI */
+/* globals DefaultState parseDOM DataManager PaginationManager VueUI sanitizeStr */
 
 const LOGO = `
 ⡕⡧⡳⡽⣿⣇⠀⢀⠀⠄⠐⡐⠌⡂⡂⠠⠀⠠⠀⠠⠀⠠⡐⡆⡇⣇⢎⢆⠆⠌⢯⡷⡥⡂⡐⠨⣻⣳⢽⢝⣵⡫⣗⢯⣺⢵⢹⡪⡳⣝⢮⡳⣿⣿⣿⣿⣿⣿⣿⣿
@@ -74,24 +74,22 @@ class SPANKBANG_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('span.n, a.n')?.innerText.toLowerCase() || "";
+        const title = sanitizeStr(thumb.querySelector('span.n, a.n')?.innerText);
         const duration = (parseInt(thumb.querySelector('span.l')?.innerText) || 1) * 60;
-        return {
-            title,
-            duration
-        }
+        return { title, duration };
     }
 
     URL_DATA() {
-        const { href, pathname, search, origin } = window.location;
-        const mres = pathname.split(/\/(\d+)\/?$/);
-        const basePathname = mres[0];
-        const offset = parseInt(mres[1]) || 1;
-        const iteratable_url = n => `${origin}${basePathname}/${n}/${search}`;
-        return {
-            offset,
-            iteratable_url
+        const url = new URL(window.location.href);
+        const offset = parseInt(url.pathname.match(/\/(\d+)\/$/)?.pop()) || 1;
+        if (!/\/\d+\/$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
+
+        const iteratable_url = n => {
+            url.pathname = url.pathname.replace(/\/\d+\/$/, `/${n}/`);
+            return url.href;
         };
+
+        return { offset, iteratable_url };
     }
 }
 
@@ -165,3 +163,4 @@ if (RULES.HAS_VIDEOS) {
 if (RULES.PAGINATION) {
     const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
+
