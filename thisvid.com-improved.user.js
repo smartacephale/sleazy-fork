@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.6.33
+// @version      4.6.4
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -121,18 +121,20 @@ class THISVID_RULES {
     }
 
     URL_DATA(proxyLocation) {
-        const { origin, pathname, search } = proxyLocation || window.location;
+        const url = new URL(proxyLocation || window.location);
 
-        let offset = parseInt(pathname.split(/(\d+\/)$/)[1] || '1');
+        const offset = this.IS_PLAYLIST ? 1 : (parseInt(url.pathname.match(/\d+/)?.[0]) || 1);
 
-        let pathname_ = pathname.split(/(\d+\/)$/)[0];
-        if (pathname === '/') pathname_ = '/latest-updates/';
+        if (url.pathname === '/') url.pathname = '/latest-updates/';
+        if (!/\d+/.test(url.pathname)) url.pathname = `${url.pathname}${offset}/`;
 
-        let iteratable_url = (n) => `${origin}${pathname_}${n}/${search}`;
-
-        if (/^\/playlist\/\d+\/video\//.test(pathname)) {
-            offset = 1;
-            iteratable_url = n => `${origin}${pathname}?mode=async&function=get_block&block_id=playlist_view_playlist_view&sort_by=added2fav_date&from=${n}&_=${Date.now()}`;
+        const iteratable_url = (n) => {
+            if (this.IS_PLAYLIST) {
+                url.search = `mode=async&function=get_block&block_id=playlist_view_playlist_view&sort_by=added2fav_date&from=${n}&_=${Date.now()}`;
+            } else {
+                url.pathname = url.pathname.replace(/\d+/, n);
+            }
+            return url.href;
         }
 
         return {
