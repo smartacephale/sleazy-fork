@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.7.4
+// @version      1.8
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -26,16 +26,14 @@ const MOBILE_UA = [
     'AppleWebKit/537.36 (KHTML, like Gecko)',
     'Chrome/114.0.0.0 Mobile Safari/537.36'].join(' ');
 
-function fetchCustomUA(url, ua = MOBILE_UA) {
-    const headers = new Headers({ "User-Agent": ua });
-    return fetch(url, { headers });
+function fetchWith(url, options = { html: false, mobile: false }) {
+    const reqOpts = {};
+    if (options.mobile) Object.assign(reqOpts, { headers: new Headers({ "User-Agent": MOBILE_UA }) });
+    return fetch(url, reqOpts).then((r) => r.text()).then(r => options.html ? parseDOM(r) : r);
 }
 
-function fetchMobHtml(url) { return fetchCustomUA(url).then((r) => r.text()).then((h) => parseDOM(h)); }
-
-function fetchHtml(url) { return fetch(url).then((r) => r.text()).then((h) => parseDOM(h)); }
-
-function fetchText(url) { return fetch(url).then((r) => r.text()); }
+const fetchHtml = (url) => fetchWith(url, { html: true });
+const fetchText = (url) => fetchWith(url);
 
 function wait(milliseconds) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
@@ -286,4 +284,12 @@ function parseDataParams(str) {
 
 function sanitizeStr(str) {
     return str.replace(/\n|\t/, ' ').replace(/ {2,}/, ' ').trim().toLowerCase();
+}
+
+function chunks(arr, n) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += n) {
+        res.push(arr.slice(i, i + n));
+    }
+    return res;
 }
