@@ -2,7 +2,7 @@
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.6.5
+// @version      1.6.6
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -21,7 +21,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
 // ==/UserScript==
-/* globals findNextSibling watchElementChildrenCount timeToSeconds getAllUniqueParents DataManager PaginationManager VueUI DefaultState */
+/* globals findNextSibling watchElementChildrenCount timeToSeconds sanitizeStr getAllUniqueParents DataManager PaginationManager VueUI DefaultState */
 
 const LOGO = `
 ⣞⣞⣞⣞⣞⣞⣞⣞⢞⣖⢔⠌⢆⠇⡇⢇⡓⡆⢠⠰⠠⡄⡄⡠⡀⡄⣄⠢⡂⡆⢆⢆⢒⢔⢕⢜⢔⢕⢕⢗⣗⢗⢗⢕⠕⠕⢔⢲⣲⢮⣺⣺⡺⡸⡪⡚⢎⢎⢺⢪
@@ -81,26 +81,21 @@ class PORNHUB_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('span.title').innerText.toLowerCase();
-        const duration = timeToSeconds(thumb.querySelector('.duration').innerText);
-        return {
-            title,
-            duration,
-        };
+        const title = sanitizeStr(thumb.querySelector('span.title')?.innerText);
+        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
+        return { title, duration };
     }
 
     URL_DATA() {
-        const { origin, pathname, href } = window.location;
         const url = new URL(window.location.href);
         const offset = parseInt(url.searchParams.get('page')) || 1;
+
         const iteratable_url = n => {
             url.searchParams.set('page', n);
             return url.href;
         }
-        return {
-            offset,
-            iteratable_url
-        }
+
+        return { offset, iteratable_url }
     }
 }
 
