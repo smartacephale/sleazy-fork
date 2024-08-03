@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.8
+// @version      1.8.1
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -87,10 +87,10 @@ async function computeAsyncOneAtTime(iterable) {
 }
 
 function timeToSeconds(t) {
-    return (t.match(/\d+/gm) || ['0'])
+    return (t?.match(/\d+/gm) || [0])
         .reverse()
         .map((s, i) => parseInt(s) * 60 ** i)
-        .reduce((a, b) => a + b) || 0;
+        .reduce((a, b) => a + b);
 }
 
 function parseIntegerOr(n, or) {
