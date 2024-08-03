@@ -2,7 +2,7 @@
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      2.2.31
+// @version      2.3
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -23,7 +23,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.meta.js
 // ==/UserScript==
-/* globals getAllUniqueParents watchElementChildrenCount timeToSeconds Observer DefaultState DataManager PaginationManager VueUI */
+/* globals getAllUniqueParents watchElementChildrenCount timeToSeconds Observer DefaultState DataManager PaginationManager VueUI sanitizeStr */
 
 if (!/^(\w{2}.)?xhamster.(com|desi)/.test(window.location.host)) return;
 
@@ -62,7 +62,8 @@ class XHAMSTER_RULES {
     constructor() {
         this.IS_VIDEO_PAGE = /^\/videos|moments\//.test(window.location.pathname);
         this.PAGINATION = document.querySelector('.prev-next-list, .test-pager');
-        this.PAGINATION_LAST = parseInt(Array.from((this.PAGINATION || document).querySelectorAll('.page-button-link, .xh-paginator-button')).pop()?.innerText);
+        this.PAGINATION_LAST = parseInt(Array.from(
+            (this.PAGINATION || document).querySelectorAll('.page-button-link, .xh-paginator-button')).pop()?.innerText.replace(/\,/g, ''));
         this.CONTAINER = Array.from(document.querySelectorAll('.thumb-list')).pop();
     }
 
@@ -83,38 +84,27 @@ class XHAMSTER_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('.video-thumb-info__name').innerText.toLowerCase();
+        const title = sanitizeStr(thumb.querySelector('.video-thumb-info__name').innerText);
         const duration = timeToSeconds(thumb.querySelector('.thumb-image-container__duration').innerText);
-        return {
-            title,
-            duration,
-        };
+        return { title, duration }
     }
 
     URL_DATA() {
-        const { origin, pathname, href } = window.location;
+        const url = new URL(window.location.href);
+        const offset = parseInt(url.searchParams.get('page') ||
+              url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 1;
+        if (!/\/\d+\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
 
-        let offset = 1;
-        let iteratable_url = () => "";
-
-        if (/^\/search\//.test(pathname)) {
-            const url = new URL(href);
-            offset = parseInt(url.searchParams.get('page')) || 1;
-            iteratable_url = n => {
+        const iteratable_url = n => {
+            if (/^\/search\//.test(url.pathname)) {
                 url.searchParams.set('page', n);
-                return url.href;
-            };
-        } else {
-            const mres = location.pathname.split(/\/(\d+)$/);
-            const base = mres[0];
-            if (mres[1]) offset = parseInt(mres[1]);
-            iteratable_url = n => `${origin}${base}/${n}`;
+            } else {
+                url.pathname = url.pathname.replace(/\/\d+\/?$/, `/${n}/`);
+            }
+            return url.href;
         }
 
-        return {
-            offset,
-            iteratable_url
-        }
+        return { offset, iteratable_url }
     }
 }
 
