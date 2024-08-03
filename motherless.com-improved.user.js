@@ -4,14 +4,14 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.6.91
+// @version      2.7
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1414482
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421601
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
@@ -21,7 +21,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ Tick fetchMobHtml replaceElementTag timeToSeconds DefaultState DataManager PaginationManager VueUI getAllUniqueParents */
+/* globals $ Tick fetchWith sanitizeStr replaceElementTag timeToSeconds DefaultState DataManager PaginationManager VueUI getAllUniqueParents */
 
 const LOGO = `
 ⡿⣹⡝⣯⡝⣯⡝⣯⠽⣭⢻⣭⢻⣭⢻⣭⢻⡭⢯⡽⡭⢏⡳⣍⡛⡜⡍⢎⡱⢊⠖⡱⢊⡖⣱⢊⠶⡱⢎⠶⣩⣿⢣⠝⣺⢿⣹⣷⣿⣿⣿⣿⢠⢃⠦⡑⢢⠜⣐⠢
@@ -64,9 +64,9 @@ class MOTHERLESS_RULES {
     THUMB_URL(thumb) { return thumb.querySelector('.img-container').href; };
 
     THUMB_DATA(thumb) {
-        const uploader = (thumb.querySelector('.uploader')?.innerText || "").toLowerCase().trim();
-        const title = (thumb.querySelector('.title')?.innerText || "").toLowerCase().replace(/\n/, ' ').replace(/\ {2,}/, ' ');
-        const duration = timeToSeconds(thumb.querySelector('.size')?.innerText || "0");
+        const uploader = sanitizeStr(thumb.querySelector('.uploader')?.innerText);
+        const title = sanitizeStr(thumb.querySelector('.title')?.innerText);
+        const duration = timeToSeconds(thumb.querySelector('.size')?.innerText);
         return {
             title: `${title} ${uploader}`,
             duration
@@ -79,10 +79,9 @@ class MOTHERLESS_RULES {
     }
 
     URL_DATA() {
-        const { origin, pathname, search, href } = window.location;
-        const url = new URL(href);
-
+        const url = new URL(window.location.href);
         const offset = parseInt(url.searchParams.get('page')) || 1;
+
         const iteratable_url = (n) => {
             url.searchParams.set('page', n);
             return url.href;
@@ -189,7 +188,7 @@ async function desktopAddMobGalleries() {
     if (galleries) {
         const galleriesContainer = galleries.querySelector('.content-inner');
         const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
-        const mobDom = await fetchMobHtml(window.location.href);
+        const mobDom = await fetchWith(window.location.href, { html: true, mobile: true });
         const mobGalleries = mobDom.querySelectorAll('.ml-gallery-thumb');
         for (const [i, x] of mobGalleries.entries()) {
             if (i > galleriesCount - 1) {
