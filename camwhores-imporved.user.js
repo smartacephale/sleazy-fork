@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4.71
+// @version      1.5
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1419832
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421630
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
@@ -22,8 +22,8 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
-/* globals $ VueUI Tick LSKDB  timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range parseDataParams
- DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime sanitizeStr */
+/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range parseDataParams
+ DataManager PaginationManager watchDomChangesWithThrottle downloader objectToFormData SyncPull computeAsyncOneAtTime sanitizeStr */
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -81,8 +81,8 @@ class CAMWHORES_RULES {
         const PAGINATION = Array.from(document_.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
         const PAGINATION_LAST = parseInt(PAGINATION?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         const CONTAINER = (PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
-                          PAGINATION?.parentElement.querySelector('.list-videos>div') ||
-                          document.querySelector('.list-videos>div'));
+                           PAGINATION?.parentElement.querySelector('.list-videos>div') ||
+                           document.querySelector('.list-videos>div'));
         return { PAGINATION, PAGINATION_LAST, CONTAINER };
     }
 
@@ -107,7 +107,7 @@ class CAMWHORES_RULES {
 
     THUMB_DATA(thumb) {
         const title = sanitizeStr(thumb.querySelector('.title').innerText);
-        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText || '0');
+        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
         return { title, duration };
     }
 
@@ -137,7 +137,7 @@ class CAMWHORES_RULES {
         return {
             offset,
             iteratable_url,
-            pag_last: PAGINATION_LAST
+            PAGINATION_LAST
         };
     }
 }
@@ -167,17 +167,10 @@ function animate() {
 
 //====================================================================================================
 
-function downloader() {
-    function tryDownloadVideo() {
-        waitForElementExists(document.body, 'video', (video) => {
-            window.location.href = video.getAttribute('src');
-        });
-    }
-
-    const btn = $('<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>');
-    $('.tabs-menu > ul').append(btn);
-    btn.on('click', tryDownloadVideo);
-}
+const createDownloadButton = () => downloader({
+    append: '.tabs-menu > ul',
+    button: '<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>'
+})
 
 //====================================================================================================
 
@@ -214,8 +207,8 @@ function getMemberLinks(document) {
 async function getMemberFriends(id) {
     const url = `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
-    const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
-    const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
+    const { offset, iteratable_url, PAGINATION_LAST } = RULES.URL_DATA(new URL(url), document_);
+    const pages = PAGINATION_LAST ? range(PAGINATION_LAST, 1).map(u => iteratable_url(u)) : [url];
     const friendlist = (await computeAsyncOneAtTime(pages.map(p => () => fetchHtml(p)))).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
     friendlist.forEach(m => lskdb.setKey(m));
     await processFriendship();
@@ -253,10 +246,7 @@ function createFriendButton() {
 function getUserInfo(document) {
     const uploadedCount = parseInt(document.querySelector('#list_videos_uploaded_videos strong')?.innerText.match(/\d+/)[0]) || 0;
     const friendsCount = parseInt(document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/).pop()) || 0;
-    return {
-        uploadedCount,
-        friendsCount
-    }
+    return { uploadedCount, friendsCount }
 }
 
 async function acceptFriendRequest(id) {
@@ -329,7 +319,7 @@ function route() {
     }
 
     if (RULES.IS_VIDEO_PAGE) {
-        downloader();
+        createDownloadButton();
     }
 
     if (RULES.IS_MESSAGES) {
