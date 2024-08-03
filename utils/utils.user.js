@@ -283,7 +283,7 @@ function parseDataParams(str) {
 }
 
 function sanitizeStr(str) {
-    return str.replace(/\n|\t/, ' ').replace(/ {2,}/, ' ').trim().toLowerCase();
+    return str?.replace(/\n|\t/, ' ').replace(/ {2,}/, ' ').trim().toLowerCase() || "";
 }
 
 function chunks(arr, n) {
