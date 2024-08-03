@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.6.5
+// @version      4.7
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -10,7 +10,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421582
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421630
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
@@ -21,9 +21,8 @@
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ listenEvents chunks range Tick waitForElementExists
-     timeToSeconds parseDOM parseCSSUrl circularShift fetchHtml fetchWith replaceElementTag
-     DataManager PaginationManager VueUI DefaultState LSKDB */
+/* globals $ listenEvents chunks range Tick downloader timeToSeconds parseDOM parseCSSUrl circularShift fetchHtml
+ fetchWith replaceElementTag DataManager PaginationManager VueUI DefaultState LSKDB */
 
 const SponsaaLogo = `
      Kono bangumi ha(wa) goran no suponsaa no teikyou de okurishimasu⣿⣿⣿⣿
@@ -122,25 +121,21 @@ class THISVID_RULES {
 
     URL_DATA(proxyLocation) {
         const url = new URL(proxyLocation || window.location);
-
-        const offset = this.IS_PLAYLIST ? 1 : (parseInt(url.pathname.match(/\d+/)?.[0]) || 1);
+        const offset = this.IS_PLAYLIST ? 1 : (parseInt(url.pathname.match(/\d+\/?$/)?.[0]) || 1);
 
         if (url.pathname === '/') url.pathname = '/latest-updates/';
-        if (!/\d+/.test(url.pathname)) url.pathname = `${url.pathname}${offset}/`;
+        if (!/\d+\/$/.test(url.pathname)) url.pathname = `${url.pathname}${offset}/`;
 
         const iteratable_url = (n) => {
             if (this.IS_PLAYLIST) {
                 url.search = `mode=async&function=get_block&block_id=playlist_view_playlist_view&sort_by=added2fav_date&from=${n}&_=${Date.now()}`;
             } else {
-                url.pathname = url.pathname.replace(/\d+/, n);
+                url.pathname = url.pathname.replace(/\/\d+\/$/, `/${n}/`);
             }
             return url.href;
         }
 
-        return {
-            offset,
-            iteratable_url
-        }
+        return { offset, iteratable_url }
     }
 
     THUMB_IMG_DATA(thumb) {
@@ -321,18 +316,12 @@ function checkPrivateVidsAccess() {
 
 //====================================================================================================
 
-function downloader() {
-    function getVideoAndDownload() {
-        $('.fp-ui').click();
-        waitForElementExists(document.body, 'video', (video) => {
-            const url = video.getAttribute('src');
-            window.location.href = url;
-        });
-    }
-    const btn = $('<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>');
-    $('.share_btn').after(btn);
-    btn.on('click', getVideoAndDownload);
-}
+const createDownloadButton = () => downloader({
+    append: '',
+    after: '.share_btn',
+    button: '<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>',
+    cbBefore: () => $('.fp-ui').click()
+})
 
 //====================================================================================================
 
@@ -602,7 +591,7 @@ function route() {
         highlightMessages();
     }
 
-    if (RULES.IS_VIDEO_PAGE) downloader();
+    if (RULES.IS_VIDEO_PAGE) createDownloadButton();
 
     if (!RULES.PAGE_HAS_VIDEO) return;
 
