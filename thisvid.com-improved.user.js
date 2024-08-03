@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.6.4
+// @version      4.6.5
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -10,7 +10,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1414482
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421582
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
@@ -21,8 +21,8 @@
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ listenEvents range Tick waitForElementExists
-     timeToSeconds parseDOM fetchHtml parseCSSUrl circularShift fetchText replaceElementTag
+/* globals $ listenEvents chunks range Tick waitForElementExists
+     timeToSeconds parseDOM parseCSSUrl circularShift fetchHtml fetchWith replaceElementTag
      DataManager PaginationManager VueUI DefaultState LSKDB */
 
 const SponsaaLogo = `
@@ -189,7 +189,7 @@ const RULES = new THISVID_RULES();
 //====================================================================================================
 
 function friend(id, i = 0) {
-    return fetchText(FRIEND_REQUEST_URL(id)).then((text) => console.log(`#${i} * ${id}`, text));
+    return fetchWith(FRIEND_REQUEST_URL(id)).then((text) => console.log(`#${i} * ${id}`, text));
 }
 
 const FRIEND_REQUEST_URL = (id) => `https://thisvid.com/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
@@ -548,20 +548,12 @@ async function clearMessages() {
     const last = RULES.PAGINATION_LAST;
     const confirmed = [];
 
-    function chunks(arr, n) {
-        const res = [];
-        for (let i = 0; i < arr.length; i += n) {
-            res.push(arr.slice(i, i + n));
-        }
-        return res;
-    }
-
     let c = 0;
     const sortMsgs = (doc) => {
         doc.querySelectorAll('.entry').forEach(e => {
             const id = e.querySelector('input[name="delete[]"]').value;
             const msg = e.querySelector('.user-comment').innerText;
-            if (msg.includes('has confirmed your invitation') || msg.includes('has removed you from his')) {
+            if (msg.includes('has confirmed') || msg.includes('has removed')) {
                 confirmed.push(id);
             }
             if (msg.includes('declined your invitation')) {
@@ -622,7 +614,6 @@ function route() {
 
     new PreviewAnimation(document.body);
     new VueUI(state, stateLocale, true);
-
 
     if (RULES.IS_OTHER_MEMBER_PAGE) {
         initFriendship();
