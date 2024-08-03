@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.8.2
+// @version      1.8.3
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494206/utils.user.js
 // @updateURL https://update.greasyfork.org/scripts/494206/utils.meta.js
@@ -293,3 +293,21 @@ function chunks(arr, n) {
     }
     return res;
 }
+
+function downloader(options = { append: "", after: "", button: "", cbBefore: () => {} }) {
+    const btn = parseDOM(options.button);
+
+    if (options.append) document.querySelector(options.append).append(btn);
+    if (options.after) document.querySelector(options.after).after(btn);
+
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        if (options.cbBefore) options.cbBefore();
+
+        waitForElementExists(document.body, 'video', (video) => {
+            window.location.href = video.getAttribute('src');
+        });
+    });
+}
+
