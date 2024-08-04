@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.5
+// @version      1.5.6
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -21,7 +21,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.meta.js
 // ==/UserScript==
-/* globals $ timeToSeconds parseDOM DefaultState DataManager PaginationManager VueUI */
+/* globals $ timeToSeconds parseDOM DefaultState DataManager PaginationManager VueUI sanitizeStr */
 
 const LOGO = `
 ⡐⠠⠀⠠⠐⡀⠆⡐⠢⡐⠢⡁⢆⠡⢂⠱⡈⠔⣈⠒⡌⠰⡈⠔⢢⢁⠒⡰⠐⢢⠐⠄⣂⠐⡀⠄⢂⠰⠀⢆⡐⠢⢐⠰⡀⠒⢄⠢⠐⣀⠂⠄⢀⢂⠒⡰⠐⡂⠔⠂⡔⠂⡔⠂⡔⠂⡔⠂⢆⠡
@@ -79,7 +79,7 @@ class XVIDEOS_RULES {
     THUMB_URL(thumb) { return thumb.querySelector('.title a').innerText; }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('.title').innerText.toLowerCase();
+        const title = sanitizeStr(thumb.querySelector('.title').innerText);
         const durationEl = thumb.querySelector('.duration').innerText;
         const duration = parseInt(durationEl) * (durationEl.includes('m') ? 60 : 1);
 
@@ -88,35 +88,27 @@ class XVIDEOS_RULES {
             unsafeWindow.xv.thumbs.prepareVideo(id);
         }, 200);
 
-        return {
-            title,
-            duration
-        }
+        return { title, duration }
     }
 
     URL_DATA() {
-        const { href, pathname, search, origin } = window.location;
-        const url = new URL(href);
-        let offset;
-        let iteratable_url;
-
-        if (url.searchParams.get('k')) {
-            offset = parseInt(url.searchParams.get('p')) || 0;
-            iteratable_url = n => {
-                url.searchParams.set('p', n)
-                return url.href;
-            }
-        } else {
-            const mres = pathname.split(/\/(\d+)\/?$/);
-            const basePathname = pathname === '/' ? '/new' : mres[0];
-            offset = parseInt(mres[1]) || 0;
-            iteratable_url = n => `${origin}${basePathname}/${n}`;
+        const url = new URL(window.location.href);
+        const offset = parseInt(url.searchParams.get('p') || url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 0;
+        if (!url.searchParams.get('k')) {
+            if (url.pathname === '/') url.pathname = '/new';
+            if (!/\/(\d+)\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
         }
 
-        return {
-            offset,
-            iteratable_url
-        };
+        const iteratable_url = (n) => {
+            if (url.searchParams.get('k')) {
+                url.searchParams.set('p', n);
+            } else {
+                url.pathname = url.pathname.replace(/\/(\d+)\/?$/, `/${n}/`);
+            }
+            return url.href;
+        }
+
+        return { offset, iteratable_url }
     }
 }
 
