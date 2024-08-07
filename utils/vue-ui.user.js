@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      2.0
+// @version      2.0.1
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @updateURL https://update.greasyfork.org/scripts/494203/menu-ui.meta.js
@@ -132,7 +132,7 @@ class VueUI {
     <template v-if="!state.hidden">${parsed}</template>
   </div>`;
 
-    constructor(state, stateLocale, scheme) {
+    constructor(state, stateLocale, scheme=defaultScheme) {
         const root = parseDOM('<div id="tapermonkey-app" style="position: relative; z-index: 999999;"></div>');
         document.body.appendChild(root);
 
