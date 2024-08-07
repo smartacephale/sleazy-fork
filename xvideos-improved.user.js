@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.6
+// @version      1.6
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -15,7 +15,7 @@
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1403633
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
 // @downloadURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.user.js
