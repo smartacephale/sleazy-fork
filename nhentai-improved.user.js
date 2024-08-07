@@ -2,7 +2,7 @@
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.5.2
+// @version      1.6
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -15,12 +15,12 @@
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1404894
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1423690
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
 // ==/UserScript==
-/* globals DataManager PaginationManager VueUI DefaultState parseDOM */
+/* globals DataManager PaginationManager VueUI DefaultState parseDOM defaultScheme */
 
 const LOGO = `⠡⠡⠡⠡⠡⠅⠅⢥⢡⢡⢠⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⡥⠨⡨⠈⠌⠌⠌⠌⠌⠌⡐
 ⠡⢡⡃⡅⠅⠅⢅⢦⣂⡂⡒⡜⡈⡚⡂⡥⠡⠡⠡⠡⠡⠡⠡⠡⡡⠡⠡⠑⠅⠣⣕⠡⠡⡡⠡⠡⠡⠡⠡⠡⣡⣡⡡⠡⠡⡑⢑⠡⠡⠡⠡⠩⠩⠨⠩⢹⠨⠨⢐⢐
@@ -228,4 +228,7 @@ if (RULES.PAGINATION) {
     const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
 
-const ui = new VueUI(state, stateLocale);
+delete defaultScheme.durationFilter;
+const ui = new VueUI(state, stateLocale, defaultScheme);
+
+
