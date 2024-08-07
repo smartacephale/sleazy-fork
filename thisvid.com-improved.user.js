@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.7
+// @version      4.8
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -15,14 +15,14 @@
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1403633
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1423679
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
 /* globals $ listenEvents chunks range Tick downloader timeToSeconds parseDOM parseCSSUrl circularShift fetchHtml
- fetchWith replaceElementTag DataManager PaginationManager VueUI DefaultState LSKDB */
+ fetchWith replaceElementTag DataManager PaginationManager VueUI DefaultState LSKDB defaultSchemeWithPrivateFilter */
 
 const SponsaaLogo = `
      Kono bangumi ha(wa) goran no suponsaa no teikyou de okurishimasu⣿⣿⣿⣿
@@ -528,7 +528,7 @@ async function createPrivateFeed() {
     PaginationManager.prototype.createNextPageGenerator = () => pageGenerator();
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     new PreviewAnimation(document.body);
-    new VueUI(state, stateLocale);
+    new VueUI(state, stateLocale, defaultSchemeWithPrivateFilter);
 }
 
 //====================================================================================================
@@ -579,7 +579,8 @@ function route() {
     console.log(SponsaaLogo);
 
     if (RULES.LOGGED_IN) {
-        unsafeWindow.checkAccess = checkPrivateVidsAccess;
+        defaultSchemeWithPrivateFilter.privateFilter.push(
+            { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
     }
 
     if (RULES.IS_MY_MEMBER_PAGE) {
@@ -602,7 +603,7 @@ function route() {
     });
 
     new PreviewAnimation(document.body);
-    new VueUI(state, stateLocale, true);
+    new VueUI(state, stateLocale, defaultSchemeWithPrivateFilter);
 
     if (RULES.IS_OTHER_MEMBER_PAGE) {
         initFriendship();
