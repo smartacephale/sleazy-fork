@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      0.51
+// @version      1.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -10,20 +10,20 @@
 // @exclude      *.cambro.tv/*mode=async*
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1416745
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
+// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1403633
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cambro.tv
 // @downloadURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.meta.js
 // ==/UserScript==
-/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range parseDataParams
- DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime */
+/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range parseDataParams defaultSchemeWithPrivateFilter
+ DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime downloader */
 
 const LOGO = `
 ⣿⢽⡻⡽⣻⣽⣻⣻⣻⣻⣻⣻⣻⡻⣻⣻⣻⣻⣻⣻⣻⣻⣟⢿⣻⣟⣿⣻⣟⣿⣻⣟⣿⣻⣟⣿⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⡽⣯
@@ -133,30 +133,25 @@ class CAMWHORES_RULES {
 
         if (RULES.IS_COMMUNITY_LIST) {
             pag = document.querySelector('.pagination');
-            pag_last = 5000;
+            pag_last = 50;
         }
 
         const el = pag?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
-        const parsedDataParams = parseDataParams(dataParameters);
-
 
         const attrs = {
             mode: 'async',
             function: 'get_block',
-            block_id: el?.getAttribute('data-block-id')
+            block_id: el?.getAttribute('data-block-id'),
+            ...parseDataParams(dataParameters)
         };
 
-        Object.keys(attrs).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
-        Object.keys(parsedDataParams).forEach(k => attrs[k] && url.searchParams.set(k, attrs[k]));
-
-        const paggeable = Object.keys(parsedDataParams).some(k => k.includes('from'));
-        if (!paggeable) pag_last = 1;
+        Object.keys(attrs).forEach(k => url.searchParams.set(k, attrs[k]));
 
         const iteratable_url = n => {
-            Object.keys(parsedDataParams).forEach(k => k.includes('from') && url.searchParams.set(k, n));
+            Object.keys(attrs).forEach(k => k.includes('from') && url.searchParams.set(k, n));
             url.searchParams.set('_', Date.now());
-            return paggeable ? url.href : (url_ || window.location.href);
+            return url.href;
         }
 
         return {
@@ -190,20 +185,14 @@ function animate() {
     });
 }
 
+
 //====================================================================================================
 
-function downloader() {
-    function tryDownloadVideo() {
-        $('.fp-ui').click();
-        waitForElementExists(document.body, 'video', (video) => {
-            const url = video.getAttribute('src');
-            window.location.href = url;
-        });
-    }
-    const btn = $('<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>');
-    $('.tabs-menu > ul').append(btn);
-    btn.on('click', tryDownloadVideo);
-}
+const createDownloadButton = () => downloader({
+    append: '.tabs-menu > ul',
+    button: '<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>',
+    cbBefore: () => $('.fp-ui').click()
+})
 
 //====================================================================================================
 
@@ -277,6 +266,20 @@ function createFriendButton() {
 
 //====================================================================================================
 
+const greenItem = 'linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green';
+const redItem = 'linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red';
+
+function checkPrivateVidsAccess() {
+    document.querySelectorAll('.item.private').forEach(async item => {
+        const videoURL = item.firstElementChild.href;
+        const doc = await fetchHtml(videoURL);
+        const haveAccess = !/This video is a private video uploaded by/ig.test(doc?.innerText);
+        item.style.background = haveAccess ? greenItem : redItem;
+    });
+}
+
+//====================================================================================================
+
 function getUserInfo(document) {
     const uploadedCount = parseInt(document.querySelector('#list_videos_uploaded_videos strong')?.innerText.match(/\d+/)[0]) || 0;
     const friendsCount = parseInt(document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/).pop()) || 0;
@@ -322,7 +325,7 @@ function clearMessages() {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
                 spull.push({v: () => fetch(deleteURL).then(r => {
                     console.log(r.status == 200 ? ++c : '', r.status, 'delete', id,
-                               html.querySelector('.list-messages').innerText.replace(/\n|\t/g, ' ').replace(/\ {2,}/g, ' ').trim());
+                                html.querySelector('.list-messages').innerText.replace(/\n|\t/g, ' ').replace(/\ {2,}/g, ' ').trim());
                 }), p: 0});
             } else {
                 console.log(hasOriginalText, url);
@@ -342,6 +345,8 @@ function route() {
         if (RULES.IS_MEMBER_PAGE || RULES.IS_COMMUNITY_LIST) {
             createFriendButton();
         }
+        defaultSchemeWithPrivateFilter.privateFilter.push(
+            { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
     }
 
     if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
@@ -352,12 +357,12 @@ function route() {
     if (RULES.HAS_VIDEOS) {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
-        const ui = new VueUI(state, stateLocale);
+        const ui = new VueUI(state, stateLocale, defaultSchemeWithPrivateFilter);
         animate();
     }
 
     if (RULES.IS_VIDEO_PAGE) {
-        downloader();
+        createDownloadButton();
     }
 
     if (RULES.IS_MESSAGES) {
