@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.8
+// @version      4.8.1
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -15,7 +15,7 @@
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1423679
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1424368
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
@@ -450,20 +450,23 @@ async function createPrivateFeed() {
     if (!window.location.pathname.includes('my_wall')) return;
     const container = parseDOM('<div class="thumbs-items"></div>');
     const ignored = parseDOM('<div class="ignored"><h2>IGNORED:</h2></div>');
-    const controls = parseDOM(`<div class="ignored">
-         <button onClick="skip(event, 10)">skip 10</button>
-         <button onClick="skip(event, 100)">skip 100</button>
-         <button onClick="skip(event, 1000)">skip 1000</button>
-         <button onClick="filterVidsCount(event, 10)">filter >10 videos</button>
-         <button onClick="filterVidsCount(event, 50)">filter >50 videos</button>
-         <button onClick="filterVidsCount(event, 100)">filter >100 videos</button>
-         </div>`);
+
+    Object.assign(defaultSchemeWithPrivateFilter, {
+        controlsSkip: [
+            { type: "button", innerText: "skip 10", callback: async () => skip(event, 10) },
+            { type: "button", innerText: "skip 100", callback: async () => skip(event, 100) },
+            { type: "button", innerText: "skip 1000", callback: async () => skip(event, 1000) }],
+        controlsFilter: [
+            { type: "button", innerText: "filter >10", callback: async () => filterVidsCount(event, 10) },
+            { type: "button", innerText: "filter >25", callback: async () => filterVidsCount(event, 25) },
+            { type: "button", innerText: "filter >100", callback: async () => filterVidsCount(event, 100) },
+        ] });
+
     const containerParent = document.querySelector('.main > .container > .content');
     containerParent.innerHTML = '';
     containerParent.nextElementSibling.remove()
     containerParent.append(container);
     container.before(ignored);
-    ignored.after(controls);
     GM_addStyle(`.content { width: auto; }
     .member-videos, .ignored { background: #b3b3b324; min-height: 3rem; margin: 1rem 0px; color: #fff; font-size: 1.24rem; display: flex; flex-wrap: wrap; justify-content: center;
       padding: 10px; width: 100%; }
@@ -492,7 +495,7 @@ async function createPrivateFeed() {
         document.querySelector('.ignored').append(parseDOM(`<button id="#ir-${im}" onClick="unignore(event)">${im} 🗡</button>`));
     });
 
-    unsafeWindow.skip = (e, n) => {
+    const skip = (e, n) => {
         skipCurrentMember(n);
         document.querySelector('.thumbs-items').innerHTML = '';
     }
@@ -521,7 +524,7 @@ async function createPrivateFeed() {
         e.target.remove();
     }
 
-    unsafeWindow.filterVidsCount = (e, count) => {
+    const filterVidsCount = (e, count) => {
         filterVideosCount(count);
     }
 
