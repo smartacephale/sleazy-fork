@@ -4,19 +4,19 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.7.1
+// @version      2.7.2
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
 // @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
+// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421630
 // @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
+// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1404894
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1403464
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1424368
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
