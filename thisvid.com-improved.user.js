@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.8.2
+// @version      4.8.3
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -21,7 +21,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ listenEvents chunks range Tick downloader timeToSeconds parseDOM parseCSSUrl circularShift fetchHtml
+/* globals $ listenEvents chunks range Tick downloader timeToSeconds parseDOM parseCSSUrl circularShift fetchHtml sanitizeStr
  fetchWith replaceElementTag DataManager PaginationManager VueUI DefaultState LSKDB defaultSchemeWithPrivateFilter */
 
 const SponsaaLogo = `
@@ -166,12 +166,9 @@ class THISVID_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('.title').innerText.toLowerCase();
+        const title = sanitizeStr(thumb.querySelector('.title').innerText);
         const duration = timeToSeconds(thumb.querySelector('.thumb > .duration').textContent);
-        return {
-            title,
-            duration
-        }
+        return { title, duration }
     }
 
     IS_PRIVATE(thumbElement) {
@@ -364,8 +361,6 @@ function highlightMessages() {
 //====================================================================================================
 
 const lskdb = new LSKDB();
-const PRIVATE_FEED_KEY = 'prv-feed';
-const PUBLIC_FEED_KEY = 'pub-feed';
 
 async function getMemberVideos(id, type = 'private') {
     const url = `https://thisvid.com/members/${id}/${type}_videos/`;
