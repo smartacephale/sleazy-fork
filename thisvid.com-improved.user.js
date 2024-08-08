@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.8.1
+// @version      4.8.2
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -432,22 +432,16 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
 
 function createPrivateFeedButton() {
     const container = document.querySelectorAll('.sidebar ul')[1];
-    const buttonPrv = parseDOM(`<li><a href="https://thisvid.com/my_wall/" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`);
-    const buttonPub = parseDOM(`<li><a href="https://thisvid.com/my_wall/" class="selective"><i class="ico-arrow"></i>My Friends Public Videos</a></li>`);
-    buttonPrv.addEventListener('click', () => lskdb.setKey(PRIVATE_FEED_KEY));
-    buttonPub.addEventListener('click', () => lskdb.setKey(PUBLIC_FEED_KEY));
+    const buttonPrv = parseDOM(`<li><a href="https://thisvid.com/my_wall/#private_feed" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`);
+    const buttonPub = parseDOM(`<li><a href="https://thisvid.com/my_wall/#public_feed" class="selective"><i class="ico-arrow"></i>My Friends Public Videos</a></li>`);
     container.append(buttonPub, buttonPrv);
-};
+}
 
 async function createPrivateFeed() {
     createPrivateFeedButton();
-    const key = lskdb.hasKey(PRIVATE_FEED_KEY) || lskdb.hasKey(PUBLIC_FEED_KEY);
-    if (!key) return;
-    const isPubKey = !!lskdb.hasKey(PUBLIC_FEED_KEY);
-    lskdb.removeKey(PRIVATE_FEED_KEY);
-    lskdb.removeKey(PUBLIC_FEED_KEY);
+    if (!window.location.hash.includes('feed')) return;
+    const isPubKey = window.location.hash === '#public_feed';
 
-    if (!window.location.pathname.includes('my_wall')) return;
     const container = parseDOM('<div class="thumbs-items"></div>');
     const ignored = parseDOM('<div class="ignored"><h2>IGNORED:</h2></div>');
 
