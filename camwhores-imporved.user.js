@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.7
+// @version      1.7.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -250,7 +250,7 @@ function checkPrivateVidsAccess() {
     document.querySelectorAll('.item.private').forEach(async item => {
         const videoURL = item.firstElementChild.href;
         const doc = await fetchHtml(videoURL);
-        const haveAccess = /This video is a private video uploaded by/ig.test(doc?.innerText);
+        const haveAccess = !/This video is a private video uploaded by/ig.test(doc?.innerText);
         item.style.background = haveAccess ? greenItem : redItem;
     });
 }
