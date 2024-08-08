@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -15,7 +15,7 @@
 // @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
+// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1423906
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cambro.tv
