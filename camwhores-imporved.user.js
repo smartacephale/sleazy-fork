@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.6
+// @version      1.7
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -243,9 +243,24 @@ function createFriendButton() {
 
 //====================================================================================================
 
+const greenItem = 'linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green';
+const redItem = 'linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red';
+
+function checkPrivateVidsAccess() {
+    document.querySelectorAll('.item.private').forEach(async item => {
+        const videoURL = item.firstElementChild.href;
+        const doc = await fetchHtml(videoURL);
+        const haveAccess = /This video is a private video uploaded by/ig.test(doc?.innerText);
+        item.style.background = haveAccess ? greenItem : redItem;
+    });
+}
+
+//====================================================================================================
+
 function getUserInfo(document) {
     const uploadedCount = parseInt(document.querySelector('#list_videos_uploaded_videos strong')?.innerText.match(/\d+/)[0]) || 0;
     const friendsCount = parseInt(document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/).pop()) || 0;
+    // const isFriend = /is in your friends list/gi.test(document.body.innerText);
     return { uploadedCount, friendsCount }
 }
 
@@ -314,6 +329,8 @@ function route() {
     if (RULES.HAS_VIDEOS) {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
+        defaultSchemeWithPrivateFilter.privateFilter.push(
+            { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
         const ui = new VueUI(state, stateLocale, defaultSchemeWithPrivateFilter);
         animate();
     }
