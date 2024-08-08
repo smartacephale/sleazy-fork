@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      2.1
+// @version      2.11
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @updateURL https://update.greasyfork.org/scripts/494203/menu-ui.meta.js
@@ -88,7 +88,7 @@ function schemeParser(scheme) {
 
         const propsToTags = Object.entries(props).filter(([_, v]) => v).map(([k, v]) => `${k}="${v}"`).join(" ");
 
-        const dom = `<${tag} ${propsToTags}>${innerText || ''}${isInput ? '' : `</+ ${tag}>`}`;
+        const dom = `<${tag} ${propsToTags}>${innerText || ''}${isInput ? '' : `</${tag}>`}`;
 
         let res = dom;
         if (label || labelBefore) {
