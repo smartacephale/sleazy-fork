@@ -4,10 +4,9 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2.1
+// @version      1.2.2
 // @match        *://*/*
-// @downloadURL https://update.greasyfork.org/scripts/494204/data-manager.user.js
-// @updateURL https://update.greasyfork.org/scripts/494204/data-manager.meta.js
+// @downloadURL none
 // ==/UserScript==
 /* globals LazyImgLoader stringToWords GM_addStyle */
 
@@ -115,8 +114,9 @@ class DataManager {
         const runFilters = [];
 
         for (const f of Object.keys(filters)) {
-            runFilters.push(this.dataFilters[f].createFilter());
+            this.dataFilters.hasOwnProperty(f) && runFilters.push(this.dataFilters[f].createFilter());
         }
+        console.log({runFilters});
 
         let offset_counter = 1;
         for (const v of this.data.values()) {
