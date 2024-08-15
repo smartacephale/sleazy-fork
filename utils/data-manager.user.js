@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.2.2
+// @version      1.2.3
 // @match        *://*/*
 // @downloadURL none
 // ==/UserScript==
@@ -116,7 +116,6 @@ class DataManager {
         for (const f of Object.keys(filters)) {
             this.dataFilters.hasOwnProperty(f) && runFilters.push(this.dataFilters[f].createFilter());
         }
-        console.log({runFilters});
 
         let offset_counter = 1;
         for (const v of this.data.values()) {
