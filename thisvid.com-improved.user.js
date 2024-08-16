@@ -2,27 +2,30 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.8.3
+// @version      4.9
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421630
-// @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1403631
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
+// @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.3.0/dist/jabroni-outfit.umd.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1424368
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ listenEvents chunks range Tick downloader timeToSeconds parseDOM parseCSSUrl circularShift fetchHtml sanitizeStr
- fetchWith replaceElementTag DataManager PaginationManager VueUI DefaultState LSKDB defaultSchemeWithPrivateFilter */
+/* globals $ DataManager PaginationManager LSKDB */
+
+const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
+       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
+      } = window.bhutils;
+const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 
 const SponsaaLogo = `
      Kono bangumi ha(wa) goran no suponsaa no teikyou de okurishimasu⣿⣿⣿⣿
@@ -226,10 +229,10 @@ async function friendMemberFriends(orientationFilter) {
 function initFriendship() {
     GM_addStyle('.buttons {display: flex; flex-wrap: wrap} .buttons button, .buttons a {align-self: center; padding: 4px; margin: 5px;}');
 
-    const buttonAll = parseDOM('<button style="background: radial-gradient(red, blueviolet);">friend everyone</button>');
-    const buttonStraightOnly = parseDOM('<button style="background: radial-gradient(red, #a18cb5);">friend straights</button>');
-    const buttonGayOnly = parseDOM('<button style="background: radial-gradient(red, #46baff);">friend gays</button>');
-    const buttonBisexualOnly = parseDOM('<button style="background: radial-gradient(red, #4ebaaf);">friend bisexuals</button>');
+    const buttonAll = parseDom('<button style="background: radial-gradient(red, blueviolet);">friend everyone</button>');
+    const buttonStraightOnly = parseDom('<button style="background: radial-gradient(red, #a18cb5);">friend straights</button>');
+    const buttonGayOnly = parseDom('<button style="background: radial-gradient(red, #46baff);">friend gays</button>');
+    const buttonBisexualOnly = parseDom('<button style="background: radial-gradient(red, #4ebaaf);">friend bisexuals</button>');
 
     document.querySelector('.buttons').append(buttonAll, buttonStraightOnly, buttonGayOnly, buttonBisexualOnly);
 
@@ -306,7 +309,7 @@ function checkPrivateVidsAccess() {
 
         thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
         thumb.querySelector('.title').innerText += access ? ' ✅ ' : ' ❌ ';
-        thumb.querySelector('.title').appendChild(parseDOM(access ? `<span>${uploaderName}</span>` :
+        thumb.querySelector('.title').appendChild(parseDom(access ? `<span>${uploaderName}</span>` :
                                                            `<span onclick="requestPrivateAccess(event, ${uploaderURL});"> 🚑 ${uploaderName}</span>`));
     });
 }
@@ -427,8 +430,8 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
 
 function createPrivateFeedButton() {
     const container = document.querySelectorAll('.sidebar ul')[1];
-    const buttonPrv = parseDOM(`<li><a href="https://thisvid.com/my_wall/#private_feed" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`);
-    const buttonPub = parseDOM(`<li><a href="https://thisvid.com/my_wall/#public_feed" class="selective"><i class="ico-arrow"></i>My Friends Public Videos</a></li>`);
+    const buttonPrv = parseDom(`<li><a href="https://thisvid.com/my_wall/#private_feed" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`);
+    const buttonPub = parseDom(`<li><a href="https://thisvid.com/my_wall/#public_feed" class="selective"><i class="ico-arrow"></i>My Friends Public Videos</a></li>`);
     container.append(buttonPub, buttonPrv);
 }
 
@@ -437,8 +440,8 @@ async function createPrivateFeed() {
     if (!window.location.hash.includes('feed')) return;
     const isPubKey = window.location.hash === '#public_feed';
 
-    const container = parseDOM('<div class="thumbs-items"></div>');
-    const ignored = parseDOM('<div class="ignored"><h2>IGNORED:</h2></div>');
+    const container = parseDom('<div class="thumbs-items"></div>');
+    const ignored = parseDom('<div class="ignored"><h2>IGNORED:</h2></div>');
 
     Object.assign(defaultSchemeWithPrivateFilter, {
         controlsSkip: [
@@ -471,7 +474,7 @@ async function createPrivateFeed() {
     RULES.CONTAINER = container;
 
     const { pageGenerator, skipCurrentMember, filterVideosCount } = getMembersVideos(friends, (name, videosCount, id) => {
-        container.append(parseDOM(`
+        container.append(parseDom(`
         <div class="member-videos" id="mem-${id}">
           <h2><a href="/members/${id}/">${name}</a> ${videosCount} videos</h2>
           <button onClick="hideMemberVideos(event)">ignore 🗡</button>
@@ -481,7 +484,7 @@ async function createPrivateFeed() {
 
     const ignoredMembers = lskdb.getAllKeys();
     ignoredMembers.forEach(im => {
-        document.querySelector('.ignored').append(parseDOM(`<button id="#ir-${im}" onClick="unignore(event)">${im} 🗡</button>`));
+        document.querySelector('.ignored').append(parseDom(`<button id="#ir-${im}" onClick="unignore(event)">${im} 🗡</button>`));
     });
 
     const skip = (e, n) => {
@@ -503,7 +506,7 @@ async function createPrivateFeed() {
         }
         toDelete.forEach(e => e.remove());
         id = id.slice(4)
-        document.querySelector('.ignored').append(parseDOM(`<button id="irm-${id}" onClick="unignore(event)">${id} X</button>`));
+        document.querySelector('.ignored').append(parseDom(`<button id="irm-${id}" onClick="unignore(event)">${id} X</button>`));
         if (ignore) lskdb.setKey(id);
     }
 
@@ -520,7 +523,7 @@ async function createPrivateFeed() {
     PaginationManager.prototype.createNextPageGenerator = () => pageGenerator();
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     new PreviewAnimation(document.body);
-    new VueUI(state, stateLocale, defaultSchemeWithPrivateFilter);
+    const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
 }
 
 //====================================================================================================
@@ -560,7 +563,7 @@ async function clearMessages() {
 }
 
 function clearMessagesButton() {
-    const btn = parseDOM('<button>clear messages</button>');
+    const btn = parseDom('<button>clear messages</button>');
     btn.addEventListener('click', clearMessages);
     document.querySelector('.headline').append(btn);
 }
@@ -595,7 +598,7 @@ function route() {
     });
 
     new PreviewAnimation(document.body);
-    new VueUI(state, stateLocale, defaultSchemeWithPrivateFilter);
+    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
 
     if (RULES.IS_OTHER_MEMBER_PAGE) {
         initFriendship();
@@ -613,9 +616,9 @@ function route() {
 const SCROLL_RESET_DELAY = 350;
 const ANIMATION_DELAY = 750;
 
-const defaultState = new DefaultState({ PRIVACY_FILTER: true });
-const { state, stateLocale } = defaultState;
+const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
+const { state, stateLocale } = store;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-defaultState.setWatchers(filter_);
+store.subscribe(filter_);
 
 route();
