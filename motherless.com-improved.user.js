@@ -4,24 +4,28 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.7.2
+// @version      2.8
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js?version=1421630
-// @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1404894
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1414551
+// @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.3.0/dist/jabroni-outfit.umd.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1403464
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1424368
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ Tick fetchWith sanitizeStr replaceElementTag timeToSeconds DefaultState DataManager PaginationManager VueUI getAllUniqueParents */
+/* globals $ DataManager PaginationManager */
+
+const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
+       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
+      } = window.bhutils;
+const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
 ⡿⣹⡝⣯⡝⣯⡝⣯⠽⣭⢻⣭⢻⣭⢻⣭⢻⡭⢯⡽⡭⢏⡳⣍⡛⡜⡍⢎⡱⢊⠖⡱⢊⡖⣱⢊⠶⡱⢎⠶⣩⣿⢣⠝⣺⢿⣹⣷⣿⣿⣿⣿⢠⢃⠦⡑⢢⠜⣐⠢
@@ -150,7 +154,7 @@ function fixURLs() {
     document.querySelector('a[href^="https://motherless.com/random/image"]').href = "https://motherless.com/m/calypso_jim_asi";
     document.querySelectorAll(('.gallery-container')).forEach(g => {
         const hasVideos = parseInt(g.innerText.match(/([\d|\.]+)k? videos/gi)?.[0]) > 0;
-        console.log({hasVideos, text: g.innerText});
+        //console.log({hasVideos, text: g.innerText});
         const header = hasVideos ? '/GV' : '/GI';
         g.querySelectorAll('a').forEach(a => { a.href = a.href.replace(/\/G/, () => header); });
     });
@@ -225,10 +229,10 @@ const SCROLL_RESET_DELAY = 50;
 
 console.log(LOGO);
 
-const defaultState = new DefaultState();
-const { state, stateLocale } = defaultState;
+const store = new JabroniOutfitStore(defaultStateWithDuration);
+const { state, stateLocale } = store;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-defaultState.setWatchers(filter_);
+store.subscribe(filter_);
 
 desktopAddMobGalleries().then(() => fixURLs());
 
@@ -238,7 +242,7 @@ if (RULES.PAGINATION) {
 }
 
 if (RULES.GET_THUMBS(document.body).length > 0) {
-    const ui = new VueUI(state, stateLocale);
+    const ui = new JabroniOutfitUI(store);
     getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => {
         handleLoadedHTML(c, c);
     });
@@ -246,7 +250,7 @@ if (RULES.GET_THUMBS(document.body).length > 0) {
 
 if (RULES.IS_SEARCH) {
     let url = window.location.pathname;
-    const wordsToFilter = state.filterExcludeWords.replace(/f\:/g, '').match(/\w+/g);
+    const wordsToFilter = state.filterExcludeWords.replace(/f\:/g, '').match(/\w+/g) || [];
     wordsToFilter.forEach(w => {
         if (!url.includes(w)) {
             url += `+-${w.trim()}`;
