@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.42
+// @version      2.43
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
@@ -13,7 +13,7 @@
 // @grant        unsafeWindow
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
-// @require      https://unpkg.com/jabroni-outfit@1.4.7/dist/jabroni-outfit.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @run-at       document-idle
