@@ -2,25 +2,30 @@
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.6
+// @version      1.7
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.nhentai.net/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
-// @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js?version=1404894
+// @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.4.1/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1423690
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
 // ==/UserScript==
-/* globals DataManager PaginationManager VueUI DefaultState parseDOM defaultScheme */
+/* globals $ DataManager PaginationManager */
+
+const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
+       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
+      } = window.bhutils;
+const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
+
 
 const LOGO = `⠡⠡⠡⠡⠡⠅⠅⢥⢡⢡⢠⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⡥⠨⡨⠈⠌⠌⠌⠌⠌⠌⡐
 ⠡⢡⡃⡅⠅⠅⢅⢦⣂⡂⡒⡜⡈⡚⡂⡥⠡⠡⠡⠡⠡⠡⠡⠡⡡⠡⠡⠑⠅⠣⣕⠡⠡⡡⠡⠡⠡⠡⠡⠡⣡⣡⡡⠡⠡⡑⢑⠡⠡⠡⠡⠩⠩⠨⠩⢹⠨⠨⢐⢐
@@ -161,9 +166,9 @@ function filtersUI(state) {
     const descs = Array.from(Object.keys(filterDescriptors));
     [descs.slice(0,3), [descs[3]], [descs[4]]].forEach(groupOfButtons => {
         console.log(groupOfButtons);
-        const btns = parseDOM(`<div class="sort-type"></div>`);
+        const btns = parseDom(`<div class="sort-type"></div>`);
         groupOfButtons.forEach(k => {
-            const btn = parseDOM(`<a href="#" ${state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''}>${filterDescriptors[k].name}</a>`);
+            const btn = parseDom(`<a href="#" ${state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''}>${filterDescriptors[k].name}</a>`);
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
                 state.custom[k] = !state.custom[k];
@@ -195,10 +200,10 @@ function findSimilar(state) {
     });
 
     document.querySelector('.buttons').append(
-        parseDOM(`<a href="${urls.searchSimilarVeryQuery}" class="btn" style="background: rgba(59, 49, 70, 1)"><i class="fa fa-search"></i> Very Similar</a>`),
-        parseDOM(`<a href="${urls.searchSimilarQuery}" class="btn" style="background: rgba(59, 49, 70, .9)"><i class="fa fa-search"></i> Similar</a>`),
-        parseDOM(`<a href="${urls.searchSimilarLessQuery}" class="btn" style="background: rgba(59, 49, 70, .8)"><i class="fa fa-search"></i> Less Similar</a>`),
-        parseDOM(`<a href="${urls.searchSimilarKindofQuery}" class="btn" style="background: rgba(59, 49, 70, .7)"><i class="fa fa-search"></i> Kindof Similar</a>`));
+        parseDom(`<a href="${urls.searchSimilarVeryQuery}" class="btn" style="background: rgba(59, 49, 70, 1)"><i class="fa fa-search"></i> Very Similar</a>`),
+        parseDom(`<a href="${urls.searchSimilarQuery}" class="btn" style="background: rgba(59, 49, 70, .9)"><i class="fa fa-search"></i> Similar</a>`),
+        parseDom(`<a href="${urls.searchSimilarLessQuery}" class="btn" style="background: rgba(59, 49, 70, .8)"><i class="fa fa-search"></i> Less Similar</a>`),
+        parseDom(`<a href="${urls.searchSimilarKindofQuery}" class="btn" style="background: rgba(59, 49, 70, .7)"><i class="fa fa-search"></i> Kindof Similar</a>`));
 }
 
 //====================================================================================================
@@ -207,10 +212,10 @@ console.log(LOGO);
 
 const SCROLL_RESET_DELAY = 350;
 
-const defaultState = new DefaultState({ DURATION_FILTER: false }, DEFAULT_NHENTAI_STATE);
-const { state, stateLocale } = defaultState;
+const store = new JabroniOutfitStore(defaultStateInclExclMiscPagination);
+const { state, stateLocale } = store;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-defaultState.setWatchers(filter_);
+store.subscribe(filter_);
 
 if (RULES.IS_VIDEO_PAGE) {
     findSimilar(state);
@@ -228,7 +233,7 @@ if (RULES.PAGINATION) {
     const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
 
-delete defaultScheme.durationFilter;
-const ui = new VueUI(state, stateLocale, defaultScheme);
+delete DefaultScheme.durationFilter;
+new JabroniOutfitUI(store, DefaultScheme);
 
 
