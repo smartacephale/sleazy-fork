@@ -4,7 +4,7 @@
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @license      MIT
-// @version      2.82
+// @version      2.83
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
@@ -21,10 +21,10 @@
 /* globals $ DataManager PaginationManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
-      } = window.bhutils;
+    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
+} = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
@@ -105,7 +105,7 @@ function animate() {
     function handleLeave(e) {
         tick.stop();
         const preview = e.target.className.includes('desktop') ? e.target.querySelector('.static') :
-        (e.target.classList.contains('static') ? e.target : undefined);
+            (e.target.classList.contains('static') ? e.target : undefined);
         $(preview.nextElementSibling).hide();
         preview.classList.remove('animating');
     }

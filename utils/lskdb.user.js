@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.1
+// @version      1.1.2
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @updateURL https://update.greasyfork.org/scripts/497286/lskdb.meta.js
@@ -58,7 +58,7 @@ class LSKDB {
     }
 
     hasKey(key) {
-        return localStorage.hasOwnProperty(`${this.prefix}${key}`);
+        return Object.hasOwn(localStorage, `${this.prefix}${key}`);
     }
 
     removeKey(key) {
@@ -71,7 +71,7 @@ class LSKDB {
 
     isLocked() {
         const lock = localStorage.getItem(this.lockKey);
-        const locktime = 5*60*1000;
+        const locktime = 5 * 60 * 1000;
         return !(!lock || Date.now() - lock > locktime);
     }
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.5
+// @version      2.2.7
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -41,9 +41,9 @@ const LOGO = `
 ⣷⣵⣮⣧⣧⣷⣾⣾⣾⣯⣯⣯⣯⣷⣿⣾⣷⣷⣵⣶⣵⣵⣿⣾⣾⣷⣯⣿⣼⣼⣼⣼⣼⣼⣶⣷⣿⣽⣾⣿⣷⣷⣷⣯⣷⣾⣾⣾⣾⣾⣾⣾⣾⣮⣾⣶⣵⣵⣮⣷`;
 console.log(LOGO);
 
-(function disableDisclaimer(){
+(function disableDisclaimer() {
     if ($('#disclaimer').length === 0) return;
-    $.ajax({ type: 'POST', url : '/user/disclaimer', async: true });
+    $.ajax({ type: 'POST', url: '/user/disclaimer', async: true });
     $('#disclaimer').remove();
     $('body').css('overflow', 'visible');
 })();

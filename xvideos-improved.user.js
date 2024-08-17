@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.7
+// @version      1.71
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -11,7 +11,7 @@
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.1/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
@@ -21,10 +21,10 @@
 /* globals $ DataManager PaginationManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
-      } = window.bhutils;
+    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
+} = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
@@ -142,21 +142,22 @@ function createPreviewElement(src, mount) {
             video.load();
             elem.remove();
             mount.style.opacity = '1';
-        }};
+        }
+    };
 }
 
 function getVideoURL(src) {
     return src
         .replace(/thumbs169ll?/, 'videopreview')
         .replace(/\/\w+\.\d+\.\w+/, '_169.mp4')
-        .replace(/(-\d+)_169\.mp4/, (_,b) => `_169${b}.mp4`)
+        .replace(/(-\d+)_169\.mp4/, (_, b) => `_169${b}.mp4`)
 }
 
 function animate() {
     function handleThumbHover(e) {
         if (!(e.target.tagName === 'IMG' && e.target.id.includes('pic_'))) return;
         const videoSrc = getVideoURL(e.target.src);
-        const {elem, removeElem} = createPreviewElement(videoSrc, e.target);
+        const { elem, removeElem } = createPreviewElement(videoSrc, e.target);
         e.target.parentElement.parentElement.parentElement.addEventListener('mouseleave', removeElem, { once: true });
     }
 

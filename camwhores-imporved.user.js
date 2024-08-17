@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.92
+// @version      1.93
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -22,10 +22,10 @@
 /* globals $ LSKDB PaginationManager DataManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
-      } = window.bhutils;
+    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
+} = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 
 const LOGO = `camwhores admin should burn in hell
@@ -84,8 +84,8 @@ class CAMWHORES_RULES {
         const PAGINATION = Array.from(document_.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
         const PAGINATION_LAST = parseInt(PAGINATION?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         const CONTAINER = (PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
-                           PAGINATION?.parentElement.querySelector('.list-videos>div') ||
-                           document.querySelector('.list-videos>div'));
+            PAGINATION?.parentElement.querySelector('.list-videos>div') ||
+            document.querySelector('.list-videos>div'));
         return { PAGINATION, PAGINATION_LAST, CONTAINER };
     }
 
@@ -187,12 +187,12 @@ function shouldReload() {
 //====================================================================================================
 
 const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
-    message:  "",
-    action:   "add_to_friends_complete",
+    message: "",
+    action: "add_to_friends_complete",
     function: "get_block",
     block_id: "member_profile_view_view_profile",
-    format:   "json",
-    mode:     "async"
+    format: "json",
+    mode: "async"
 });
 
 const lskdb = new LSKDB();
@@ -286,11 +286,13 @@ function clearMessages() {
     if (!last) return;
 
     for (let i = 0; i < last; i++) {
-        spull.push({v: () =>
-                    fetchHtml(messagesURL(i)).then(html_ => {
-                        const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
-                        messages.forEach((m,j) => spull.push({v: () => checkMessageHistory(m), p: 1}));
-                    }), p: 2});
+        spull.push({
+            v: () =>
+                fetchHtml(messagesURL(i)).then(html_ => {
+                    const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
+                    messages.forEach((m, j) => spull.push({ v: () => checkMessageHistory(m), p: 1 }));
+                }), p: 2
+        });
     }
 
     let c = 0;
@@ -301,9 +303,11 @@ function clearMessages() {
             const id = url.match(/\d+/)[0];
             if (!(hasOriginalText || hasFriendRequest)) {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
-                spull.push({v: () => fetch(deleteURL).then(r => {
-                    console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
-                }), p: 0});
+                spull.push({
+                    v: () => fetch(deleteURL).then(r => {
+                        console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
+                    }), p: 0
+                });
             } else {
                 console.log(hasOriginalText, url);
                 if (hasFriendRequest) {

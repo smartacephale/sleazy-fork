@@ -2,7 +2,7 @@
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
 // @license      MIT
-// @version      1.7
+// @version      1.71
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -12,7 +12,7 @@
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.1/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
@@ -21,10 +21,10 @@
 /* globals $ DataManager PaginationManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
-      } = window.bhutils;
+    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
+} = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `

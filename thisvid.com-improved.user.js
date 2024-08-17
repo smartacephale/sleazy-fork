@@ -2,7 +2,7 @@
 // @name         ThisVid.com Improved
 // @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.92
+// @version      4.93
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
@@ -21,10 +21,10 @@
 /* globals $ DataManager PaginationManager LSKDB */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
-      } = window.bhutils;
+    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
+} = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 
 const SponsaaLogo = `
@@ -310,7 +310,7 @@ function checkPrivateVidsAccess() {
         thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
         thumb.querySelector('.title').innerText += access ? ' ✅ ' : ' ❌ ';
         thumb.querySelector('.title').appendChild(parseDom(access ? `<span>${uploaderName}</span>` :
-                                                           `<span onclick="requestPrivateAccess(event, ${uploaderURL});"> 🚑 ${uploaderName}</span>`));
+            `<span onclick="requestPrivateAccess(event, ${uploaderURL});"> 🚑 ${uploaderName}</span>`));
     });
 }
 
@@ -452,7 +452,8 @@ async function createPrivateFeed() {
             { type: "button", innerText: "filter >10", callback: async () => filterVidsCount(event, 10) },
             { type: "button", innerText: "filter >25", callback: async () => filterVidsCount(event, 25) },
             { type: "button", innerText: "filter >100", callback: async () => filterVidsCount(event, 100) },
-        ] });
+        ]
+    });
 
     const containerParent = document.querySelector('.main > .container > .content');
     containerParent.innerHTML = '';
@@ -546,7 +547,8 @@ async function clearMessages() {
                     if (orientation === 'Straight' && uploadedPrivate > 0) {
                         c++;
                         friend(mid.match(/\d+/)[0], c);
-                    }});
+                    }
+                });
                 confirmed.push(id);
             }
         });
@@ -558,8 +560,8 @@ async function clearMessages() {
         fetch(url).then(res => console.log(url, res?.status, ';___;'));
     }
 
-    await Promise.all([...Array(last)].map((_, i) => fetchHtml(`https://thisvid.com/my_messages/inbox/${i+1}/`).then(html => sortMsgs(html))));
-    chunks(confirmed, 10).forEach((c,i) => deleteMsg(c));
+    await Promise.all([...Array(last)].map((_, i) => fetchHtml(`https://thisvid.com/my_messages/inbox/${i + 1}/`).then(html => sortMsgs(html))));
+    chunks(confirmed, 10).forEach((c, i) => deleteMsg(c));
 }
 
 function clearMessagesButton() {

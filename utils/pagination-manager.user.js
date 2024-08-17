@@ -4,7 +4,7 @@
 // @namespace    http://tampermonkey.net/
 // @author       smartacephale
 // @license      MIT
-// @version      1.1.2
+// @version      1.1.3
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494205/pagination-manager.meta.js
@@ -30,7 +30,7 @@ class PaginationManager {
         this.stateLocale.pagIndexLast = this.rules.PAGINATION_LAST;
         this.paginationGenerator = this.createNextPageGenerator();
         this.paginationObserver = Observer.observeWhile(this.rules.INTERSECTION_OBSERVABLE ||
-                                                        this.rules.PAGINATION, this.generatorConsume, delay);
+            this.rules.PAGINATION, this.generatorConsume, delay);
     }
 
     generatorConsume = async () => {
