@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.81
+// @version      1.82
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -63,7 +63,8 @@ class SPANKBANG_RULES {
     }
 
     GET_THUMBS(html) {
-        return html.querySelectorAll('.video-item:not(.clear-fix)');
+        return Array.from(html.querySelectorAll('.video-item:not(.clear-fix)') || [])
+            .filter(e => !e.parentElement.hasAttribute('data-disabled-layout-change'));
     }
 
     THUMB_URL(thumb) {
