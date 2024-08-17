@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -9,21 +9,24 @@
 // @match        https://*.cambro.tv/*
 // @exclude      *.cambro.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
-// @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
+// @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.4.1/dist/jabroni-outfit.umd.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js?version=1423906
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cambro.tv
 // @downloadURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.meta.js
 // ==/UserScript==
-/* globals $ VueUI Tick LSKDB timeToSeconds parseDOM fetchHtml DefaultState circularShift getAllUniqueParents range parseDataParams defaultSchemeWithPrivateFilter
- DataManager PaginationManager waitForElementExists watchDomChangesWithThrottle objectToFormData SyncPull computeAsyncOneAtTime downloader */
+/* globals $ LSKDB PaginationManager DataManager */
+
+const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
+       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
+      } = window.bhutils;
+const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 
 const LOGO = `
 ⣿⢽⡻⡽⣻⣽⣻⣻⣻⣻⣻⣻⣻⡻⣻⣻⣻⣻⣻⣻⣻⣻⣟⢿⣻⣟⣿⣻⣟⣿⣻⣟⣿⣻⣟⣿⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⡽⣯
@@ -251,7 +254,7 @@ async function processFriendship() {
 }
 
 function createFriendButton() {
-    const button = parseDOM('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
+    const button = parseDom('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
     (document.querySelector('.main-container-user > .headline') || document.querySelector('.headline')).append(button);
     const memberid = window.location.pathname.match(/\d+/)?.[0];
     button.addEventListener('click', () => {
@@ -357,7 +360,7 @@ function route() {
     if (RULES.HAS_VIDEOS) {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
-        const ui = new VueUI(state, stateLocale, defaultSchemeWithPrivateFilter);
+        const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
 
@@ -366,7 +369,7 @@ function route() {
     }
 
     if (RULES.IS_MESSAGES) {
-        const button = parseDOM(`<button>clear messages</button>`);
+        const button = parseDom(`<button>clear messages</button>`);
         document.querySelector('.headline').append(button);
         button.addEventListener('click', clearMessages);
     }
@@ -377,10 +380,10 @@ function route() {
 const SCROLL_RESET_DELAY = 500;
 const ANIMATION_DELAY = 500;
 
-const defaultState = new DefaultState({ PRIVACY_FILTER: true });
-const { state, stateLocale } = defaultState;
+const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
+const { state, stateLocale } = store;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-defaultState.setWatchers(filter_);
+store.subscribe(filter_);
 
 console.log(LOGO);
 route();
