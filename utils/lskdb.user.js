@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         lskdb
-// @description  locale storage key database
 // @namespace    http://tampermonkey.net/
-// @author       smartacephale
+// @version      1.1.3
 // @license      MIT
-// @version      1.1.2
+// @description  locale storage key database
+// @author       smartacephale
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @updateURL https://update.greasyfork.org/scripts/497286/lskdb.meta.js

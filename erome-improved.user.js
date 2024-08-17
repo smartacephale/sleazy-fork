@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.7
+// @version      2.2.8
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale

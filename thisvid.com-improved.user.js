@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
-// @license      MIT
 // @namespace    http://tampermonkey.net/
-// @version      4.93
+// @version      4.94
+// @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
-// @require      https://unpkg.com/jabroni-outfit@1.4.1/dist/jabroni-outfit.umd.js
+// @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.4.7/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030

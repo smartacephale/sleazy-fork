@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         data-manager
-// @description  handles loaded html, takes care of data, applying filters
 // @namespace    http://tampermonkey.net/
-// @author       smartacephale
+// @version      1.2.4
 // @license      MIT
-// @version      1.2.3
+// @description  handles loaded html, takes care of data, applying filters
+// @author       smartacephale
 // @match        *://*/*
 // @downloadURL none
 // ==/UserScript==
@@ -48,7 +48,7 @@ class DataManager {
         },
         filterPrivate: {
             tag: 'filtered-private',
-            createFilter(){
+            createFilter() {
                 return (v) => [this.tag, this.rules.IS_PRIVATE(v.element) && this.state.filterPrivate];
             }
         },
