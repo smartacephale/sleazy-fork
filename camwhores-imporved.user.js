@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.91
+// @version      1.92
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
-// @require      https://unpkg.com/jabroni-outfit@1.3.1/dist/jabroni-outfit.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.4.1/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
