@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.6
+// @version      1.7
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -9,19 +9,23 @@
 // @match        https://*.xvideos.com/*
 // @exclude      https://*.xvideos.com/embedframe/*
 // @grant        GM_addStyle
-// @require      https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js
-// @require      https://update.greasyfork.org/scripts/494206/utils.user.js
-// @require      data:, let tempVue = unsafeWindow.Vue; unsafeWindow.Vue = Vue; const { ref, watch, reactive, createApp } = Vue;
-// @require      https://update.greasyfork.org/scripts/494207/persistent-state.user.js
+// @require      https://unpkg.com/billy-herrington-utils@1.0.3/dist/billy-herrington-utils.umd.js
+// @require      https://unpkg.com/jabroni-outfit@1.4.1/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/494203/menu-ui.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
 // @downloadURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.meta.js
 // ==/UserScript==
-/* globals $ timeToSeconds parseDOM DefaultState DataManager PaginationManager VueUI sanitizeStr */
+/* globals $ DataManager PaginationManager */
+
+const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
+       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
+      } = window.bhutils;
+const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
 ⡐⠠⠀⠠⠐⡀⠆⡐⠢⡐⠢⡁⢆⠡⢂⠱⡈⠔⣈⠒⡌⠰⡈⠔⢢⢁⠒⡰⠐⢢⠐⠄⣂⠐⡀⠄⢂⠰⠀⢆⡐⠢⢐⠰⡀⠒⢄⠢⠐⣀⠂⠄⢀⢂⠒⡰⠐⡂⠔⠂⡔⠂⡔⠂⡔⠂⡔⠂⢆⠡
@@ -117,7 +121,7 @@ const RULES = new XVIDEOS_RULES();
 //====================================================================================================
 
 function createPreviewElement(src, mount) {
-    const elem = parseDOM(`
+    const elem = parseDom(`
     <div class="videopv" style="display: none;">
         <video autoplay="autoplay" playsinline="playsinline" muted="muted"></video>
     </div>`);
@@ -165,10 +169,10 @@ console.log(LOGO);
 
 const SCROLL_RESET_DELAY = 350;
 
-const defaultState = new DefaultState();
-const { state, stateLocale } = defaultState;
+const store = new JabroniOutfitStore(defaultStateWithDuration);
+const { state, stateLocale } = store;
 const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-defaultState.setWatchers(filter_);
+store.subscribe(filter_);
 
 function route() {
     if (RULES.PAGINATION) {
@@ -178,7 +182,7 @@ function route() {
     if (RULES.HAS_VIDEOS) {
         animate();
         handleLoadedHTML(RULES.CONTAINER)
-        const ui = new VueUI(state, stateLocale);
+        new JabroniOutfitUI(store);
     }
 }
 
