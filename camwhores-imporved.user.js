@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.95
+// @version      1.96
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -11,15 +11,15 @@
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://unpkg.com/lskdb@1.0.1/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
 // @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
-/* globals $ LSKDB PaginationManager DataManager */
+/* globals $ PaginationManager DataManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
     parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
@@ -27,6 +27,7 @@ const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPu
     objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
 } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
+const { LSKDB } = window.lskdb;
 
 const LOGO = `camwhores admin should burn in hell
 ⣿⢏⡩⡙⣭⢫⡍⣉⢉⡉⢍⠩⡭⢭⠭⡭⢩⢟⣿⣿⣻⢿⣿⣿⣿⣿⡿⣏⣉⢉⣿⣿⣻⢿⣿⣿⠛⣍⢯⢋⠹⣛⢯⡅⡎⢱⣠⢈⡿⣽⣻⠽⡇⢘⡿⣯⢻⣝⡣⣍⠸⣏⡿⣭⢋⣽⣻⡏⢬⢹
@@ -81,7 +82,8 @@ class CAMWHORES_RULES {
     }
 
     CALC_CONTAINER = (document_ = document) => {
-        const PAGINATION = Array.from(document_.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
+        const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
+        const PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
         const PAGINATION_LAST = parseInt(PAGINATION?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         const CONTAINER = (PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
             PAGINATION?.parentElement.querySelector('.list-videos>div') ||
@@ -137,11 +139,7 @@ class CAMWHORES_RULES {
             return url.href;
         }
 
-        return {
-            offset,
-            iteratable_url,
-            PAGINATION_LAST
-        };
+        return { offset, iteratable_url, PAGINATION_LAST };
     }
 }
 
@@ -331,6 +329,7 @@ function route() {
     if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
         const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
         shouldReload();
+        const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
     }
 
     if (RULES.HAS_VIDEOS) {
@@ -338,7 +337,6 @@ function route() {
         containers.forEach(c => handleLoadedHTML(c, c));
         defaultSchemeWithPrivateFilter.privateFilter.push(
             { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
-        const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
 
