@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.13
+// @version      1.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -11,15 +11,15 @@
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://unpkg.com/lskdb@1.0.1/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
-// @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cambro.tv
 // @downloadURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/501581/Cambrotv%20Improved.meta.js
 // ==/UserScript==
-/* globals $ LSKDB PaginationManager DataManager */
+/* globals $ PaginationManager DataManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
     parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
@@ -27,6 +27,7 @@ const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPu
     objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
 } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
+const { LSKDB } = window.lskdb;
 
 const LOGO = `
 ⣿⢽⡻⡽⣻⣽⣻⣻⣻⣻⣻⣻⣻⡻⣻⣻⣻⣻⣻⣻⣻⣻⣟⢿⣻⣟⣿⣻⣟⣿⣻⣟⣿⣻⣟⣿⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⣻⡽⣯
@@ -88,7 +89,8 @@ class CAMWHORES_RULES {
     }
 
     CALC_CONTAINER = () => {
-        this.PAGINATION = Array.from(document.querySelectorAll('.pagination'))?.[this.IS_MEMBER_PAGE ? 1 : 0];
+        const paginationEls = Array.from(document.querySelectorAll('.pagination'));
+        const PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
         this.PAGINATION_LAST = parseInt(Array.from(this.PAGINATION?.querySelectorAll('.pagination-holder > ul > .page > a') || []).pop()
             ?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         if (this.PAGINATION_LAST === 9) this.PAGINATION_LAST = 999;
@@ -243,11 +245,12 @@ async function getMemberFriends(id) {
 async function processFriendship() {
     console.log('processFriendship');
     if (!lskdb.isLocked()) {
-        const friendlist = lskdb.getKeys(30);
+        const friendlist = lskdb.getKeys(1);
         if (friendlist?.length < 1) return;
         lskdb.lock(true);
         const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
         await computeAsyncOneAtTime(urls.map(url => () => friendRequest(url)));
+        await wait(3500);
         lskdb.lock(false);
         await processFriendship();
     }
