@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.95
+// @version      4.96
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -11,14 +11,14 @@
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://unpkg.com/lskdb@1.0.1/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
-// @require      https://update.greasyfork.org/scripts/497286/lskdb.user.js?version=1391030
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ DataManager PaginationManager LSKDB */
+/* globals $ DataManager PaginationManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
     parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
@@ -26,6 +26,7 @@ const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPu
     objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
 } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
+const { LSKDB } = window.lskdb;
 
 const SponsaaLogo = `
      Kono bangumi ha(wa) goran no suponsaa no teikyou de okurishimasu⣿⣿⣿⣿
