@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    http://tampermonkey.net/
-// @version      1.2.4
+// @version      1.2.5
 // @license      MIT
 // @description  handles loaded html, takes care of data, applying filters
 // @author       smartacephale
@@ -10,27 +10,7 @@
 // ==/UserScript==
 /* globals LazyImgLoader stringToWords GM_addStyle */
 
-/** Manages thumbs, applying filters, lazy loading, keep list unique */
 class DataManager {
-    /**
-  * @param {Rules} rules - WEBSITE_RULES class which have to implement methods:
-  * GET_THUMBS,
-  * THUMB_URL,
-  * THUMB_DATA,
-  * THUMB_IMG_DATA (required for lazy loading, return undefined if no need it)
-  * IS_PRIVATE * optional
-  *
-  * @param {Object} state - object with props:
-  * filterDuration
-  * filterDurationFrom
-  * filterDurationTo
-  * filterExclude
-  * filterExcludeWords
-  * filterInclude
-  * filterIncludeWords
-  * filterPublic * optional
-  * filterPrivate * optional
-  */
     constructor(rules, state) {
         this.rules = rules;
         this.state = state;
@@ -111,21 +91,18 @@ class DataManager {
     }
 
     filter_ = (filters, offset = 0) => {
-        const runFilters = [];
-
-        for (const f of Object.keys(filters)) {
-            this.dataFilters.hasOwnProperty(f) && runFilters.push(this.dataFilters[f].createFilter());
-        }
-
+        const runFilters = Object.keys(filters)
+          .filter(k => Object.hasOwn(this.dataFilters, k))
+          .map(k => this.dataFilters[k].createFilter());
+    
         let offset_counter = 1;
         for (const v of this.data.values()) {
-            offset_counter++;
-            if (offset_counter > offset) {
-                for (const rf of runFilters) {
-                    const [tag, condition] = rf(v);
-                    v.element.classList.toggle(tag, condition);
-                }
+          if (++offset_counter > offset) {
+            for (const rf of runFilters) {
+              const [tag, condition] = rf(v);
+              v.element.classList.toggle(tag, condition);
             }
+          }
         }
     }
 
