@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.84
+// @version      1.85
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1430668
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=spankbang.com
@@ -154,8 +154,8 @@ const SCROLL_RESET_DELAY = 350;
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
-const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-store.subscribe(filter_);
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+store.subscribe(applyFilters);
 
 if (RULES.HAS_VIDEOS) {
     animate();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.86
+// @version      2.87
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -12,7 +12,7 @@
 // @grant        GM_addStyle
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1430668
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1403464
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
@@ -231,8 +231,8 @@ console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
-const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-store.subscribe(filter_);
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+store.subscribe(applyFilters);
 
 desktopAddMobGalleries().then(() => fixURLs());
 

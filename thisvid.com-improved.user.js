@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.96
+// @version      4.97
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -12,7 +12,7 @@
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
 // @require      https://unpkg.com/lskdb@1.0.1/dist/lskdb.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1430668
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
@@ -213,16 +213,14 @@ async function friendMemberFriends(orientationFilter) {
     const friends = await getMemberFriends(memberId);
     let count = 0;
     await Promise.all(friends.map((fid, i) => {
-        if (!orientationFilter) {
-            return friend(fid, i);
-        } else {
-            return getMemberData(fid).then(({ orientation, uploadedPrivate }) => {
-                if (orientation === orientationFilter && uploadedPrivate > 0) {
-                    count++;
-                    return friend(fid, i);
-                }
-            });
-        }
+        if (!orientationFilter) return friend(fid, i);
+        return getMemberData(fid).then(({ orientation, uploadedPrivate }) => {
+            if (orientation === orientationFilter && uploadedPrivate > 0) {
+                count++;
+                return friend(fid, i);
+            }
+        });
+
     }));
     console.log(count, '/', friends.length);
 }
@@ -621,7 +619,7 @@ const ANIMATION_DELAY = 750;
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
 const { state, stateLocale } = store;
-const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-store.subscribe(filter_);
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+store.subscribe(applyFilters);
 
 route();

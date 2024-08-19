@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.97
+// @version      1.98
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -12,7 +12,7 @@
 // @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
 // @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
 // @require      https://unpkg.com/lskdb@1.0.1/dist/lskdb.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1428433
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1430668
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
@@ -345,7 +345,7 @@ function route() {
     }
 
     if (RULES.IS_MESSAGES) {
-        const button = parseDom(`<button>clear messages</button>`);
+        const button = parseDom('<button>clear messages</button>');
         document.querySelector('.headline').append(button);
         button.addEventListener('click', clearMessages);
     }
@@ -358,8 +358,8 @@ const ANIMATION_DELAY = 500;
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
 const { state, stateLocale } = store;
-const { filter_, handleLoadedHTML } = new DataManager(RULES, state);
-store.subscribe(filter_);
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+store.subscribe(applyFilters);
 
 console.log(LOGO);
 route();
