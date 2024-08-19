@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.21
+// @version      1.22
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -22,10 +22,10 @@
 /* globals $ PaginationManager DataManager */
 
 const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
-} = window.bhutils;
+       parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
+       watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
+       objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
+      } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
 
@@ -90,13 +90,13 @@ class CAMWHORES_RULES {
 
     CALC_CONTAINER = () => {
         const paginationEls = Array.from(document.querySelectorAll('.pagination'));
-        const PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
+        this.PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
         this.PAGINATION_LAST = parseInt(Array.from(this.PAGINATION?.querySelectorAll('.pagination-holder > ul > .page > a') || []).pop()
-            ?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
+                                        ?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
         if (this.PAGINATION_LAST === 9) this.PAGINATION_LAST = 999;
         this.CONTAINER = (this.PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
-            this.PAGINATION?.parentElement.querySelector('.list-videos>div') ||
-            document.querySelector('.list-videos>div'));
+                          this.PAGINATION?.parentElement.querySelector('.list-videos>div') ||
+                          document.querySelector('.list-videos>div'));
     }
 
     IS_PRIVATE(thumb) {
@@ -135,6 +135,7 @@ class CAMWHORES_RULES {
 
         let pag = document_ ? Array.from(document_?.querySelectorAll('.pagination')).pop() : this.PAGINATION;
         let pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]) || 99;
+        console.log(pag,pag_last);
 
         if (RULES.IS_COMMUNITY_LIST) {
             pag = document.querySelector('.pagination');
@@ -233,7 +234,7 @@ function getMemberLinks(document) {
 
 async function getMemberFriends(id) {
     const url = RULES.IS_COMMUNITY_LIST ?
-        `${window.location.origin}/members/` : `${window.location.origin}/members/${id}/friends/`;
+          `${window.location.origin}/members/` : `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
     const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
@@ -316,10 +317,10 @@ function clearMessages() {
     for (let i = 0; i < last; i++) {
         spull.push({
             v: () =>
-                fetchHtml(messagesURL(i)).then(html_ => {
-                    const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
-                    messages.forEach((m, j) => spull.push({ v: () => checkMessageHistory(m), p: 1 }));
-                }), p: 2
+            fetchHtml(messagesURL(i)).then(html_ => {
+                const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
+                messages.forEach((m, j) => spull.push({ v: () => checkMessageHistory(m), p: 1 }));
+            }), p: 2
         });
     }
 
@@ -334,7 +335,7 @@ function clearMessages() {
                 spull.push({
                     v: () => fetch(deleteURL).then(r => {
                         console.log(r.status == 200 ? ++c : '', r.status, 'delete', id,
-                            html.querySelector('.list-messages').innerText.replace(/\n|\t/g, ' ').replace(/\ {2,}/g, ' ').trim());
+                                    html.querySelector('.list-messages').innerText.replace(/\n|\t/g, ' ').replace(/\ {2,}/g, ' ').trim());
                     }), p: 0
                 });
             } else {
