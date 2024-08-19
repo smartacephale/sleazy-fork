@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    http://tampermonkey.net/
-// @version      1.2.6
+// @version      1.2.7
 // @license      MIT
 // @description  handles loaded html, takes care of data, applying filters
 // @author       smartacephale
@@ -90,7 +90,7 @@ class DataManager {
         return el.className.includes('filtered');
     }
 
-    filter_ = (filters, offset = 0) => {
+    applyFilters = (filters, offset = 0) => {
         const filtersToApply = Object.keys(filters)
             .filter(k => Object.hasOwn(this.dataFilters, k))
             .map(k => this.dataFilters[k].createFilter());
@@ -109,8 +109,8 @@ class DataManager {
     }
 
     filterAll = (offset) => {
-        const applyFilters = Object.assign({}, ...Object.keys(this.dataFilters).map(f => ({ [f]: this.state[f] })));
-        this.filter_(applyFilters, offset);
+        const filters = Object.assign({}, ...Object.keys(this.dataFilters).map(f => ({ [f]: this.state[f] })));
+        this.applyFilters(filters, offset);
     }
 
     handleLoadedHTML = (html, container, removeDuplicates = false, shouldLazify = true) => {
