@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         pagination-manager
-// @description  infinite scroll
 // @namespace    http://tampermonkey.net/
-// @author       smartacephale
+// @version      1.1.6
 // @license      MIT
-// @version      1.1.5
+// @description  infinite scroll
+// @author       smartacephale
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494205/pagination-manager.meta.js
