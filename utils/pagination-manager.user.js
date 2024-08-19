@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         pagination-manager
-// @namespace    http://tampermonkey.net/
-// @version      1.1.4
-// @license      MIT
 // @description  infinite scroll
+// @namespace    http://tampermonkey.net/
 // @author       smartacephale
+// @license      MIT
+// @version      1.1.5
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494205/pagination-manager.meta.js
@@ -16,8 +16,8 @@ class PaginationManager {
      * @param {Vue.reactive} state
      * @param {Vue.reactive} stateLocale
      * @param {Rules} rules - WEBSITE_RULES class which have to implement methods:
-     * URL_DATA { iteratable_url, offset },
-     * PAGINATION_LAST
+     * - URL_DATA { iteratable_url, offset },
+     * - PAGINATION_LAST
      * @param {Function} handleHtmlCallback
      * @param {number} delay - milliseconds
      */
@@ -29,16 +29,13 @@ class PaginationManager {
 
         this.stateLocale.pagIndexLast = this.rules.PAGINATION_LAST;
         this.paginationGenerator = this.createNextPageGenerator();
-        this.paginationObserver = Observer.observeWhile(this.rules.INTERSECTION_OBSERVABLE ||
-            this.rules.PAGINATION, this.generatorConsume, delay);
+        this.paginationObserver = Observer.observeWhile(
+            this.rules.INTERSECTION_OBSERVABLE || this.rules.PAGINATION, this.generatorConsume, delay);
     }
 
     generatorConsume = async () => {
         if (!this.state.infiniteScrollEnabled) return;
-        const {
-            value: { url, offset } = {},
-            done,
-        } = await this.paginationGenerator.next();
+        const { value: { url, offset } = {}, done } = await this.paginationGenerator.next();
         if (!done) {
             console.log(url);
             const nextPageHTML = await fetchHtml(url);
@@ -47,7 +44,7 @@ class PaginationManager {
             this.stateLocale.pagIndexCur = offset;
             window.scrollTo(0, prevScrollPos);
         }
-        return !this.generatorDone;
+        return !done;
     }
 
     createNextPageGenerator() {
