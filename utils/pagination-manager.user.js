@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         pagination-manager
-// @namespace    http://tampermonkey.net/
-// @version      1.1.6
-// @license      MIT
 // @description  infinite scroll
+// @namespace    http://tampermonkey.net/
 // @author       smartacephale
+// @license      MIT
+// @version      1.2
 // @match        *://*/*
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494205/pagination-manager.meta.js
@@ -21,16 +21,21 @@ class PaginationManager {
      * @param {Function} handleHtmlCallback
      * @param {number} delay - milliseconds
      */
-    constructor(state, stateLocale, rules, handleHtmlCallback, delay) {
+    constructor(state, stateLocale, rules, handleHtmlCallback, delay, alternativeGenerator) {
         this.state = state;
         this.stateLocale = stateLocale;
-        this.rules = rules;
         this.handleHtmlCallback = handleHtmlCallback;
 
-        this.stateLocale.pagIndexLast = this.rules.PAGINATION_LAST;
-        this.paginationGenerator = this.createNextPageGenerator();
+        const { offset, iteratable_url } = rules.URL_DATA();
+
+        this.stateLocale.pagIndexLast = rules.PAGINATION_LAST;
+        this.stateLocale.pagIndexCur = offset;
+
+        this.paginationGenerator = alternativeGenerator ? alternativeGenerator() :
+          PaginationManager.createPaginationGenerator(offset, rules.PAGINATION_LAST, iteratable_url);
+
         this.paginationObserver = Observer.observeWhile(
-            this.rules.INTERSECTION_OBSERVABLE || this.rules.PAGINATION, this.generatorConsume, delay);
+            rules.INTERSECTION_OBSERVABLE || rules.PAGINATION, this.generatorConsume, delay);
     }
 
     generatorConsume = async () => {
@@ -47,14 +52,11 @@ class PaginationManager {
         return !done;
     }
 
-    createNextPageGenerator() {
-        const { offset, iteratable_url } = this.rules.URL_DATA();
-        const { PAGINATION_LAST } = this.rules;
-        this.stateLocale.pagIndexCur = offset;
+    static createPaginationGenerator(currentPage, totalPages, generateURL) {
         function* nextPageGenerator() {
-            for (let c = offset + 1; c <= PAGINATION_LAST; c++) {
-                const url = iteratable_url(c);
-                yield { url, offset: c };
+            for (let p = currentPage + 1; p <= totalPages; p++) {
+                const url = generateURL(p);
+                yield { url, offset: p };
             }
         }
         return nextPageGenerator();
