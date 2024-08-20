@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.97
+// @version      4.995
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -9,11 +9,11 @@
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
-// @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
-// @require      https://unpkg.com/lskdb@1.0.1/dist/lskdb.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.1/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1430668
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1390557
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1431615
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
@@ -365,24 +365,12 @@ function highlightMessages() {
 const lskdb = new LSKDB();
 
 async function getMemberVideos(id, type = 'private') {
-    const url = `https://thisvid.com/members/${id}/${type}_videos/`;
     const { uploadedPrivate, uploadedPublic, name } = await getMemberData(id);
     const videosCount = type === 'private' ? uploadedPrivate : uploadedPublic;
     const paginationLast = Math.ceil(videosCount / 48);
-    const pageIterator = n => `${url}${n}/`;
-
-    function* pageGenerator() {
-        for (let c = 1; c <= paginationLast; c++) {
-            const url = pageIterator(c);
-            yield { url, offset: c };
-        }
-    }
-
-    return {
-        name,
-        videosCount,
-        pageGenerator: pageGenerator()
-    }
+    const { iteratable_url } = RULES.URL_DATA(new URL(`https://thisvid.com/members/${id}/${type}_videos/`));
+    const memberVideosGenerator = PaginationManager.createPaginationGenerator(0, paginationLast, iteratable_url);
+    return { name, videosCount, memberVideosGenerator };
 }
 
 function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private') {
@@ -399,9 +387,9 @@ function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private')
         while (c < membersIds.length - 1) {
             if (lskdb.hasKey(membersIds[c])) { c++; continue; }
             if (!currentGenerator) {
-                const { pageGenerator, name, videosCount } = await getMemberVideos(membersIds[c], type);
-                if (pageGenerator && videosCount >= minVideosCount) {
-                    currentGenerator = pageGenerator;
+                const { memberVideosGenerator, name, videosCount } = await getMemberVideos(membersIds[c], type);
+                if (memberVideosGenerator && videosCount >= minVideosCount) {
+                    currentGenerator = memberVideosGenerator;
                     memberGeneratorCallback(name, videosCount, membersIds[c]);
                 } else {
                     c++;
@@ -520,8 +508,7 @@ async function createPrivateFeed() {
         filterVideosCount(count);
     }
 
-    PaginationManager.prototype.createNextPageGenerator = () => pageGenerator();
-    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY, pageGenerator);
     new PreviewAnimation(document.body);
     const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
 }
@@ -608,7 +595,7 @@ function route() {
     if (RULES.PAGINATION_ALLOWED) {
         stateLocale.pagIndexLast = RULES.PAGINATION_LAST;
         if (!RULES.PAGINATION) return;
-        this.paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     }
 }
 
