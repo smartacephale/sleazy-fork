@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         data-manager
-// @namespace    http://tampermonkey.net/
-// @version      1.2.7
+// @namespace    Violentmonkey Scripts
+// @version      1.3
 // @license      MIT
 // @description  handles loaded html, takes care of data, applying filters
 // @author       smartacephale
 // @match        *://*/*
+// @grant        unsafeWindow
+// @grant        GM_addStyle
 // @downloadURL none
 // ==/UserScript==
-/* globals LazyImgLoader stringToWords GM_addStyle */
 
 class DataManager {
     constructor(rules, state) {
@@ -16,7 +17,7 @@ class DataManager {
         this.state = state;
         this.data = new Map();
         this.setupFilters();
-        this.lazyImgLoader = LazyImgLoader.create((target) => !this.isFiltered(target));
+        this.lazyImgLoader = unsafeWindow.bhutils.LazyImgLoader.create((target) => !this.isFiltered(target));
     }
 
     dataFilters = {
@@ -66,7 +67,7 @@ class DataManager {
     filterDSLToRegex(str) {
         const toFullWord = w => `(^|\ )${w}($|\ )`;
         const str_ = str.replace(/f\:(\w+)/g, (_, w) => toFullWord(w));
-        return stringToWords(str_).map(expr => new RegExp(expr, 'i'));
+        return unsafeWindow.bhutils.stringToWords(str_).map(expr => new RegExp(expr, 'i'));
     }
 
     setupFilters() {
