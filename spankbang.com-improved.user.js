@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.85
+// @version      1.87
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.spankbang.com/*
 // @grant        GM_addStyle
-// @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
-// @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1430668
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1434101
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=spankbang.com
 // @downloadURL https://update.sleazyfork.org/scripts/493946/SpankBangcom%20Improved.user.js
@@ -24,6 +24,7 @@ const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPu
     watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
     objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
 } = window.bhutils;
+Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `

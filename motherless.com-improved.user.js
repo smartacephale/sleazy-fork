@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.87
+// @version      2.88
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -10,10 +10,10 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://unpkg.com/billy-herrington-utils@1.1.1/dist/billy-herrington-utils.umd.js
-// @require      https://unpkg.com/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1430668
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1403464
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1434101
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
@@ -25,6 +25,7 @@ const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPu
     watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
     objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
 } = window.bhutils;
+Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
