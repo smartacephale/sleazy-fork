@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         pagination-manager
 // @description  infinite scroll
-// @namespace    http://tampermonkey.net/
+// @namespace    Violentmonkey Scripts
 // @author       smartacephale
 // @license      MIT
-// @version      1.2
+// @version      1.3
 // @match        *://*/*
+// @grant        unsafeWindow
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
 // @updateURL https://update.greasyfork.org/scripts/494205/pagination-manager.meta.js
 // ==/UserScript==
-/* globals Observer fetchHtml */
 
 class PaginationManager {
     /**
@@ -34,7 +34,7 @@ class PaginationManager {
         this.paginationGenerator = alternativeGenerator ? alternativeGenerator() :
           PaginationManager.createPaginationGenerator(offset, rules.PAGINATION_LAST, iteratable_url);
 
-        this.paginationObserver = Observer.observeWhile(
+        this.paginationObserver = unsafeWindow.bhutils.Observer.observeWhile(
             rules.INTERSECTION_OBSERVABLE || rules.PAGINATION, this.generatorConsume, delay);
     }
 
@@ -43,7 +43,7 @@ class PaginationManager {
         const { value: { url, offset } = {}, done } = await this.paginationGenerator.next();
         if (!done) {
             console.log(url);
-            const nextPageHTML = await fetchHtml(url);
+            const nextPageHTML = await unsafeWindow.bhutils.fetchHtml(url);
             const prevScrollPos = document.documentElement.scrollTop;
             this.handleHtmlCallback(nextPageHTML);
             this.stateLocale.pagIndexCur = offset;
