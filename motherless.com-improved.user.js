@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.88
+// @version      2.89
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -98,7 +98,7 @@ const RULES = new MOTHERLESS_RULES();
 //====================================================================================================
 
 function animate() {
-    RULES.CONTAINER.querySelectorAll("a, div, span, ul, li, p, button").forEach(e => $(e).off());
+    $(RULES.CONTAINER).find("a, div, span, ul, li, p, button").off();
     const ANIMATION_INTERVAL = 500;
     const tick = new Tick(ANIMATION_INTERVAL);
     let container;
@@ -129,19 +129,20 @@ function animate() {
             $(target.parentElement).append(m);
         }
         const c = $(target);
-        const h = target.getAttribute('data-strip-src');
+        const stripSrc = target.getAttribute('data-strip-src');
         m.show();
 
         tick.start(() => {
-            const v = Math.floor(1000.303 * c.width() / 100);
-            const k = Math.floor(228.6666 * c.height() / 100);
-            m.css("width", d.width());
-            m.css("height", c.height());
-            m.css("background-image", "url('" + h + "')");
-            m.css("background-size", v + "px " + k + "px ");
-            j * d.width() > v && (j = 0);
-            m.css("background-position", j * d.width() + "px 0");
-            j++;
+            const widthRatio = Math.floor(1000.303 * c.width() / 100);
+            const heightRatio = Math.floor(228.6666 * c.height() / 100);
+
+            m.css({
+                width: d.width(),
+                height: c.height(),
+                "background-image": `url('${stripSrc}')`,
+                "background-size": `${widthRatio}px ${heightRatio}px`,
+                "background-position": `${(j++ * d.width()) % widthRatio}px 0`
+            });
         });
     }
 
@@ -155,7 +156,6 @@ function fixURLs() {
     document.querySelector('a[href^="https://motherless.com/random/image"]').href = "https://motherless.com/m/calypso_jim_asi";
     document.querySelectorAll(('.gallery-container')).forEach(g => {
         const hasVideos = parseInt(g.innerText.match(/([\d|\.]+)k? videos/gi)?.[0]) > 0;
-        //console.log({hasVideos, text: g.innerText});
         const header = hasVideos ? '/GV' : '/GI';
         g.querySelectorAll('a').forEach(a => { a.href = a.href.replace(/\/G/, () => header); });
     });
@@ -238,12 +238,12 @@ store.subscribe(applyFilters);
 desktopAddMobGalleries().then(() => fixURLs());
 
 if (RULES.PAGINATION) {
-    const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     animate();
 }
 
 if (RULES.GET_THUMBS(document.body).length > 0) {
-    const ui = new JabroniOutfitUI(store);
+    new JabroniOutfitUI(store);
     getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => {
         handleLoadedHTML(c, c, true);
     });

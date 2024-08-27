@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.8
+// @version      1.81
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -158,7 +158,7 @@ function animate() {
     function handleThumbHover(e) {
         if (!(e.target.tagName === 'IMG' && e.target.id.includes('pic_'))) return;
         const videoSrc = getVideoURL(e.target.src);
-        const { elem, removeElem } = createPreviewElement(videoSrc, e.target);
+        const { removeElem } = createPreviewElement(videoSrc, e.target);
         e.target.parentElement.parentElement.parentElement.addEventListener('mouseleave', removeElem, { once: true });
     }
 
@@ -178,7 +178,7 @@ store.subscribe(applyFilters);
 
 function route() {
     if (RULES.PAGINATION) {
-        const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     }
 
     if (RULES.HAS_VIDEOS) {

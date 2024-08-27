@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.996
+// @version      4.997
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -279,7 +279,7 @@ async function getMemberData(id) {
 
 //====================================================================================================
 
-unsafeWindow.requestPrivateAccess = function (e, memberid) {
+unsafeWindow.requestPrivateAccess = (e, memberid) => {
     e.preventDefault();
     friend(memberid);
     e.target.innerText = e.target.innerText.replace('🚑', '🍆');
@@ -511,7 +511,7 @@ async function createPrivateFeed() {
 
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY, pageGenerator);
     new PreviewAnimation(document.body);
-    const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
 }
 
 //====================================================================================================
@@ -542,7 +542,7 @@ async function clearMessages() {
     }
 
     const deleteMsg = ids => {
-        let url = `https://thisvid.com/my_messages/inbox/2/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages`;
+        let url = 'https://thisvid.com/my_messages/inbox/2/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages';
         ids.forEach(id => { url += `&delete[]=${id}` });
         fetch(url).then(res => console.log(url, res?.status, ';___;'));
     }

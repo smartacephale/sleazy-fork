@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.5
+// @version      2.51
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.desi/*
-// @exclude      https://xhamster.com/embed/*
+// @exclude      https://xhamster.com/embed*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
@@ -30,7 +30,7 @@ const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPu
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
-if (!/^(\w{2}.)?xhamster.(com|desi)/.test(window.location.host)) return;
+if (!/^(\w{2}.)?xhamster.(com|desi)/.test(window.location.host)) throw new Error('whatever');
 
 const LOGO = `
  ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⡘⢲⣃⢖⡚⡴⢣⡞⠰⠁⡀⠀⠀⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -149,7 +149,7 @@ function createPreviewVideoElement(src, mount) {
 function handleThumbHover(e) {
     if (!e.target.classList.contains('thumb-image-container__image')) return;
     const videoSrc = e.target.parentElement.getAttribute('data-previewvideo');
-    const { video, removeVideo } = createPreviewVideoElement(videoSrc, e.target);
+    const { removeVideo } = createPreviewVideoElement(videoSrc, e.target);
     e.target.parentElement.parentElement.addEventListener('mouseleave', removeVideo, { once: true });
 }
 
@@ -175,7 +175,7 @@ function route() {
     }
 
     if (RULES.PAGINATION) {
-        const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
     }
 
     parseInPLace();

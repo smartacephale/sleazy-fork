@@ -4,7 +4,7 @@
 // @namespace    Violentmonkey Scripts
 // @author       smartacephale
 // @license      MIT
-// @version      1.3
+// @version      1.31
 // @match        *://*/*
 // @grant        unsafeWindow
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
@@ -15,11 +15,12 @@ class PaginationManager {
     /**
      * @param {Vue.reactive} state
      * @param {Vue.reactive} stateLocale
-     * @param {Rules} rules - WEBSITE_RULES class which have to implement methods:
+     * @param {Rules} rules - WEBSITE_RULES class with methods:
      * - URL_DATA { iteratable_url, offset },
      * - PAGINATION_LAST
      * @param {Function} handleHtmlCallback
      * @param {number} delay - milliseconds
+     * @param {Function} [alternativeGenerator] - Optional custom generator function
      */
     constructor(state, stateLocale, rules, handleHtmlCallback, delay, alternativeGenerator) {
         this.state = state;
@@ -32,7 +33,7 @@ class PaginationManager {
         this.stateLocale.pagIndexCur = offset;
 
         this.paginationGenerator = alternativeGenerator ? alternativeGenerator() :
-          PaginationManager.createPaginationGenerator(offset, rules.PAGINATION_LAST, iteratable_url);
+            PaginationManager.createPaginationGenerator(offset, rules.PAGINATION_LAST, iteratable_url);
 
         this.paginationObserver = unsafeWindow.bhutils.Observer.observeWhile(
             rules.INTERSECTION_OBSERVABLE || rules.PAGINATION, this.generatorConsume, delay);
@@ -52,13 +53,10 @@ class PaginationManager {
         return !done;
     }
 
-    static createPaginationGenerator(currentPage, totalPages, generateURL) {
-        function* nextPageGenerator() {
-            for (let p = currentPage + 1; p <= totalPages; p++) {
-                const url = generateURL(p);
-                yield { url, offset: p };
-            }
+    static * createPaginationGenerator(currentPage, totalPages, generateURL) {
+        for (let p = currentPage + 1; p <= totalPages; p++) {
+            const url = generateURL(p);
+            yield { url, offset: p };
         }
-        return nextPageGenerator();
     }
 }

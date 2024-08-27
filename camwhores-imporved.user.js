@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.982
+// @version      1.983
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -119,7 +119,7 @@ class CAMWHORES_RULES {
 
     URL_DATA(url_, document_) {
         const url = new URL((url_ || window.location).href);
-        let offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
+        const offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
         const { PAGINATION, PAGINATION_LAST } = this.CALC_CONTAINER(document_ || document);
         const el = PAGINATION?.querySelector('a[data-block-id][data-parameters]');
@@ -304,7 +304,7 @@ function clearMessages() {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
                 spull.push({
                     v: () => fetch(deleteURL).then(r => {
-                        console.log(r.status == 200 ? ++c : '', r.status, 'delete', id);
+                        console.log(r.status === 200 ? ++c : '', r.status, 'delete', id);
                     }), p: 0
                 });
             } else {
@@ -328,7 +328,7 @@ function route() {
     }
 
     if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-        const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
         shouldReload();
     }
 
@@ -337,7 +337,7 @@ function route() {
         containers.forEach(c => handleLoadedHTML(c, c));
         defaultSchemeWithPrivateFilter.privateFilter.push(
             { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
-        const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+        new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
 

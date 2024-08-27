@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.23
+// @version      1.24
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -157,11 +157,7 @@ class CAMWHORES_RULES {
             return url.href;
         }
 
-        return {
-            offset,
-            iteratable_url,
-            pag_last
-        };
+        return { offset, iteratable_url, pag_last };
     }
 }
 
@@ -233,7 +229,7 @@ async function getMemberFriends(id) {
     const url = RULES.IS_COMMUNITY_LIST ?
         `${window.location.origin}/members/` : `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
-    const { offset, iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
+    const { iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
     const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
     const friendlist = (await computeAsyncOneAtTime(pages.map(p => () => fetchHtml(p)))).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
     friendlist.forEach(m => lskdb.setKey(m));
@@ -331,7 +327,7 @@ function clearMessages() {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
                 spull.push({
                     v: () => fetch(deleteURL).then(r => {
-                        console.log(r.status == 200 ? ++c : '', r.status, 'delete', id,
+                        console.log(r.status === 200 ? ++c : '', r.status, 'delete', id,
                             html.querySelector('.list-messages').innerText.replace(/\n|\t/g, ' ').replace(/\ {2,}/g, ' ').trim());
                     }), p: 0
                 });
@@ -358,7 +354,7 @@ function route() {
     }
 
     if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-        const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
         shouldReload();
     }
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.74
+// @version      1.76
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -26,7 +26,6 @@ const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPu
 } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
-
 
 const LOGO = `⠡⠡⠡⠡⠡⠅⠅⢥⢡⢡⢠⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⡥⠨⡨⠈⠌⠌⠌⠌⠌⠌⡐
 ⠡⢡⡃⡅⠅⠅⢅⢦⣂⡂⡒⡜⡈⡚⡂⡥⠡⠡⠡⠡⠡⠡⠡⠡⡡⠡⠡⠑⠅⠣⣕⠡⠡⡡⠡⠡⠡⠡⠡⠡⣡⣡⡡⠡⠡⡑⢑⠡⠡⠡⠡⠩⠩⠨⠩⢹⠨⠨⢐⢐
@@ -102,24 +101,17 @@ class NHENTAI_RULES {
     THUMB_DATA(thumb) {
         const title = thumb.querySelector('.caption').innerText.toLowerCase();
         const duration = 0;
-        return {
-            title,
-            duration,
-        };
+        return { title, duration };
     }
 
     URL_DATA() {
-        const { origin, pathname, href } = window.location;
         const url = new URL(window.location.href);
         const offset = parseInt(url.searchParams.get('page')) || 1;
         const iteratable_url = n => {
             url.searchParams.set('page', n);
             return url.href;
         }
-        return {
-            offset,
-            iteratable_url
-        }
+        return { offset, iteratable_url }
     }
 }
 
@@ -231,10 +223,8 @@ if (RULES.IS_SEARCH_PAGE) {
 }
 
 if (RULES.PAGINATION) {
-    const paginationManager = new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
 
-delete DefaultScheme.durationFilter;
+DefaultScheme.durationFilter = undefined;
 new JabroniOutfitUI(store, DefaultScheme);
-
-
