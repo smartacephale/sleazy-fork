@@ -53,6 +53,9 @@ const LOGO = `
 ⡿⣽⣻⢷⣯⠿⣽⣳⣟⡾⣞⠿⣼⢎⡷⣭⢻⡞⣽⣳⣟⡾⣿⣿⣿⣿⣽⡷⢾⣽⣻⢶⣫⣗⣻⣜⡻⣜⢧⡻⣜⢧⡻⣜⡳⣞⡵⣫⢞⣥⣶⣷⣿⣶⣿⣿⣿⣿⣿⣿`;
 
 
+// Enable internal downloader
+unsafeWindow.__is_premium = true;
+
 class MOTHERLESS_RULES {
     constructor() {
         this.PAGINATION = document.querySelector('.pagination_link, .ml-pagination');
@@ -197,21 +200,6 @@ async function desktopAddMobGalleries() {
         displayAll();
     }
 }
-
-//====================================================================================================
-
-function downloader() {
-    function getVideoAndDownload(e) {
-        e.stopPropagation();
-        const video = document.querySelector('#ml-main-video_html5_api, video');
-        const url = video.getAttribute('src');
-        window.location.href = url;
-    }
-    $('#button-download').off();
-    $('#button-download').on('click', getVideoAndDownload);
-}
-
-downloader();
 
 //====================================================================================================
 
