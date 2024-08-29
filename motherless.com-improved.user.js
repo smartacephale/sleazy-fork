@@ -224,6 +224,12 @@ GM_addStyle(`
   #categories-page.inner .filtered-include { display: none !important; }
 }`);
 
+GM_addStyle(`
+  .ml-masonry-images.masonry-columns-4 .content-inner { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ml-masonry-images.masonry-columns-6 .content-inner { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .ml-masonry-images.masonry-columns-8 .content-inner { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
+`)
+
 //====================================================================================================
 
 const SCROLL_RESET_DELAY = 50;
