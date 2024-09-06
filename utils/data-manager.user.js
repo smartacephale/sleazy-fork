@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    Violentmonkey Scripts
-// @version      1.3
+// @version      1.31
 // @license      MIT
 // @description  handles loaded html, takes care of data, applying filters
 // @author       smartacephale
