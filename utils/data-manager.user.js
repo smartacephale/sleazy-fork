@@ -17,7 +17,7 @@ class DataManager {
         this.state = state;
         this.data = new Map();
         this.setupFilters();
-        this.lazyImgLoader = unsafeWindow.bhutils.LazyImgLoader.create((target) => !this.isFiltered(target));
+        this.lazyImgLoader = new unsafeWindow.bhutils.LazyImgLoader((target) => !this.isFiltered(target));
     }
 
     dataFilters = {
