@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.76
+// @version      1.78
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -9,9 +9,9 @@
 // @match        https://*.nhentai.net/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1434101
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1442661
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
@@ -19,11 +19,7 @@
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
-const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents
-} = window.bhutils;
+const { parseDom, sanitizeStr } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -99,7 +95,7 @@ class NHENTAI_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('.caption').innerText.toLowerCase();
+        const title = sanitizeStr(thumb.querySelector('.caption').innerText);
         const duration = 0;
         return { title, duration };
     }
@@ -161,6 +157,7 @@ function filtersUI(state) {
         console.log(groupOfButtons);
         const btns = parseDom(`<div class="sort-type"></div>`);
         groupOfButtons.forEach(k => {
+          console.log(k, state.custom, state);
             const btn = parseDom(`<a href="#" ${state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''}>${filterDescriptors[k].name}</a>`);
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -209,6 +206,11 @@ const store = new JabroniOutfitStore(defaultStateInclExclMiscPagination);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
+
+if (!state.custom) {
+  state.custom = {};
+  Object.assign(state.custom, DEFAULT_NHENTAI_STATE);
+}
 
 if (RULES.IS_VIDEO_PAGE) {
     findSimilar(state);
