@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.78
+// @version      1.79
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -154,10 +154,8 @@ function filtersUI(state) {
     const btnContainer = Array.from(document.querySelectorAll('.sort-type')).pop();
     const descs = Array.from(Object.keys(filterDescriptors));
     [descs.slice(0, 3), [descs[3]], [descs[4]]].forEach(groupOfButtons => {
-        console.log(groupOfButtons);
         const btns = parseDom(`<div class="sort-type"></div>`);
         groupOfButtons.forEach(k => {
-          console.log(k, state.custom, state);
             const btn = parseDom(`<a href="#" ${state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''}>${filterDescriptors[k].name}</a>`);
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
