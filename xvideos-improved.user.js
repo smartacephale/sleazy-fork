@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.82
+// @version      1.83
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -20,7 +20,6 @@
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
-const { parseDOM, sanitizeStr } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -80,7 +79,7 @@ class XVIDEOS_RULES {
     THUMB_URL(thumb) { return thumb.querySelector('.title a').innerText; }
 
     THUMB_DATA(thumb) {
-        const title = sanitizeStr(thumb.querySelector('.title').innerText);
+        const title = bhutils.sanitizeStr(thumb.querySelector('.title').innerText);
         const durationEl = thumb.querySelector('.duration').innerText;
         const duration = parseInt(durationEl) * (durationEl.includes('m') ? 60 : 1);
 
@@ -118,7 +117,7 @@ const RULES = new XVIDEOS_RULES();
 //====================================================================================================
 
 function createPreviewElement(src, mount) {
-    const elem = parseDom(`
+    const elem = bhutils.parseDom(`
     <div class="videopv" style="display: none;">
         <video autoplay="autoplay" playsinline="playsinline" muted="muted"></video>
     </div>`);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.89
+// @version      1.90
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -19,7 +19,6 @@
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
-const { parseDOM, sanitizeStr } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -76,7 +75,7 @@ class SPANKBANG_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = sanitizeStr(thumb.querySelector('.name')?.innerText);
+        const title = bhutils.sanitizeStr(thumb.querySelector('.name')?.innerText);
         const duration = (parseInt(thumb.querySelector('span.l')?.innerText) || 1) * 60;
         return { title, duration };
     }
@@ -100,7 +99,7 @@ const RULES = new SPANKBANG_RULES();
 //====================================================================================================
 
 function createPreviewElement(src, mount) {
-    const elem = parseDom(`
+    const elem = bhutils.parseDom(`
     <div class="video-js vjs-controls-disabled vjs-touch-enabled vjs-workinghover vjs-v7 vjs-user-active vjs-playing vjs-has-started mp4t_video-dimensions"
          id="mp4t_video" tabindex="-1" lang="en" translate="no" role="region" aria-label="Video Player" style="display: none;">
       <video id="mp4t_video_html5_api" class="vjs-tech" tabindex="-1" loop="loop" autoplay="autoplay" muted="muted" playsinline="playsinline"></video>
