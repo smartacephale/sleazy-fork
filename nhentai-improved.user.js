@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.79
+// @version      1.80
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1442661
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
 // @run-at       document-idle
@@ -206,8 +206,7 @@ const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
 if (!state.custom) {
-  state.custom = {};
-  Object.assign(state.custom, DEFAULT_NHENTAI_STATE);
+    Object.assign(state, { custom: DEFAULT_NHENTAI_STATE });
 }
 
 if (RULES.IS_VIDEO_PAGE) {

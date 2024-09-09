@@ -20,7 +20,7 @@
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
-const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr } = window.bhutils;
+const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr, findNextSibling } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 

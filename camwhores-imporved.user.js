@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.983
+// @version      1.984
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -9,10 +9,10 @@
 // @match        https://*.camwhores.tv/*
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.2/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.8/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.1/dist/lskdb.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1434101
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1442661
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
@@ -21,11 +21,9 @@
 // ==/UserScript==
 /* globals $ PaginationManager DataManager */
 
-const { Tick, findNextSibling, parseDom, fetchWith, fetchHtml, fetchText, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
-    parseIntegerOr, stringToWords, parseCSSUrl, circularShift, range, listenEvents, Observer, LazyImgLoader,
-    watchElementChildrenCount, watchDomChangesWithThrottle, copyAttributes, replaceElementTag, isMob,
-    objectToFormData, parseDataParams, sanitizeStr, chunks, getAllUniqueParents, downloader
-} = window.bhutils;
+const { Tick, parseDom, fetchHtml, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
+    circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
+    getAllUniqueParents, downloader } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
