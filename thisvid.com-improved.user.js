@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.9991
+// @version      4.9992
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -379,8 +379,8 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
     const skipCurrentMember = (n = 1) => { skipFlag = true; skipCount = n; }
     const filterVideosCount = (n = 1) => { minVideosCount = n; }
     let membersIds = [];
-    await getMemberFriends(id, 0, 2).then(r => membersIds = membersIds.concat(r));
-    getMemberFriends(id, 2).then(r => membersIds = membersIds.concat(r));
+    await getMemberFriends(id, 0, 1).then(r => membersIds = membersIds.concat(r));
+    getMemberFriends(id, 1).then(r => membersIds = membersIds.concat(r));
 
     async function* pageGenerator() {
         let currentGenerator;
