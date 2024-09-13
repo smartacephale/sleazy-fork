@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    Violentmonkey Scripts
-// @version      1.34
+// @version      1.35
 // @license      MIT
 // @description  process html, store and filter data
 // @author       smartacephale
@@ -76,7 +76,7 @@ class DataManager {
                 delete this.dataFilters[k];
             } else {
                 Object.assign(this.dataFilters[k], { state: this.state, rules: this.rules });
-                GM_addStyle(`${this.dataFilters[k].tag} { display: none !important; }`);
+                GM_addStyle(`.${this.dataFilters[k].tag} { display: none !important; }`);
             }
         });
     }
