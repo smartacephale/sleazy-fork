@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    Violentmonkey Scripts
-// @version      1.31
+// @version      1.32
 // @license      MIT
-// @description  handles loaded html, takes care of data, applying filters
+// @description  process html, store and filter data
 // @author       smartacephale
 // @match        *://*/*
 // @grant        unsafeWindow
@@ -45,7 +45,7 @@ class DataManager {
         filterExclude: {
             tag: 'filtered-exclude',
             createFilter() {
-                const tags = this.filterDSLToRegex(this.state.filterExcludeWords);
+                const tags = DataManager.filterDSLToRegex(this.state.filterExcludeWords);
                 return (v) => {
                     const containTags = tags.some(tag => tag.test(v.title));
                     return [this.tag, this.state.filterExclude && containTags];
@@ -55,7 +55,7 @@ class DataManager {
         filterInclude: {
             tag: 'filtered-include',
             createFilter() {
-                const tags = this.filterDSLToRegex(this.state.filterIncludeWords);
+                const tags = DataManager.filterDSLToRegex(this.state.filterIncludeWords);
                 return (v) => {
                     const containTagsNot = tags.some(tag => !tag.test(v.title));
                     return [this.tag, this.state.filterInclude && containTagsNot];
@@ -64,7 +64,7 @@ class DataManager {
         }
     }
 
-    filterDSLToRegex(str) {
+    static filterDSLToRegex(str) {
         const toFullWord = w => `(^|\ )${w}($|\ )`;
         const str_ = str.replace(/f\:(\w+)/g, (_, w) => toFullWord(w));
         return unsafeWindow.bhutils.stringToWords(str_).map(expr => new RegExp(expr, 'i'));
@@ -83,7 +83,6 @@ class DataManager {
         Object.values(this.dataFilters).forEach(f => {
             f.state = this.state;
             f.rules = this.rules;
-            f.filterDSLToRegex = this.filterDSLToRegex;
         });
     }
 
