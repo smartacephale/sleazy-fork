@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    Violentmonkey Scripts
-// @version      1.32
+// @version      1.33
 // @license      MIT
 // @description  process html, store and filter data
 // @author       smartacephale
@@ -74,16 +74,13 @@ class DataManager {
         Object.keys(this.dataFilters).forEach(k => {
             if (!Object.hasOwn(this.state, k)) {
                 delete this.dataFilters[k];
+            } else {
+                Object.assign(this.dataFilters[k], { state: this.state, rules: this.rules });
             }
         });
 
         const tags = Object.keys(this.dataFilters).map(k => `.${this.dataFilters[k].tag}`).join(',');
         GM_addStyle(`${tags} { display: none !important; }`);
-
-        Object.values(this.dataFilters).forEach(f => {
-            f.state = this.state;
-            f.rules = this.rules;
-        });
     }
 
     isFiltered(el) {
