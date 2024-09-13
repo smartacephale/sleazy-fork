@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.999
+// @version      4.9991
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -12,7 +12,7 @@
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.1/dist/lskdb.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1442661
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1447191
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
@@ -190,10 +190,10 @@ const FRIEND_REQUEST_URL = (id) => `https://thisvid.com/members/${id}/?action=ad
 
 const USERS_PER_PAGE = 24;
 
-async function getMemberFriends(memberId) {
+async function getMemberFriends(memberId, start, end) {
     const { friendsCount } = await getMemberData(memberId);
     const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
-    const pages = range(offset).map(o => `https://thisvid.com/members/${memberId}/friends/${o}/`);
+    const pages = range(offset).slice(start, end).map(o => `https://thisvid.com/members/${memberId}/friends/${o}/`);
     const pagesFetched = pages.map(p => fetchHtml(p));
     const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
     return friends;
@@ -371,18 +371,21 @@ async function getMemberVideos(id, type = 'private') {
     return { name, videosCount, memberVideosGenerator };
 }
 
-function getMembersVideos(membersIds, memberGeneratorCallback, type = 'private') {
+async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type = 'private') {
     let skipFlag = false;
     let skipCount = 1;
     let minVideosCount = 1;
 
     const skipCurrentMember = (n = 1) => { skipFlag = true; skipCount = n; }
     const filterVideosCount = (n = 1) => { minVideosCount = n; }
+    let membersIds = [];
+    await getMemberFriends(id, 0, 2).then(r => membersIds = membersIds.concat(r));
+    getMemberFriends(id, 2).then(r => membersIds = membersIds.concat(r));
 
     async function* pageGenerator() {
-        let c = 0;
         let currentGenerator;
-        while (c < membersIds.length - 1) {
+        let c = 0;
+        while (c < friendsCount - 1) {
             if (lskdb.hasKey(membersIds[c])) { c++; continue; }
             if (!currentGenerator) {
                 const { memberVideosGenerator, name, videosCount } = await getMemberVideos(membersIds[c], type);
@@ -453,13 +456,13 @@ async function createPrivateFeed() {
  .ignored * {  padding: 4px; margin: 5px; }
  .thumbs-items { display: flex; flex-wrap: wrap; }`);
 
-    const friends = await getMemberFriends(RULES.MY_ID);
+    const { friendsCount } = await getMemberData(RULES.MY_ID);
 
     RULES.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
-    RULES.PAGINATION_LAST = friends.length;
+    RULES.PAGINATION_LAST = friendsCount;
     RULES.CONTAINER = container;
 
-    const { pageGenerator, skipCurrentMember, filterVideosCount } = getMembersVideos(friends, (name, videosCount, id) => {
+    const { pageGenerator, skipCurrentMember, filterVideosCount } = await getMembersVideos(RULES.MY_ID, friendsCount, (name, videosCount, id) => {
         container.append(parseDom(`
      <div class="member-videos" id="mem-${id}">
        <h2><a href="/members/${id}/">${name}</a> ${videosCount} videos</h2>
