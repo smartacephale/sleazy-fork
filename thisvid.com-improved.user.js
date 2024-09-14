@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.9992
+// @version      4.9993
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -182,8 +182,8 @@ const RULES = new THISVID_RULES();
 
 //====================================================================================================
 
-function friend(id, i = 0) {
-    return fetchWith(FRIEND_REQUEST_URL(id)).then((text) => console.log(`#${i} * ${id}`, text));
+function friend(id) {
+    return fetchWith(FRIEND_REQUEST_URL(id));
 }
 
 const FRIEND_REQUEST_URL = (id) => `https://thisvid.com/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
@@ -211,11 +211,11 @@ async function friendMemberFriends(orientationFilter) {
     const friends = await getMemberFriends(memberId);
     let count = 0;
     await Promise.all(friends.map((fid, i) => {
-        if (!orientationFilter) return friend(fid, i);
+        if (!orientationFilter) return friend(fid);
         return getMemberData(fid).then(({ orientation, uploadedPrivate }) => {
             if (orientation === orientationFilter && uploadedPrivate > 0) {
                 count++;
-                return friend(fid, i);
+                return friend(fid);
             }
         });
 
@@ -533,7 +533,7 @@ async function clearMessages() {
                 getMemberData(mid).then(({ orientation, uploadedPrivate }) => {
                     if (orientation === 'Straight' && uploadedPrivate > 0) {
                         c++;
-                        friend(mid.match(/\d+/)[0], c);
+                        friend(mid.match(/\d+/)[0]);
                     }
                 });
                 confirmed.push(id);
