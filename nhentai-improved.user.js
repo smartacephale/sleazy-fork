@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.80
+// @version      1.81
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -89,7 +89,8 @@ class NHENTAI_RULES {
 
     THUMB_IMG_DATA(thumb) {
         const img = thumb.querySelector('.cover img');
-        const imgSrc = img.getAttribute('data-src') || img.getAttribute('src');
+        const imgSrc = (img.getAttribute('data-src') || img.getAttribute('src'))?.replace('t5', 't3');
+        img.classList.remove('lazyload');
         if ((img.complete && img.getAttribute('src') && !img.src.includes('data:image'))) { return ({}); }
         return { img, imgSrc };
     }
