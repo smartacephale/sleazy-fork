@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.910
+// @version      2.911
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -157,10 +157,10 @@ function fixURLs() {
         const header = hasVideos ? '/GV' : '/GI';
         g.querySelectorAll('a').forEach(a => { a.href = a.href.replace(/\/G/, () => header); });
     });
-
     document.querySelectorAll('a[href^="/term/"]').forEach(a => {
         a.href = a.href.replace(/[\w|+]+$/, (v) => `videos/${v}?term=${v}&range=0&size=0&sort=date`);
     });
+    document.querySelectorAll('a[href^="/g/"]').forEach(a => a.href = a.href.replace(/\/g\//, '/gv/'));
 }
 
 //====================================================================================================
