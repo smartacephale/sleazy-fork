@@ -4,7 +4,7 @@
 // @namespace    Violentmonkey Scripts
 // @author       smartacephale
 // @license      MIT
-// @version      1.32
+// @version      1.4
 // @match        *://*/*
 // @grant        unsafeWindow
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
@@ -23,23 +23,26 @@ class PaginationManager {
      * @param {Function} [alternativeGenerator] - Optional custom generator function
      */
     constructor(state, stateLocale, rules, handleHtmlCallback, delay, alternativeGenerator) {
-        this.state = state;
-        this.stateLocale = stateLocale;
-        this.handleHtmlCallback = handleHtmlCallback;
-
         const { offset, iteratable_url } = rules.URL_DATA();
+        Object.assign(this, { state, stateLocale, rules, handleHtmlCallback, delay });
+        Object.assign(this, { pagIndexLast: rules.PAGINATION_LAST, pagIndexCur: offset });
 
-        this.stateLocale.pagIndexLast = rules.PAGINATION_LAST;
-        this.stateLocale.pagIndexCur = offset;
-
-        this.paginationGenerator = alternativeGenerator ? alternativeGenerator() :
+        this.paginationGenerator = alternativeGenerator?.() ??
             PaginationManager.createPaginationGenerator(offset, rules.PAGINATION_LAST, iteratable_url);
 
-        this.paginationObserver = unsafeWindow.bhutils.Observer.observeWhile(
-            rules.INTERSECTION_OBSERVABLE || rules.PAGINATION, this.generatorConsumer, delay);
+        this.createPaginationObserver();
+    }
+
+    createPaginationObserver() {
+        if (this.this.infscrlenbld !== undefined) paginationObserver?.disconnect();
+        this.infscrlenbld = !!this.state.infiniteScrollEnabled;
+        if (!this.infscrlenbld) return;
+        const observable = this.rules.INTERSECTION_OBSERVABLE || this.rules.PAGINATION;
+        this.paginationObserver = unsafeWindow.bhutils.Observer.observeWhile(observable, this.generatorConsumer, this.delay);
     }
 
     generatorConsumer = async () => {
+        if (this.state.infiniteScrollEnabled !== this.infscrlenbld) this.createPaginationObserver();
         if (!this.state.infiniteScrollEnabled) return;
         const { value: { url, offset } = {}, done } = await this.paginationGenerator.next();
         if (!done) {
