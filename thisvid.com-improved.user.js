@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.9993
+// @version      4.9995
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.5/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.1/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1447191
@@ -21,7 +21,7 @@
 /* globals $ DataManager PaginationManager */
 
 const { Tick, parseDom, fetchWith, fetchHtml, timeToSeconds, parseCSSUrl, circularShift, range, listenEvents, replaceElementTag,
-    sanitizeStr, chunks, downloader } = window.bhutils;
+    sanitizeStr, chunks, downloader, AsyncPool } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
@@ -209,18 +209,16 @@ async function friendMemberFriends(orientationFilter) {
     const memberId = window.location.pathname.match(/\d+/)[0];
     friend(memberId);
     const friends = await getMemberFriends(memberId);
-    let count = 0;
-    await Promise.all(friends.map((fid, i) => {
-        if (!orientationFilter) return friend(fid);
-        return getMemberData(fid).then(({ orientation, uploadedPrivate }) => {
+    const spool = new AsyncPool(4);
+    friends.map((fid) => {
+        if (!orientationFilter) () => friend(fid);
+        return () => getMemberData(fid).then(async ({ orientation, uploadedPrivate }) => {
             if (orientation === orientationFilter && uploadedPrivate > 0) {
-                count++;
-                return friend(fid);
+                await friend(fid);
             }
         });
-
-    }));
-    console.log(count, '/', friends.length);
+    }).forEach(f => spool.push(f));
+    await spool.run();
 }
 
 function initFriendship() {
@@ -379,8 +377,8 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
     const skipCurrentMember = (n = 1) => { skipFlag = true; skipCount = n; }
     const filterVideosCount = (n = 1) => { minVideosCount = n; }
     let membersIds = [];
-    await getMemberFriends(id, 0, 1).then(r => membersIds = membersIds.concat(r));
-    getMemberFriends(id, 1).then(r => membersIds = membersIds.concat(r));
+    await getMemberFriends(id, 0, 1).then(r => { membersIds = membersIds.concat(r) });
+    getMemberFriends(id, 1).then(r => { membersIds = membersIds.concat(r) });
 
     async function* pageGenerator() {
         let currentGenerator;

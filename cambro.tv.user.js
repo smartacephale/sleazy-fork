@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.25
+// @version      1.27
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.cambro.tv/*
 // @exclude      *.cambro.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.5/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.1/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1442661
@@ -21,7 +21,7 @@
 // ==/UserScript==
 /* globals $ PaginationManager DataManager */
 
-const { Tick, parseDom, fetchHtml, SyncPull, wait, computeAsyncOneAtTime, timeToSeconds,
+const { Tick, parseDom, fetchHtml, AsyncPool, wait, computeAsyncOneAtTime, timeToSeconds,
     circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
     getAllUniqueParents, downloader } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
@@ -123,7 +123,6 @@ class CAMWHORES_RULES {
         return { title, duration };
     }
 
-
     URL_DATA(url_, document_) {
         const { href } = url_ || window.location;
         const url = new URL(href);
@@ -182,7 +181,6 @@ function animate() {
     });
 }
 
-
 //====================================================================================================
 
 const createDownloadButton = () => downloader({
@@ -212,7 +210,7 @@ const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
 });
 
 const lskdb = new LSKDB();
-const spull = new SyncPull();
+const spool = new AsyncPool();
 
 function friendRequest(id) {
     const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
@@ -306,11 +304,11 @@ function clearMessages() {
     if (!last) return;
 
     for (let i = 0; i < last; i++) {
-        spull.push({
+        spool.push({
             v: () =>
                 fetchHtml(messagesURL(i)).then(html_ => {
                     const messages = Array.from(html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || []).map(a => a.href);
-                    messages.forEach((m, j) => spull.push({ v: () => checkMessageHistory(m), p: 1 }));
+                    messages.forEach((m, j) => spool.push({ v: () => checkMessageHistory(m), p: 1 }));
                 }), p: 2
         });
     }
@@ -323,7 +321,7 @@ function clearMessages() {
             const id = url.match(/\d+/)[0];
             if (!(hasOriginalText || hasFriendRequest)) {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
-                spull.push({
+                spool.push({
                     v: () => fetch(deleteURL).then(r => {
                         console.log(r.status === 200 ? ++c : '', r.status, 'delete', id,
                             html.querySelector('.list-messages').innerText.replace(/\n|\t/g, ' ').replace(/\ {2,}/g, ' ').trim());
@@ -332,7 +330,7 @@ function clearMessages() {
             } else {
                 console.log(hasOriginalText, url);
                 if (hasFriendRequest) {
-                    spull.push({ v: () => acceptFriendRequest(id), p: 0 });
+                    spool.push({ v: () => acceptFriendRequest(id), p: 0 });
                 }
             }
         });
@@ -376,7 +374,7 @@ function route() {
 
 //====================================================================================================
 
-const SCROLL_RESET_DELAY = 500;
+const SCROLL_RESET_DELAY = 400;
 const ANIMATION_DELAY = 500;
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
