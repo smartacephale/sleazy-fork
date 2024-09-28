@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.9996
+// @version      4.9997
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -209,7 +209,7 @@ async function friendMemberFriends(orientationFilter) {
     const memberId = window.location.pathname.match(/\d+/)[0];
     friend(memberId);
     const friends = await getMemberFriends(memberId);
-    const spool = new AsyncPool(4);
+    const spool = new AsyncPool(60);
     friends.map((fid) => {
         if (!orientationFilter) () => friend(fid);
         return () => getMemberData(fid).then(async ({ orientation, uploadedPrivate }) => {
