@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    Violentmonkey Scripts
-// @version      1.35
+// @version      1.4
 // @license      MIT
 // @description  process html, store and filter data
 // @author       smartacephale
@@ -92,15 +92,20 @@ class DataManager {
 
         if (filtersToApply.length === 0) return;
 
+        let updates = [];
         let offset_counter = 1;
         for (const v of this.data.values()) {
             if (++offset_counter > offset) {
                 for (const f of filtersToApply) {
                     const [tag, condition] = f(v);
-                    v.element.classList.toggle(tag, condition);
+                    updates.push(() => v.element.classList.toggle(tag, condition));
                 }
             }
         }
+
+        requestAnimationFrame(() => {
+            updates.forEach(update => update());
+        });
     }
 
     filterAll = (offset) => {
