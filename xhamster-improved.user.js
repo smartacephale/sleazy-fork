@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.52
+// @version      2.54
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
@@ -22,7 +22,7 @@
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
-const { getAllUniqueParents, watchElementChildrenCount, timeToSeconds, Observer, sanitizeStr } = window.bhutils;
+const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, Observer, sanitizeStr } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -69,7 +69,7 @@ class XHAMSTER_RULES {
     }
 
     GET_THUMBS(html) {
-        return html.querySelectorAll('.thumb-list__item:not([data-video-type])');
+        return html.querySelectorAll('.video-thumb');
     }
 
     THUMB_URL(thumb) {
@@ -93,12 +93,12 @@ class XHAMSTER_RULES {
     URL_DATA() {
         const url = new URL(window.location.href);
         const offset = parseInt(url.searchParams.get('page') || url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 1;
-        if (!/\/\d+\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
 
         const iteratable_url = n => {
             if (/^\/search\//.test(url.pathname)) {
                 url.searchParams.set('page', n);
             } else {
+                if (!/\/\d+\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
                 url.pathname = url.pathname.replace(/\/\d+\/?$/, `/${n}/`);
             }
             return url.href;
@@ -113,9 +113,10 @@ const RULES = new XHAMSTER_RULES();
 //====================================================================================================
 
 function expandMoreVideoPage() {
-    const getExpandButton = () => document.querySelector('button[data-role="show-more-next"]');
-    const observer = new Observer((target) => target.click());
-    observer.observe(getExpandButton());
+    waitForElementExists(document.body, 'button[data-role="show-more-next"]', (el) => {
+      const observer = new Observer((target) => target.click());
+      observer.observe(el);
+    });
 }
 
 //====================================================================================================
