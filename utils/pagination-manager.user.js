@@ -4,7 +4,7 @@
 // @namespace    Violentmonkey Scripts
 // @author       smartacephale
 // @license      MIT
-// @version      1.4
+// @version      1.41
 // @match        *://*/*
 // @grant        unsafeWindow
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
@@ -34,15 +34,11 @@ class PaginationManager {
     }
 
     createPaginationObserver() {
-        if (this.infscrlenbld !== undefined) this.paginationObserver?.disconnect();
-        this.infscrlenbld = !!this.state.infiniteScrollEnabled;
-        if (!this.infscrlenbld) return;
         const observable = this.rules.INTERSECTION_OBSERVABLE || this.rules.PAGINATION;
-        this.paginationObserver = unsafeWindow.bhutils.Observer.observeWhile(observable, this.generatorConsumer, this.delay);
+        unsafeWindow.bhutils.Observer.observeWhile(observable, this.generatorConsumer, this.delay);
     }
 
     generatorConsumer = async () => {
-        if (this.state.infiniteScrollEnabled !== this.infscrlenbld) this.createPaginationObserver();
         if (!this.state.infiniteScrollEnabled) return;
         const { value: { url, offset } = {}, done } = await this.paginationGenerator.next();
         if (!done) {
