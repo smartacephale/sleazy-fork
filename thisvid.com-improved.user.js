@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.9998
+// @version      4.9999
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -13,10 +13,10 @@
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1456146
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456003
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456787
 // @run-at       document-idle
-// @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
-// @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
+// @downloadURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
+// @updateURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
