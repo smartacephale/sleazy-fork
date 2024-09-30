@@ -34,7 +34,7 @@ class PaginationManager {
     }
 
     createPaginationObserver() {
-        if (this.this.infscrlenbld !== undefined) paginationObserver?.disconnect();
+        if (this.infscrlenbld !== undefined) paginationObserver?.disconnect();
         this.infscrlenbld = !!this.state.infiniteScrollEnabled;
         if (!this.infscrlenbld) return;
         const observable = this.rules.INTERSECTION_OBSERVABLE || this.rules.PAGINATION;
