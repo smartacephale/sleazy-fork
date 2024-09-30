@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         ebalka improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.0.1
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.ebalka.*/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1442661
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1456146
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456787
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=wwwa.ebalka.link
 // ==/UserScript==
@@ -117,21 +117,21 @@ const RULES = new EBALKA_RULES();
 //====================================================================================================
 
 function animateThumb(thumb) {
-  const el = thumb.querySelector('.card__thumb_video');
-  const src = el.querySelector('.card__image').getAttribute('data-preview');
+    const el = thumb.querySelector('.card__thumb_video');
+    const src = el.querySelector('.card__image').getAttribute('data-preview');
 
-  el.classList.add('video-on');
+    el.classList.add('video-on');
 
-  const videoElem = bhutils.parseDom(`<video style="position: absolute; left: 0px; top: 0px; width: 330px; height: 187px; visibility: visible; margin-top: -1px;"
+    const videoElem = bhutils.parseDom(`<video style="position: absolute; left: 0px; top: 0px; width: 330px; height: 187px; visibility: visible; margin-top: -1px;"
                             autoplay="" loop="" playsinline="true" webkit-playsinline="true" src="${src}"></video>`);
-  el.appendChild(videoElem);
+    el.appendChild(videoElem);
 
-  return {
-    removeElem: () => {
-      el.classList.remove('video-on');
-      videoElem.remove();
+    return {
+        removeElem: () => {
+            el.classList.remove('video-on');
+            videoElem.remove();
+        }
     }
-  }
 }
 
 function animate() {
