@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         data-manager
 // @namespace    Violentmonkey Scripts
-// @version      1.4
+// @version      1.5
 // @license      MIT
 // @description  process html, store and filter data
 // @author       smartacephale
@@ -11,74 +11,87 @@
 // @downloadURL none
 // ==/UserScript==
 
+class DataFilter {
+    constructor(rules, state) {
+        this.state = state;
+        this.rules = rules;
+
+        const methods = Object.getOwnPropertyNames(this);
+        this.filters = methods.reduce((acc, k) => {
+            if (k in this.state) {
+                acc[k] = this[k];
+                GM_addStyle(`.filter-${k.toLowerCase().slice(6)} { display: none !important; }`);
+            }
+            return acc;
+        }, {});
+    }
+
+    filterPublic = () => {
+        return (v) => {
+            const isPublic = !this.rules.IS_PRIVATE(v.element);
+            return {
+                tag: 'filter-public',
+                condition: this.state.filterPublic && isPublic
+            };
+        }
+    }
+
+    filterPrivate = () => {
+        return (v) => {
+            const isPrivate = this.rules.IS_PRIVATE(v.element);
+            return {
+                tag: 'filter-private',
+                condition: this.state.filterPrivate && isPrivate
+            };
+        }
+    }
+
+    filterDuration = () => {
+        return (v) => {
+            const notInRange = v.duration < this.state.filterDurationFrom || v.duration > this.state.filterDurationTo;
+            return {
+                tag: 'filter-duration',
+                condition: this.state.filterDuration && notInRange
+            };
+        }
+    }
+
+    filterExclude = () => {
+        const tags = DataManager.filterDSLToRegex(this.state.filterExcludeWords);
+        return (v) => {
+            const containTags = tags.some(tag => tag.test(v.title));
+            return {
+                tag: 'filter-exclude',
+                condition: this.state.filterExclude && containTags
+            };
+        }
+    }
+
+    filterInclude = () => {
+        const tags = DataManager.filterDSLToRegex(this.state.filterIncludeWords);
+        return (v) => {
+            const containTagsNot = tags.some(tag => !tag.test(v.title));
+            return {
+                tag: 'filter-include',
+                condition: this.state.filterInclude && containTagsNot
+            };
+        }
+    }
+}
+
 class DataManager {
     constructor(rules, state) {
         this.rules = rules;
         this.state = state;
         this.data = new Map();
-        this.setupFilters();
         this.lazyImgLoader = new unsafeWindow.bhutils.LazyImgLoader((target) => !this.isFiltered(target));
-    }
-
-    dataFilters = {
-        filterPublic: {
-            tag: 'filtered-public',
-            createFilter() {
-                return (v) => [this.tag, !this.rules.IS_PRIVATE(v.element) && this.state.filterPublic];
-            }
-        },
-        filterPrivate: {
-            tag: 'filtered-private',
-            createFilter() {
-                return (v) => [this.tag, this.rules.IS_PRIVATE(v.element) && this.state.filterPrivate];
-            }
-        },
-        filterDuration: {
-            tag: 'filtered-duration',
-            createFilter() {
-                return (v) => {
-                    const notInRange = v.duration < this.state.filterDurationFrom || v.duration > this.state.filterDurationTo;
-                    return [this.tag, this.state.filterDuration && notInRange];
-                }
-            }
-        },
-        filterExclude: {
-            tag: 'filtered-exclude',
-            createFilter() {
-                const tags = DataManager.filterDSLToRegex(this.state.filterExcludeWords);
-                return (v) => {
-                    const containTags = tags.some(tag => tag.test(v.title));
-                    return [this.tag, this.state.filterExclude && containTags];
-                }
-            }
-        },
-        filterInclude: {
-            tag: 'filtered-include',
-            createFilter() {
-                const tags = DataManager.filterDSLToRegex(this.state.filterIncludeWords);
-                return (v) => {
-                    const containTagsNot = tags.some(tag => !tag.test(v.title));
-                    return [this.tag, this.state.filterInclude && containTagsNot];
-                }
-            }
-        }
+        this.dataFilters = new DataFilter(rules, state).filters;
     }
 
     static filterDSLToRegex(str) {
         const toFullWord = w => `(^|\ )${w}($|\ )`;
         const str_ = str.replace(/f\:(\w+)/g, (_, w) => toFullWord(w));
         return unsafeWindow.bhutils.stringToWords(str_).map(expr => new RegExp(expr, 'i'));
-    }
-
-    setupFilters() {
-        Object.keys(this.dataFilters).forEach(k => {
-            if (!Object.hasOwn(this.state, k)) {
-                delete this.dataFilters[k];
-            } else {
-                Object.assign(this.dataFilters[k], { state: this.state, rules: this.rules });
-                GM_addStyle(`.${this.dataFilters[k].tag} { display: none !important; }`);
-            }
-        });
     }
 
     isFiltered(el) {
@@ -88,7 +101,7 @@ class DataManager {
     applyFilters = (filters, offset = 0) => {
         const filtersToApply = Object.keys(filters)
             .filter(k => Object.hasOwn(this.dataFilters, k))
-            .map(k => this.dataFilters[k].createFilter());
+            .map(k => this.dataFilters[k]());
 
         if (filtersToApply.length === 0) return;
 
@@ -97,7 +110,7 @@ class DataManager {
         for (const v of this.data.values()) {
             if (++offset_counter > offset) {
                 for (const f of filtersToApply) {
-                    const [tag, condition] = f(v);
+                    const {tag, condition} = f(v);
                     updates.push(() => v.element.classList.toggle(tag, condition));
                 }
             }
