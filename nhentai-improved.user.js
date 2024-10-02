@@ -9,10 +9,10 @@
 // @match        https://*.nhentai.net/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.7/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.4/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1456146
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456787
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1442661
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1434103
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
@@ -117,14 +117,6 @@ const RULES = new NHENTAI_RULES();
 
 //====================================================================================================
 
-const DEFAULT_NHENTAI_STATE = {
-    english: false,
-    japanese: false,
-    chinese: false,
-    gay: false,
-    fullColor: false
-}
-
 const filterDescriptors = {
     english: { query: 'english', name: '🇬🇧' },
     japanese: { query: 'japanese', name: '🇯🇵' },
@@ -133,23 +125,11 @@ const filterDescriptors = {
     fullColor: { query: 'full+color', name: 'Full Color' }
 }
 
-function checkParamInQuery(param, state, url_) {
-    let url = url_ || window.location.search;
-    if (state && !url.includes(param)) {
-        url += `+${param}`;
-    }
-    if (!state && url.includes(param)) {
-        url = url.replace(`+${param}`, () => '');
-    }
-    return url;
-}
-
 function checkURL(url_) {
-    let url = url_;
-    Object.keys(filterDescriptors).forEach(k => {
-        url = checkParamInQuery(filterDescriptors[k].query, state.custom[k], url);
-    });
-    return url;
+    return Object.keys(filterDescriptors).reduce((url, k) => {
+        const q = filterDescriptors[k].query;
+        return state.custom[k] ? (url.includes(q) ? url : `${url}+${q}`) : url.replace(`+${q}`, () => '');
+    }, url_);
 }
 
 function filtersUI(state) {
@@ -168,6 +148,8 @@ function filtersUI(state) {
         });
         btnContainer.after(btns);
     });
+  const fixedURL = checkURL(window.location.href);
+  if (window.location.href !== fixedURL) window.location.href = checkURL(window.location.href);
 }
 
 function findSimilar(state) {
@@ -181,9 +163,7 @@ function findSimilar(state) {
         searchSimilarKindofQuery: `/search/?q=${tags.reverse().slice(0, 5).join("+")}`
     }
 
-    Object.keys(urls).forEach(url => {
-        urls[url] = checkURL(urls[url]);
-    });
+    Object.keys(urls).forEach(url => { urls[url] = checkURL(urls[url]) });
 
     Array.from(document.links).filter(l => /\/(search|category|tag|character|artist|group|parody)\/\w+/.test(l.href)).forEach(l => {
         l.href = checkURL(l.href.replace(/(search|category|tag|character|artist|group|parody)\//, 'search/?q=').replace(/\/$/, ''));
@@ -208,7 +188,8 @@ const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
 if (!state.custom) {
-    Object.assign(state, { custom: DEFAULT_NHENTAI_STATE });
+    const custom = Object.entries(filterDescriptors).reduce((acc, [k,_]) => { acc[k] = false; return acc }, {});
+    Object.assign(state, { custom });
 }
 
 if (RULES.IS_VIDEO_PAGE) {
