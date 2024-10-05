@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.914
+// @version      2.915
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -12,7 +12,7 @@
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1456146
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456787
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js

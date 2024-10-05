@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.84
+// @version      1.85
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -11,7 +11,7 @@
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1456146
+// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456787
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
@@ -148,8 +148,8 @@ function filtersUI(state) {
         });
         btnContainer.after(btns);
     });
-  const fixedURL = checkURL(window.location.href);
-  if (window.location.href !== fixedURL) window.location.href = checkURL(window.location.href);
+    const fixedURL = checkURL(window.location.href);
+    if (window.location.href !== fixedURL) window.location.href = checkURL(window.location.href);
 }
 
 function findSimilar(state) {
@@ -188,7 +188,7 @@ const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
 if (!state.custom) {
-    const custom = Object.entries(filterDescriptors).reduce((acc, [k,_]) => { acc[k] = false; return acc }, {});
+    const custom = Object.entries(filterDescriptors).reduce((acc, [k, _]) => { acc[k] = false; return acc }, {});
     Object.assign(state, { custom });
 }
 
