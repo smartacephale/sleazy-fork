@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.9
+// @version      2.3.0
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -42,7 +42,7 @@ const LOGO = `
 console.log(LOGO);
 
 (function disableDisclaimer() {
-    if ($('#disclaimer').length === 0) return;
+    if (!$('#disclaimer').length) return;
     $.ajax({ type: 'POST', url: '/user/disclaimer', async: true });
     $('#disclaimer').remove();
     $('body').css('overflow', 'visible');
@@ -62,32 +62,31 @@ function togglePhotoElements() {
 }
 
 function hidePhotoOnlyAlbums() {
-    Array.from(document.querySelectorAll('div[id^=album]')).filter(e => !e.querySelector('.album-videos')).forEach(a => {
-        $(a).toggle(config.showPhotoAlbums);
-    });
+    $('div[id^=album]').filter((_, e) => !$(e).find('.album-videos').length).toggle(config.showPhotoAlbums);
     $('#togglePhotoAlbums').css('color', isActiveColor(!config.showPhotoAlbums));
     window.dispatchEvent(new Event('scroll'));
 }
 
 function infiniteScrollAndLazyLoading() {
     if (!document.querySelector('.pagination')) return;
+
     const url = new URL(window.location.href);
-    let next_page = parseInt(url.searchParams.get('page')) || 2;
+  
     const nextPageUrl = () => {
-        url.searchParams.set('page', next_page);
+        url.searchParams.set('page', nextPage);
         return url.href;
     }
+
+    let nextPage = parseInt(url.searchParams.get('page')) || 2;
     const limit = parseInt($('.pagination li:last-child()').prev().text()) || 50;
 
     const infinite = $('#page').infiniteScroll({ path: nextPageUrl, append: '.page-content', scrollThreshold: 800 });
 
-    $('#page').on('append.infiniteScroll', (event, body, path, items, response) => {
+    $('#page').on('append.infiniteScroll', () => {
         hidePhotoOnlyAlbums();
         new LazyLoad();
-        next_page++;
-        if (next_page > limit) {
-            infinite.destroy();
-        }
+        nextPage++;
+        if (nextPage > limit) infinite.destroy();
     });
 }
 
@@ -99,7 +98,7 @@ const config = {
 }
 
 function sync() {
-    Object.assign(config, { ...JSON.parse(localStorage.getItem("config")) });
+    Object.assign(config, JSON.parse(localStorage.getItem("config")));
 }
 
 function save() {
