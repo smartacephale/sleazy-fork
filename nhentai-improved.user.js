@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.85
+// @version      1.87
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -12,7 +12,7 @@
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456787
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
@@ -157,10 +157,8 @@ function findSimilar(state) {
     tags = Array.from(new Set(tags)).sort((a, b) => a.length < b.length);
 
     const urls = {
-        searchSimilarVeryQuery: `/search/?q=${tags.join("+")}`,
-        searchSimilarQuery: `/search/?q=${tags.slice(0, 10).join("+")}`,
-        searchSimilarLessQuery: `/search/?q=${tags.slice(0, 5).join("+")}`,
-        searchSimilarKindofQuery: `/search/?q=${tags.reverse().slice(0, 5).join("+")}`
+        searchSimilar: `/search/?q=${tags.slice(0, 5).join("+")}`,
+        searchSimilarLess: `/search/?q=${tags.reverse().slice(0, 5).join("+")}`
     }
 
     Object.keys(urls).forEach(url => { urls[url] = checkURL(urls[url]) });
@@ -170,10 +168,8 @@ function findSimilar(state) {
     });
 
     document.querySelector('.buttons').append(
-        parseDom(`<a href="${urls.searchSimilarVeryQuery}" class="btn" style="background: rgba(59, 49, 70, 1)"><i class="fa fa-search"></i> Very Similar</a>`),
-        parseDom(`<a href="${urls.searchSimilarQuery}" class="btn" style="background: rgba(59, 49, 70, .9)"><i class="fa fa-search"></i> Similar</a>`),
-        parseDom(`<a href="${urls.searchSimilarLessQuery}" class="btn" style="background: rgba(59, 49, 70, .8)"><i class="fa fa-search"></i> Less Similar</a>`),
-        parseDom(`<a href="${urls.searchSimilarKindofQuery}" class="btn" style="background: rgba(59, 49, 70, .7)"><i class="fa fa-search"></i> Kindof Similar</a>`));
+        parseDom(`<a href="${urls.searchSimilar}" class="btn" style="background: rgba(59, 49, 70, 1)"><i class="fa fa-search"></i> Similar</a>`),
+        parseDom(`<a href="${urls.searchSimilarLess}" class="btn" style="background: rgba(59, 49, 70, .9)"><i class="fa fa-search"></i> Less Similar</a>`));
 }
 
 //====================================================================================================
@@ -208,5 +204,5 @@ if (RULES.PAGINATION) {
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
 
-DefaultScheme.durationFilter = undefined;
+delete DefaultScheme.durationFilter;
 new JabroniOutfitUI(store, DefaultScheme);
