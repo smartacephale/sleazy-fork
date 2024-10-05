@@ -4,7 +4,7 @@
 // @namespace    Violentmonkey Scripts
 // @author       smartacephale
 // @license      MIT
-// @version      1.41
+// @version      1.42
 // @match        *://*/*
 // @grant        unsafeWindow
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
@@ -25,7 +25,7 @@ class PaginationManager {
     constructor(state, stateLocale, rules, handleHtmlCallback, delay, alternativeGenerator) {
         const { offset, iteratable_url } = rules.URL_DATA();
         Object.assign(this, { state, stateLocale, rules, handleHtmlCallback, delay });
-        Object.assign(this, { pagIndexLast: rules.PAGINATION_LAST, pagIndexCur: offset });
+        Object.assign(this.stateLocale, { pagIndexLast: rules.PAGINATION_LAST, pagIndexCur: offset });
 
         this.paginationGenerator = alternativeGenerator?.() ??
             PaginationManager.createPaginationGenerator(offset, rules.PAGINATION_LAST, iteratable_url);
