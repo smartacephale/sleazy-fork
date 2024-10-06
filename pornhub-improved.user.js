@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.804
+// @version      1.805
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -124,9 +124,7 @@ if (RULES.CONTAINER) {
 
 if (RULES.IS_PLAYLIST_PAGE) {
     handleLoadedHTML(RULES.CONTAINER);
-    watchElementChildrenCount(RULES.CONTAINER, () => {
-        handleLoadedHTML(RULES.CONTAINER);
-    });
+    watchElementChildrenCount(RULES.CONTAINER, () => handleLoadedHTML(RULES.CONTAINER));
 }
 
 if (RULES.PAGINATION) {
