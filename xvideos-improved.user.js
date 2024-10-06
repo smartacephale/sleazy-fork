@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.87
+// @version      1.88
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
