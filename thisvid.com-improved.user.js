@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.2
+// @version      5.0.3
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
