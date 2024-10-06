@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.93
+// @version      1.94
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -11,7 +11,7 @@
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1456787
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=spankbang.com
 // @downloadURL https://update.sleazyfork.org/scripts/493946/SpankBangcom%20Improved.user.js
@@ -132,14 +132,16 @@ function createPreviewElement(src, mount) {
 }
 
 function animate() {
+    RULES.GET_THUMBS(document.body).forEach(e => { e.querySelector('[data-preview]').setAttribute('do-not-animate', ''); });
     function handleThumbHover(e) {
-        if (!(e.target.classList.contains('cover') && e.target.getAttribute('data-preview'))) return;
+        if (!(e.target.classList.contains('cover') && e.target.getAttribute('data-preview') && !e.target.hasAttribute('do-not-animate'))) return;
+        const parent = e.target.parentElement.parentElement;
         const videoSrc = e.target.getAttribute('data-preview');
-        const { removeElem } = createPreviewElement(videoSrc, e.target.parentElement.parentElement);
-        e.target.parentElement.parentElement.addEventListener('mouseleave', removeElem, { once: true });
+        const { removeElem } = createPreviewElement(videoSrc, parent);
+        parent.addEventListener('mouseleave', removeElem, { once: true });
     }
 
-    document.body.addEventListener('mouseover', handleThumbHover);
+  document.body.addEventListener('mouseover', handleThumbHover, true);
 }
 
 //====================================================================================================
@@ -156,9 +158,7 @@ store.subscribe(applyFilters);
 if (RULES.HAS_VIDEOS) {
     animate();
     new JabroniOutfitUI(store);
-    document.querySelectorAll('.video-list').forEach(c => {
-        handleLoadedHTML(c, c);
-    });
+    document.querySelectorAll('.video-list').forEach(c => handleLoadedHTML(c, c));
 }
 
 if (RULES.PAGINATION) {
