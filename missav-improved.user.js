@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         missav.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -14,8 +14,6 @@
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
-// @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
-// @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
