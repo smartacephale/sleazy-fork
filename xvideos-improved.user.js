@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.88
+// @version      1.89
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -18,7 +18,7 @@
 // @downloadURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.meta.js
 // ==/UserScript==
-/* globals $ DataManager PaginationManager */
+/* globals DataManager PaginationManager */
 
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
@@ -61,20 +61,9 @@ class XVIDEOS_RULES {
         this.HAS_VIDEOS = document.querySelector('div.thumb-block[id^=video_]');
     }
 
-    GET_THUMBS(html) {
-        return html.querySelectorAll('div.thumb-block[id^=video_]:not(.thumb-ad)');
-    }
+    GET_THUMBS(html) { return html.querySelectorAll('div.thumb-block[id^=video_]:not(.thumb-ad)'); }
 
     THUMB_IMG_DATA() { return ({}); };
-
-    GET_THUMB_IMG(thumb) {
-        const img = thumb.querySelector('img');
-        const imgSrc = img?.getAttribute('data-src');
-        if (img && imgSrc) {
-            img.setAttribute('data-src', imgSrc.replace('THUMBNUM', '1'));
-        }
-        return img;
-    }
 
     THUMB_URL(thumb) { return thumb.querySelector('.title a').innerText; }
 
@@ -162,15 +151,6 @@ function animate() {
 
 //====================================================================================================
 
-console.log(LOGO);
-
-const SCROLL_RESET_DELAY = 350;
-
-const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
-store.subscribe(applyFilters);
-
 function route() {
     if (RULES.PAGINATION) {
         new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
@@ -183,4 +163,13 @@ function route() {
     }
 }
 
+//====================================================================================================
+
+console.log(LOGO);
+
+const SCROLL_RESET_DELAY = 350;
+const store = new JabroniOutfitStore(defaultStateWithDuration);
+const { state, stateLocale } = store;
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+store.subscribe(applyFilters);
 route();
