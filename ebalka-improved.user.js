@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ebalka improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.6
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -15,7 +15,7 @@
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=wwwa.ebalka.link
 // ==/UserScript==
-/* globals $ DataManager PaginationManager */
+/* globals DataManager PaginationManager */
 
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
@@ -68,17 +68,9 @@ class EBALKA_RULES {
         this.HAS_VIDEOS = !!document.querySelector('.card_video');
     }
 
-    GET_THUMBS(html) {
-        return html.querySelectorAll('.card_video');
-    }
+    GET_THUMBS(html) { return html.querySelectorAll('.card_video'); }
 
     THUMB_IMG_DATA() { return ({}); };
-
-    GET_THUMB_IMG(thumb) {
-        const img = thumb.querySelector('.card__image');
-        const imgSrc = img?.getAttribute('src');
-        return img;
-    }
 
     THUMB_URL(thumb) { return thumb.querySelector('.root__link').href; }
 
@@ -147,14 +139,6 @@ function animate() {
 
 //====================================================================================================
 
-console.log(LOGO);
-
-const SCROLL_RESET_DELAY = 250;
-const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
-store.subscribe(applyFilters);
-
 function route() {
     if (RULES.PAGINATION) {
         new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
@@ -167,4 +151,13 @@ function route() {
     }
 }
 
+//====================================================================================================
+
+console.log(LOGO);
+
+const SCROLL_RESET_DELAY = 250;
+const store = new JabroniOutfitStore(defaultStateWithDuration);
+const { state, stateLocale } = store;
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+store.subscribe(applyFilters);
 route();
