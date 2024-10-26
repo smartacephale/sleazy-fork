@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         javhdporn.net Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -17,7 +17,6 @@
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
-const { timeToSeconds, sanitizeStr } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -68,29 +67,20 @@ class PORNHUB_RULES {
     SCROLL_RESET_DELAY = 350;
 
     constructor() {;
-        //this.HAS_VIDEOS = !!this.GET_THUMBS(document.body).length;
         this.PAGINATION = document.querySelector('.pagination');
         this.PAGINATION_LAST = parseInt(Array.from(this.PAGINATION?.querySelectorAll('a') || [], (a) => a.href.match(/\d+/g)?.pop())?.pop() || 1);
         this.CONTAINER = this.GET_THUMBS(document.body)?.[0].parentElement;
     }
 
-    THUMB_URL(thumb) {
-      return thumb.querySelector('a').href;
-    }
+    THUMB_URL(thumb) { return thumb.querySelector('a').href; }
 
-    GET_THUMBS(html) {
-        return Array.from(html.querySelectorAll('article.thumb-block'));
-    }
+    GET_THUMBS(html) { return Array.from(html.querySelectorAll('article.thumb-block')); }
 
-    THUMB_IMG_DATA(thumb) {
-        const img = thumb.querySelector('img.video-img');
-        const imgSrc = img?.getAttribute('data-wpsrc');
-        return { img, imgSrc };
-    }
+    THUMB_IMG_DATA(thumb) { return ({}); }
 
     THUMB_DATA(thumb) {
-        const title = sanitizeStr(thumb.querySelector('header.entry-header')?.innerText);
-        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
+        const title = window.bhutils.sanitizeStr(thumb.querySelector('header.entry-header')?.innerText);
+        const duration = window.bhutils.timeToSeconds(thumb.querySelector('.duration')?.innerText);
         return { title, duration };
     }
 
