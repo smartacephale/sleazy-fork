@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.96
+// @version      1.97
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -82,7 +82,7 @@ class SPANKBANG_RULES {
 
     URL_DATA() {
         const url = new URL(window.location.href);
-        const offset = parseInt(url.pathname.match(/\/(\d+)\/$/)?.pop()) || 1;
+        const offset = parseInt(url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 1;
         if (!/\/\d+\/$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
 
         const iteratable_url = n => {
@@ -97,7 +97,6 @@ class SPANKBANG_RULES {
 const RULES = new SPANKBANG_RULES();
 
 //====================================================================================================
-
 
 function createPreviewElement(src, mount) {
     const elem = bhutils.parseDom(`
@@ -128,20 +127,19 @@ function createPreviewElement(src, mount) {
       elem.remove();
     }
 
-    return { elem, removeElem };
+    return { removeElem };
 }
 
 function animate() {
-    RULES.GET_THUMBS(document.body)?.forEach(e => { e.querySelector('[data-preview]')?.setAttribute('do-not-animate', ''); });
+    RULES.GET_THUMBS(document.body).forEach(e => { e.outerHTML = e.outerHTML; });
     function handleThumbHover(e) {
-        if (!(e.target.classList.contains('cover') && e.target.getAttribute('data-preview') && !e.target.hasAttribute('do-not-animate'))) return;
+        if (!(e.target.classList.contains('cover') && e.target.getAttribute('data-preview'))) return;
         const parent = e.target.parentElement.parentElement;
         const videoSrc = e.target.getAttribute('data-preview');
         const { removeElem } = createPreviewElement(videoSrc, parent);
         parent.addEventListener('mouseleave', removeElem, { once: true });
     }
-
-  document.body.addEventListener('mouseover', handleThumbHover, true);
+  document.body.addEventListener('mouseover', handleThumbHover);
 }
 
 //====================================================================================================
@@ -164,4 +162,3 @@ if (RULES.HAS_VIDEOS) {
 if (RULES.PAGINATION) {
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
-
