@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.87
+// @version      1.88
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -122,7 +122,7 @@ const filterDescriptors = {
     japanese: { query: 'japanese', name: '🇯🇵' },
     chinese: { query: 'chinese', name: '🇨🇳' },
     gay: { query: '-gay', name: 'Exclude Gay' },
-    fullColor: { query: 'full+color', name: 'Full Color' }
+    fullColor: { query: 'color', name: 'Full Color' }
 }
 
 function checkURL(url_) {
