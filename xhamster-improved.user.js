@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.59
+// @version      2.60
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
@@ -24,7 +24,7 @@
 
 const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, Observer, sanitizeStr } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
-const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
+const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 
 if (!/^(\w{2}.)?xhamster.(com|desi)/.test(window.location.host)) throw new Error('whatever');
 
@@ -68,6 +68,10 @@ class XHAMSTER_RULES {
         this.CONTAINER = Array.from(document.querySelectorAll('.thumb-list')).pop();
     }
 
+    IS_PRIVATE(thumb) {
+      return !!thumb.querySelector('[data-role="video-watched');
+    }
+
     GET_THUMBS(html) {
         return html.querySelectorAll('.video-thumb');
     }
@@ -85,8 +89,8 @@ class XHAMSTER_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = sanitizeStr(thumb.querySelector('.video-thumb-info__name').innerText);
-        const duration = timeToSeconds(thumb.querySelector('.thumb-image-container__duration').innerText);
+        const title = sanitizeStr(thumb.querySelector('.video-thumb-info__name,.video-thumb-info>a')?.innerText);
+        const duration = timeToSeconds(thumb.querySelector('.thumb-image-container__duration')?.innerText);
         return { title, duration }
     }
 
@@ -131,14 +135,12 @@ function createPreviewVideoElement(src, mount) {
     video.addEventListener('loadeddata', () => {
         mount.before(video);
     }, false);
-    return {
-        video,
-        removeVideo: () => {
+    const removeVideo = () => {
             video.removeAttribute('src');
             video.load();
             video.remove();
-        }
-    };
+    }
+    return { video, removeVideo };
 }
 
 function handleThumbHover(e) {
@@ -172,14 +174,21 @@ function route() {
     }
 
     parseInPLace();
-    new JabroniOutfitUI(store);
+
+    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
 }
+
+
+defaultSchemeWithPrivateFilter.privateFilter = [
+  { type: "checkbox", model: "state.filterPrivate", label: "unwatched" },
+  { type: "checkbox", model: "state.filterPublic", label: "watched" }];
 
 //====================================================================================================
 
 const SCROLL_RESET_DELAY = 350;
 
-const store = new JabroniOutfitStore(defaultStateWithDuration);
+console.log({defaultStateWithDurationAndPrivacy})
+const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
