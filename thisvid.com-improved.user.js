@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.3
+// @version      5.0.4
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -15,8 +15,8 @@
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
-// @downloadURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
-// @updateURL https://update.greasyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
+// @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.meta.js
 // ==/UserScript==
 /* globals $ DataManager PaginationManager */
 
@@ -173,8 +173,8 @@ class THISVID_RULES {
         return { title, duration }
     }
 
-    IS_PRIVATE(thumbElement) {
-        return thumbElement.firstElementChild.classList.contains('private');
+    IS_PRIVATE(thumb) {
+        return !thumb.querySelector('.private');
     }
 }
 
