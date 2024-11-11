@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.60
+// @version      2.61
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.desi/*
-// @exclude      https://xhamster.com/embed*
+// @exclude      https://*.xhamster.com/embed*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
