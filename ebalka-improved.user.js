@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         ebalka improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.8
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
+// @match        https://1ebalka.ru.actor/*
 // @match        https://*.ebalk*.*/*
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
@@ -82,7 +83,7 @@ class EBALKA_RULES {
 
     URL_DATA() {
         const url = new URL(window.location.href);
-        const offset = parseInt(document.querySelector('.pagination__item_active').innerText) || 1;
+        const offset = parseInt(document.querySelector('.pagination__item_active,input.pagination__item').innerText) || 1;
         const el = document.querySelector('.pagination__item.next');
 
         const attrs = {
