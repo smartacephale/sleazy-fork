@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.995
+// @version      1.996
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -306,9 +306,8 @@ function clearMessages() {
         fetchHtml(url).then(html => {
             const hasFriendRequest = html.querySelector('input[value=confirm_add_to_friends]');
             const hasOriginalText = html.querySelector('.original-text')?.innerText;
-            const isScum = /($|¥|€|token)/.test(html.querySelector('.original-text')?.innerText);
             const id = url.match(/\d+/)[0];
-            if (!((hasOriginalText && !isScum) || hasFriendRequest)) {
+            if (!(hasOriginalText || hasFriendRequest)) {
                 const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
                 spool.push({
                     v: () => fetch(deleteURL).then(r => {
