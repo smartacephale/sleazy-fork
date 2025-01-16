@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.97
+// @version      1.98
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -100,25 +100,20 @@ const RULES = new SPANKBANG_RULES();
 
 function createPreviewElement(src, mount) {
     const elem = bhutils.parseDom(`
-    <div class="video-js vjs-controls-disabled vjs-touch-enabled vjs-workinghover vjs-v7 vjs-user-active vjs-playing vjs-has-started mp4t_video-dimensions"
-         id="mp4t_video" tabindex="-1" lang="en" translate="no" role="region" aria-label="Video Player" style="display: none;">
-      <video id="mp4t_video_html5_api" class="vjs-tech" tabindex="-1" loop="loop" autoplay="autoplay" muted="muted" playsinline="playsinline"></video>
-      <div class="vjs-poster vjs-hidden" tabindex="-1" aria-disabled="false"></div>
-      <div class="vjs-text-track-display" translate="yes" aria-live="off" aria-atomic="true">
-        <div style="position: absolute; inset: 0px; margin: 1.5%;"></div>
-      </div>
-      <div class="vjs-loading-spinner" dir="ltr">
-        <span class="vjs-control-text">Video Player is loading.</span>
-      </div><button class="vjs-big-play-button" type="button" title="Play Video" aria-disabled="false">
-      <span class="vjs-icon-placeholder" aria-hidden="true"></span>
-      <span class="vjs-control-text" aria-live="polite">
-    </div>`);
+      <div class="video-js vjs-controls-disabled vjs-touch-enabled vjs-workinghover vjs-v7 vjs-playing vjs-has-started mp4t_video-dimensions vjs-user-inactive" id="mp4t_video" tabindex="-1" lang="en" translate="no" role="region" aria-label="Video Player" style="opacity: 1;">
+        <video id="mp4t_video_html5_api" class="vjs-tech" tabindex="-1" muted="muted" playsinline="playsinline" autoplay="autoplay"></video>
+        <div class="vjs-poster vjs-hidden" tabindex="-1" aria-disabled="false"></div>
+        <div class="vjs-text-track-display" translate="yes" aria-live="off" aria-atomic="true">
+          <div style="position: absolute; inset: 0px; margin: 1.5%;"></div>
+        </div>
+      </div>>`);
 
     mount.append(elem);
     const video = elem.querySelector('video');
     video.src = src;
     video.addEventListener('loadeddata', () => {
         elem.style.display = 'block';
+        video.play();
     }, false);
 
     const removeElem = () => {
@@ -131,9 +126,10 @@ function createPreviewElement(src, mount) {
 }
 
 function animate() {
+    document.querySelectorAll('.video-rotate').forEach(e => e.classList.remove('.video-rotate'));
     RULES.GET_THUMBS(document.body).forEach(e => { e.outerHTML = e.outerHTML; });
     function handleThumbHover(e) {
-        if (!(e.target.classList.contains('cover') && e.target.getAttribute('data-preview'))) return;
+        if (!e.target.getAttribute('data-preview')) return;
         const parent = e.target.parentElement.parentElement;
         const videoSrc = e.target.getAttribute('data-preview');
         const { removeElem } = createPreviewElement(videoSrc, parent);
@@ -152,6 +148,12 @@ const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
+
+if (location.pathname.startsWith('/s/')) {
+  Array.from(document.querySelectorAll('.main_results .main_content_container')).slice(1).forEach(c => {
+    if (c.querySelector('.video-list, a.go, h2.main_content_title, .channels_scroll_list')) c.remove()
+  });
+}
 
 if (RULES.HAS_VIDEOS) {
     animate();
