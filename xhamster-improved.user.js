@@ -1,13 +1,12 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.61
+// @version      2.62
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
-// @match        https://*.xhamster.com/*
-// @match        https://*.xhamster.desi/*
+// @match        https://*.xhamster.*/*
 // @exclude      https://*.xhamster.com/embed*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
@@ -25,6 +24,8 @@
 const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, Observer, sanitizeStr } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
+
+if (window.top != window.self) return;
 
 if (!/^(\w{2}.)?xhamster.(com|desi)/.test(window.location.host)) throw new Error('whatever');
 
