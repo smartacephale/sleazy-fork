@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.4
+// @version      5.0.5
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -376,35 +376,36 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
 
     const skipCurrentMember = (n = 1) => { skipFlag = true; skipCount = n; }
     const filterVideosCount = (n = 1) => { minVideosCount = n; }
-    let membersIds = [];
-    await getMemberFriends(id, 0, 1).then(r => { membersIds = membersIds.concat(r) });
+
+    let membersIds = await getMemberFriends(id, 0, 1);
     getMemberFriends(id, 1).then(r => { membersIds = membersIds.concat(r) });
 
     async function* pageGenerator() {
-        let currentGenerator;
-        let c = 0;
-        while (c < friendsCount - 1) {
-            if (lskdb.hasKey(membersIds[c])) { c++; continue; }
+        let currentGenerator = null;
+        for (let c = 0; c < friendsCount - 1; c++) {
+            if (lskdb.hasKey(membersIds[c])) continue;
+
             if (!currentGenerator) {
                 const { memberVideosGenerator, name, videosCount } = await getMemberVideos(membersIds[c], type);
+
                 if (memberVideosGenerator && videosCount >= minVideosCount) {
                     currentGenerator = memberVideosGenerator;
                     memberGeneratorCallback(name, videosCount, membersIds[c]);
-                } else {
-                    c++;
-                }
+                } else continue;
+            }
+
+            const { value: { url } = {}, done } = await currentGenerator.next();
+
+            if (done || skipFlag) {
+                c += skipCount - 1;
+                skipCount = 1;
+                currentGenerator = null;
+                skipFlag = false;
             } else {
-                const { value: { url } = {}, done } = currentGenerator.next();
-                if (done || skipFlag) {
-                    c += skipCount;
-                    skipCount = 1;
-                    currentGenerator = null;
-                    skipFlag = false;
-                } else {
-                    yield { url, offset: c };
-                }
+                yield { url, offset: c };
             }
         }
+
     }
 
     return {
@@ -493,8 +494,10 @@ async function createPrivateFeed() {
         }
         toDelete.forEach(e => e.remove());
         id = id.slice(4)
-        document.querySelector('.ignored').append(parseDom(`<button id="irm-${id}" onClick="unignore(event)">${id} X</button>`));
-        if (ignore) lskdb.setKey(id);
+        if (ignore) {
+          document.querySelector('.ignored').append(parseDom(`<button id="irm-${id}" onClick="unignore(event)">${id} X</button>`));
+          lskdb.setKey(id);
+        }
     }
 
     unsafeWindow.unignore = (e) => {
