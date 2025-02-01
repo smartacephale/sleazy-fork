@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.99
+// @version      2.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -126,6 +126,30 @@ function animate() {
 
 //====================================================================================================
 
+function unmute(tries = 10) {
+  const muteButton = document.querySelector('.vjs-mute-control');
+  console.log('test');
+  if (!muteButton) {
+    if (tries > 0) setTimeout(() => unmute(--tries), 500);
+    return;
+  }
+
+  if (muteButton.getAttribute('title') === 'Unmute') {
+    muteButton.click();
+  }
+
+  const observer = new MutationObserver(mutationsList => {
+      for (const mutation of mutationsList) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'title' && muteButton.getAttribute('title') === 'Unmute') {
+              muteButton.click();
+          }
+      }
+  });
+  observer.observe(muteButton, { attributes: true });
+}
+
+//====================================================================================================
+
 console.log(LOGO);
 
 const SCROLL_RESET_DELAY = 350;
@@ -150,3 +174,5 @@ if (RULES.HAS_VIDEOS) {
 if (RULES.PAGINATION) {
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
 }
+
+unmute();
