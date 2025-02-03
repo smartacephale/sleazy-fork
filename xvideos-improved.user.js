@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.89
+// @version      2.0.0
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -133,7 +133,7 @@ function createPreviewElement(src, mount) {
 
 function getVideoURL(src) {
     return src
-        .replace(/thumbs169ll?/, 'videopreview')
+        .replace(/thumbs169l{1,}/, 'videopreview')
         .replace(/\/\w+\.\d+\.\w+/, '_169.mp4')
         .replace(/(-\d+)_169\.mp4/, (_, b) => `_169${b}.mp4`)
 }
@@ -168,6 +168,7 @@ function route() {
 console.log(LOGO);
 
 const SCROLL_RESET_DELAY = 350;
+
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
