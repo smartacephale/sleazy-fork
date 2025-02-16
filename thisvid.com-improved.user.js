@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.7
+// @version      5.0.8
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -522,7 +522,7 @@ async function clearMessages() {
         doc.querySelectorAll('.entry').forEach(e => {
             const id = e.querySelector('input[name="delete[]"]').value;
             const msg = e.querySelector('.user-comment').innerText;
-            if (/has confirmed|declined your|has removed|Together/g.test(msg)) deleteMsg(id);
+            if (/has confirmed|declined your|has removed/g.test(msg)) deleteMsg(id);
         });
     }
 
