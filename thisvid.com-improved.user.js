@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.6
+// @version      5.0.7
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -518,38 +518,21 @@ async function createPrivateFeed() {
 //====================================================================================================
 
 async function clearMessages() {
-    const last = RULES.PAGINATION_LAST;
-    const confirmed = [];
-
-    let c = 0;
     const sortMsgs = (doc) => {
         doc.querySelectorAll('.entry').forEach(e => {
             const id = e.querySelector('input[name="delete[]"]').value;
             const msg = e.querySelector('.user-comment').innerText;
-            if (msg.includes('has confirmed') || msg.includes('has removed')) {
-                confirmed.push(id);
-            }
-            if (msg.includes('declined your invitation')) {
-                const mid = e.querySelector('a').href;
-                getMemberData(mid).then(({ orientation, uploadedPrivate }) => {
-                    if (orientation === 'Straight' && uploadedPrivate > 0) {
-                        c++;
-                        friend(mid.match(/\d+/)[0]);
-                    }
-                });
-                confirmed.push(id);
-            }
+            if (/has confirmed|declined your|has removed|Together/g.test(msg)) deleteMsg(id);
         });
     }
 
-    const deleteMsg = ids => {
-        let url = 'https://thisvid.com/my_messages/inbox/2/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages';
-        ids.forEach(id => { url += `&delete[]=${id}` });
-        fetch(url).then(res => console.log(url, res?.status, ';___;'));
+    const deleteMsg = id => {
+        const url = `https://thisvid.com/my_messages/inbox/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages&delete[]=${id}`;
+        fetch(url).then(res => console.log(url, res?.status));
     }
 
-    await Promise.all([...Array(last)].map((_, i) => fetchHtml(`https://thisvid.com/my_messages/inbox/${i + 1}/`).then(html => sortMsgs(html))));
-    chunks(confirmed, 10).forEach((c, i) => deleteMsg(c));
+    await Promise.all(Array.from({ length: RULES.PAGINATION_LAST }, (_, i) =>
+                                 fetchHtml(`https://thisvid.com/my_messages/inbox/${i + 1}/`).then(html => sortMsgs(html))));
 }
 
 function clearMessagesButton() {
