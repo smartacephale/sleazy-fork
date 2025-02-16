@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.5
+// @version      5.0.6
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -123,10 +123,10 @@ class THISVID_RULES {
 
     URL_DATA(proxyLocation) {
         const url = new URL(proxyLocation || window.location);
-        const offset = this.IS_PLAYLIST ? 1 : (parseInt(url.pathname.match(/\d+\/?$/)?.[0]) || 1);
+        const offset = this.IS_PLAYLIST ? 1 : (parseInt(url.pathname.match(/\/(\d+)\/?$/)?.[1]) || 1);
 
         if (url.pathname === '/') url.pathname = '/latest-updates/';
-        if (!/\d+\/$/.test(url.pathname)) url.pathname = `${url.pathname}${offset}/`;
+        if (!/\/(\d+)\/?$/.test(url.pathname)) url.pathname = `${url.pathname}${offset}/`;
 
         const iteratable_url = (n) => {
             if (this.IS_PLAYLIST) {
