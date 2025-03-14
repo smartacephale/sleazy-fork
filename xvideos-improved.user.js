@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.0.1
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -68,7 +68,8 @@ class XVIDEOS_RULES {
     THUMB_URL(thumb) { return thumb.querySelector('.title a').innerText; }
 
     THUMB_DATA(thumb) {
-        const title = bhutils.sanitizeStr(thumb.querySelector('.title').innerText);
+        const name = bhutils.sanitizeStr(thumb.querySelector('.name').innerText);
+        const title = bhutils.sanitizeStr(thumb.querySelector('.title').innerText).concat(` user:${name}`);
         const durationEl = thumb.querySelector('.duration').innerText;
         const duration = parseInt(durationEl) * (durationEl.includes('m') ? 60 : 1);
 
