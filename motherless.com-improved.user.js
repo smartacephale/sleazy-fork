@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.917
+// @version      3.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -68,9 +68,9 @@ class MOTHERLESS_RULES {
 
     THUMB_DATA(thumb) {
         const uploader = sanitizeStr(thumb.querySelector('.uploader')?.innerText);
-        const title = sanitizeStr(thumb.querySelector('.title')?.innerText);
+        const title = sanitizeStr(thumb.querySelector('.title')?.innerText).concat(` user:${uploader}`);
         const duration = timeToSeconds(thumb.querySelector('.size')?.innerText);
-        return { title: `${title} ${uploader}`, duration }
+        return { title, duration }
     }
 
     THUMB_IMG_DATA(thumb) {
