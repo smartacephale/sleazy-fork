@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.805
+// @version      2.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -82,7 +82,8 @@ class PORNHUB_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = sanitizeStr(thumb.querySelector('span.title')?.innerText);
+        const name = sanitizeStr(thumb.querySelector('.usernameWrap')?.innerText);
+        const title = sanitizeStr(thumb.querySelector('span.title')?.innerText).concat(` user:${name}`);
         const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
         return { title, duration };
     }
