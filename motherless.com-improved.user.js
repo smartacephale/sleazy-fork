@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -215,6 +215,22 @@ GM_addStyle(`
 
 //====================================================================================================
 
+function useWebsiteSearchFilters() {
+    let url = window.location.pathname;
+    const wordsToFilter = state.filterExcludeWords.replace(/f\:/g, '')
+      .match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];
+    wordsToFilter.forEach(w => {
+        if (!url.includes(w)) {
+            url += `+-${w.trim()}`;
+        }
+    });
+    if (wordsToFilter.some(w => !window.location.href.includes(w))) {
+        window.location.href = url;
+    }
+}
+
+//====================================================================================================
+
 const SCROLL_RESET_DELAY = 50;
 
 console.log(LOGO);
@@ -239,14 +255,5 @@ if (RULES.GET_THUMBS(document.body).length > 0) {
 }
 
 if (RULES.IS_SEARCH) {
-    let url = window.location.pathname;
-    const wordsToFilter = state.filterExcludeWords.replace(/f\:/g, '').match(/\w+/g) || [];
-    wordsToFilter.forEach(w => {
-        if (!url.includes(w)) {
-            url += `+-${w.trim()}`;
-        }
-    });
-    if (wordsToFilter.some(w => !window.location.href.includes(w))) {
-        window.location.href = url;
-    }
+  useWebsiteSearchFilters();
 }
