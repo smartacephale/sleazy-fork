@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.3.1
+// @version      2.3.2
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -80,7 +80,7 @@ function infiniteScrollAndLazyLoading() {
     let nextPage = (parseInt(url.searchParams.get('page')) || 1) + 1;
     const limit = parseInt($('.pagination li:last-child()').prev().text()) || 50;
 
-    const infinite = $('#page').infiniteScroll({ path: nextPageUrl, append: '.page-content', scrollThreshold: 800 });
+    const infinite = $('#page').infiniteScroll({ path: nextPageUrl, append: '.page-content', scrollThreshold: 1800 });
 
     $('#page').on('append.infiniteScroll', () => {
         hidePhotoOnlyAlbums();
