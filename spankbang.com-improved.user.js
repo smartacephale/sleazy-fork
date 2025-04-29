@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.spankbang.com/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.9/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
@@ -47,24 +47,22 @@ const LOGO = `
 ⢀⠀⠐⠀⠄⠁⠨⡊⡎⡎⡎⡎⡎⡎⡎⡎⡇⡏⡎⡎⡎⡎⡎⡎⡎⡮⡪⡣⡳⡱⡱⡕⡝⣜⢜⢜⢜⢔⢕⢱⠸⡸⡸⡸⡸⡸⡸⡸⡸⡸⡸⡨⡣⡣⡣⡣⡣⡣⡃⡇
 ⠀⠀⠈⡀⠂⠐⠀⢑⠜⡌⢎⢪⠪⡪⡪⡪⢪⠪⡪⢪⠪⡪⡪⢪⠪⡊⡎⡜⡌⡎⢎⢎⢎⢎⠎⡎⡪⠢⡑⢌⢪⢘⢔⠱⡡⢣⢃⢇⠕⡕⢅⢇⢣⢱⢑⢕⠸⡐⡱⡘`;
 
-
 class SPANKBANG_RULES {
     constructor() {
         this.PAGINATION = document.querySelector('.paginate-bar, .pagination');
         this.PAGINATION_LAST = parseInt(
             document.querySelector('.paginate-bar .status span')?.innerText.match(/\d+/)?.[0] ||
-            document.querySelector('.pagination .next')?.previousElementSibling?.innerText);
+            Array.from(document.querySelectorAll('.pagination a'))?.at(-2)?.innerText);
         this.CONTAINER = document.querySelectorAll('.results .video-list')[0];
         this.HAS_VIDEOS = !!this.GET_THUMBS(document.body).length > 0;
     }
 
     GET_THUMBS(html) {
-        return Array.from(html.querySelectorAll('.video-item:not(.clear-fix)') || [])
-            .filter(e => !e.parentElement.hasAttribute('data-disabled-layout-change'));
+        return Array.from(html.querySelectorAll('.video-item:not(.clear-fix), .js-video-item') || []);
     }
 
     THUMB_URL(thumb) {
-        return thumb.querySelector('.thumb').href;
+        return thumb.querySelector('a[title]').href;
     }
 
     THUMB_IMG_DATA(thumb) {
@@ -75,8 +73,8 @@ class SPANKBANG_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = bhutils.sanitizeStr(thumb.querySelector('.name')?.innerText);
-        const duration = (parseInt(thumb.querySelector('span.l')?.innerText) || 1) * 60;
+        const title = bhutils.sanitizeStr(thumb.querySelector('[title]')?.getAttribute('title'));
+        const duration = bhutils.timeToSeconds(thumb.querySelector('span.l')?.innerText);
         return { title, duration };
     }
 
@@ -128,7 +126,6 @@ function animate() {
 
 function unmute(tries = 10) {
   const muteButton = document.querySelector('.vjs-mute-control');
-  console.log('test');
   if (!muteButton) {
     if (tries > 0) setTimeout(() => unmute(--tries), 500);
     return;
@@ -168,7 +165,7 @@ if (location.pathname.startsWith('/s/')) {
 if (RULES.HAS_VIDEOS) {
     animate();
     new JabroniOutfitUI(store);
-    document.querySelectorAll('.video-list').forEach(c => handleLoadedHTML(c, c));
+    bhutils.getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => handleLoadedHTML(c, c));
 }
 
 if (RULES.PAGINATION) {
