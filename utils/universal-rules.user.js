@@ -20,6 +20,8 @@ class UNIVERSAL_RULES {
     return parseInt(el.innerText) || 1;
   }
 
+  // static parseThumbData(thumb, { uploader = "", title="", duration = ""}, thumbCallback)
+  // static parseThumbData(thumb, rules, thumbCallback)
   static parseThumbData(thumb, thumbCallback) {
     const uploader = bhutils.sanitizeStr(thumb.querySelector('[class*=name], .uploader')?.innerText);
     let title = bhutils.sanitizeStr(
