@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.997
+// @version      1.999
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -257,11 +257,33 @@ function createFriendButton() {
 const greenItem = 'linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green';
 const redItem = 'linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red';
 
+const uidsNoAccess = new Set();
+
+async function requestAccess() {
+  if (uidsNoAccess.size === 0) {
+    checkPrivateVidsAccess();
+  }
+
+  let c = 0;
+  let i = setInterval(() => {
+    if (c < uidsNoAccess.size) {
+      friendRequest(Array.from(uidsNoAccess)[c]);
+    } else {
+      clearInterval(i);
+    }
+    c++;
+  }, 5000);
+}
+
 function checkPrivateVidsAccess() {
     document.querySelectorAll('.item.private').forEach(async item => {
         const videoURL = item.firstElementChild.href;
         const doc = await fetchHtml(videoURL);
-        const haveAccess = !/This video is a private video uploaded by/ig.test(doc?.innerText);
+        const haveAccess = !doc?.querySelector('.no-player');
+        if (!haveAccess) {
+          const uid = doc?.querySelector('.message a').href;
+          uidsNoAccess.add(uid);
+        }
         item.style.background = haveAccess ? greenItem : redItem;
     });
 }
@@ -347,6 +369,8 @@ function route() {
         containers.forEach(c => handleLoadedHTML(c, c));
         defaultSchemeWithPrivateFilter.privateFilter.push(
             { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
+        defaultSchemeWithPrivateFilter.privateFilter.push(
+            { type: "button", innerText: "request 🔓", callback: requestAccess });
         new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
