@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.1.0
+// @version      5.1.1
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -306,11 +306,21 @@ async function checkPrivateVideoAccess(url) {
     }
 }
 
+const uploadersNotInFriendlist = new Set();
+
+function friendRequestPrivateVidsUploaders() {
+  Array.from(uploadersNotInFriendlist).forEach(uid => {
+    friend(uid, "add me pls");
+  });
+}
+
 function checkPrivateVidsAccess() {
     document.querySelectorAll('.tumbpu > .private, .thumb.private').forEach(async t => {
         const thumb = t.parentElement;
         if (thumb.querySelector('.title > button')) return;
         const { access, uploaderURL, uploaderName } = await checkPrivateVideoAccess(thumb.href);
+
+        if (!access) uploadersNotInFriendlist.add(uploaderURL);
 
         thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
         thumb.querySelector('.title').innerText += access ? ' ✅ ' : ' ❌ ';
@@ -557,6 +567,8 @@ function route() {
     if (RULES.LOGGED_IN) {
         defaultSchemeWithPrivateFilter.privateFilter.push(
             { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
+        defaultSchemeWithPrivateFilter.privateFilter.push(
+            { type: "button", innerText: "🤹", callback: friendRequestPrivateVidsUploaders });
     }
 
     if (RULES.IS_MY_MEMBER_PAGE) {
