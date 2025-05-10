@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.8
+// @version      5.0.10
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -211,9 +211,10 @@ async function friendMemberFriends(orientationFilter) {
     const friends = await getMemberFriends(memberId);
     const spool = new AsyncPool(60);
     friends.map((fid) => {
-        if (!orientationFilter) () => friend(fid);
+        if (!orientationFilter) return () => friend(fid);
         return () => getMemberData(fid).then(async ({ orientation, uploadedPrivate }) => {
-            if (orientation === orientationFilter && uploadedPrivate > 0) {
+            if (uploadedPrivate > 0 &&
+                (orientation === orientationFilter || (orientationFilter === 'Straight' && orientation === 'Lesbian'))) {
                 await friend(fid);
             }
         });
@@ -298,14 +299,15 @@ async function checkPrivateVideoAccess(url) {
 }
 
 function checkPrivateVidsAccess() {
-    document.querySelectorAll('.tumbpu > .private').forEach(async t => {
+    document.querySelectorAll('.tumbpu > .private, .thumb.private').forEach(async t => {
         const thumb = t.parentElement;
+        if (thumb.querySelector('.title > button')) return;
         const { access, uploaderURL, uploaderName } = await checkPrivateVideoAccess(thumb.href);
 
         thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
         thumb.querySelector('.title').innerText += access ? ' ✅ ' : ' ❌ ';
         thumb.querySelector('.title').appendChild(parseDom(access ? `<span>${uploaderName}</span>` :
-            `<span onclick="requestPrivateAccess(event, ${uploaderURL});"> 🚑 ${uploaderName}</span>`));
+            `<button onclick="requestPrivateAccess(event, ${uploaderURL});" style="padding: .2rem; line-height: 1rem;"> 🚑 ${uploaderName}</button>`));
     });
 }
 
@@ -432,13 +434,13 @@ async function createPrivateFeed() {
 
     Object.assign(defaultSchemeWithPrivateFilter, {
         controlsSkip: [
-            { type: "button", innerText: "skip 10", callback: async () => skip(event, 10) },
-            { type: "button", innerText: "skip 100", callback: async () => skip(event, 100) },
-            { type: "button", innerText: "skip 1000", callback: async () => skip(event, 1000) }],
+            { type: "button", innerText: "skip 10", callback: async () => skip(10) },
+            { type: "button", innerText: "skip 100", callback: async () => skip(100) },
+            { type: "button", innerText: "skip 1000", callback: async () => skip(1000) }],
         controlsFilter: [
-            { type: "button", innerText: "filter >10", callback: async () => filterVidsCount(event, 10) },
-            { type: "button", innerText: "filter >25", callback: async () => filterVidsCount(event, 25) },
-            { type: "button", innerText: "filter >100", callback: async () => filterVidsCount(event, 100) },
+            { type: "button", innerText: "filter >10", callback: async () => filterVidsCount(10) },
+            { type: "button", innerText: "filter >25", callback: async () => filterVidsCount(25) },
+            { type: "button", innerText: "filter >100", callback: async () => filterVidsCount(100) },
         ]
     });
 
@@ -475,7 +477,7 @@ async function createPrivateFeed() {
         document.querySelector('.ignored').append(parseDom(`<button id="#ir-${im}" onClick="unignore(event)">${im} 🗡</button>`));
     });
 
-    const skip = (e, n) => {
+    const skip = (n) => {
         skipCurrentMember(n);
         document.querySelector('.thumbs-items').innerHTML = '';
     }
@@ -506,9 +508,7 @@ async function createPrivateFeed() {
         e.target.remove();
     }
 
-    const filterVidsCount = (e, count) => {
-        filterVideosCount(count);
-    }
+    const filterVidsCount = (count) => filterVideosCount(count);
 
     new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY, pageGenerator);
     new PreviewAnimation(document.body);
