@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.999
+// @version      1.9991
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -56,7 +56,12 @@ const LOGO = `camwhores admin should burn in hell
 ⣯⠳⣌⠧⡝⣎⠶⣱⢋⢧⣛⠼⣄⠫⡴⡩⢆⠻⣿⣿⠽⣾⠽⣞⣷⣻⣟⡷⣿⢯⣿⢷⣻⣯⢷⣿⣻⣟⡿⣽⢿⡿⣿⣽⣿⣻⢾⣽⣿⣿⣻⣿⣿⣿⣿⣽⣿⣿⣿⣷⡀⠀⠀⠀⣀⣉⣿⣿⣿⣿
 ⣗⡫⣜⢣⡝⣬⠓⣥⢋⠶⣩⢞⡬⡓⡥⢓⠮⣅⠻⣿⣿⣽⣻⣽⣾⣻⢾⣻⣽⣻⣞⣯⢷⡯⣟⣾⢳⡯⢿⡽⣫⣽⡳⣏⡾⣽⣛⢾⡳⣟⢿⣻⢿⣿⣿⣿⡾⣿⣿⣷⣿⡔⣠⣿⣹⣯⣿⣿⣿⣿`;
 
-GM_addStyle('.item.private .thumb, .item .thumb.private { opacity: 1 !important; }');
+GM_addStyle(`
+.item.private .thumb, .item .thumb.private { opacity: 1 !important; }
+.haveNoAccess { background: linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red !important; }
+.haveAccess { background: linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green !important; }
+.friend-button { background: radial-gradient(#5ccbf4, #e1ccb1) !important; }
+`);
 
 class CAMWHORES_RULES {
     constructor() {
@@ -214,15 +219,19 @@ async function getMemberFriends(id) {
     await processFriendship();
 }
 
-async function processFriendship() {
-    console.log('processFriendship');
+let processFriendshipStarted = false;
+async function processFriendship(batchSize = 30) {
     if (!lskdb.isLocked()) {
-        const friendlist = lskdb.getKeys(30);
+        if (!processFriendshipStarted) {
+          processFriendshipStarted = true;
+          console.log('processFriendshipStarted');
+        }
+        const friendlist = lskdb.getKeys(batchSize);
         if (friendlist?.length < 1) return;
         lskdb.lock(true);
         const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
         await computeAsyncOneAtTime(urls.map(url => async () => {
-          await wait(5000);
+          await wait(FRIEND_REQUEST_INTERVAL);
           return friendRequest(url);
         }));
         lskdb.lock(false);
@@ -233,13 +242,13 @@ async function processFriendship() {
 function createPrivateVideoFriendButton() {
     if (!document.querySelector('.no-player')) return;
     const member = document.querySelector('.no-player a').href;
-    const button = parseDom('<button style="background: radial-gradient(#5ccbf4, #e1ccb1)"><span>Friend Request</span></button>');
+    const button = parseDom('<button class="friend-button"><span>Friend Request</span></button>');
     document.querySelector('.no-player .message').append(button);
     button.addEventListener('click', () => friendRequest(member), { once: true });
 }
 
 function createFriendButton() {
-    const button = parseDom('<a href="#friend_everyone" style="background: radial-gradient(#5ccbf4, #e1ccb1)" class="button"><span>Friend Everyone</span></a>');
+    const button = parseDom('<a href="#friend_everyone" class="button friend-button"><span>Friend Everyone</span></a>');
     document.querySelector('.main-container-user > .headline').append(button);
     const memberid = window.location.pathname.match(/\d+/)[0];
     button.addEventListener('click', () => {
@@ -254,38 +263,38 @@ function createFriendButton() {
 
 //====================================================================================================
 
-const greenItem = 'linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green';
-const redItem = 'linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red';
-
-const uidsNoAccess = new Set();
+// clean: Object.keys(localStorage).forEach(k => k.includes('lsm') && localStorage.removeItem(k));
 
 async function requestAccess() {
-  if (uidsNoAccess.size === 0) {
+  if (!Object.keys(localStorage).find(k => k.includes('lsm'))) {
     checkPrivateVidsAccess();
   }
-
-  let c = 0;
-  let i = setInterval(() => {
-    if (c < uidsNoAccess.size) {
-      friendRequest(Array.from(uidsNoAccess)[c]);
-    } else {
-      clearInterval(i);
-    }
-    c++;
-  }, 5000);
+  setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
 }
 
-function checkPrivateVidsAccess() {
-    document.querySelectorAll('.item.private').forEach(async item => {
+async function checkPrivateVidsAccess() {
+    const checkAccess = async (item) => {
         const videoURL = item.firstElementChild.href;
         const doc = await fetchHtml(videoURL);
-        const haveAccess = !doc?.querySelector('.no-player');
+
+        if (!doc.querySelector('.player')) return;
+
+        const haveAccess = !doc.querySelector('.no-player');
+
         if (!haveAccess) {
-          const uid = doc?.querySelector('.message a').href;
-          uidsNoAccess.add(uid);
+          const uid = doc.querySelector('.message a').href.match(/\d+/).at(-1);
+          lskdb.setKey(uid);
+          item.classList.add('haveNoAccess');
+        } else {
+          item.classList.add('haveAccess');
         }
-        item.style.background = haveAccess ? greenItem : redItem;
+    }
+
+    const f = [];
+    document.querySelectorAll('.item.private').forEach(item => {
+      if (!item.classList.contains('haveNoAccess')) f.push(() => checkAccess(item));
     });
+    computeAsyncOneAtTime(f);
 }
 
 //====================================================================================================
@@ -391,6 +400,7 @@ function route() {
 
 const SCROLL_RESET_DELAY = 500;
 const ANIMATION_DELAY = 500;
+const FRIEND_REQUEST_INTERVAL = 5000;
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
 const { state, stateLocale } = store;
