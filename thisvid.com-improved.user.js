@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.0.10
+// @version      5.1.0
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -182,11 +182,11 @@ const RULES = new THISVID_RULES();
 
 //====================================================================================================
 
-function friend(id) {
-    return fetchWith(FRIEND_REQUEST_URL(id));
+function friend(id, message = "") {
+    return fetchWith(FRIEND_REQUEST_URL(id, message));
 }
 
-const FRIEND_REQUEST_URL = (id) => `https://thisvid.com/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=`;
+const FRIEND_REQUEST_URL = (id, message = "") => `https://thisvid.com/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=${message}`;
 
 const USERS_PER_PAGE = 24;
 
@@ -250,6 +250,14 @@ function initFriendship() {
 
 //====================================================================================================
 
+async function sendMessage(uid, message = "add me pls") {
+  const url = new URL(`https://thisvid.com/members/${uid}/?action=send_message_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async`);
+  url.searchParams.append('message', message);
+  await fetch(url.href);
+}
+
+//====================================================================================================
+
 async function getMemberData(id) {
     const url = id.includes('member') ? id : `/members/${id}/`;
     const doc = await fetchHtml(url);
@@ -277,7 +285,7 @@ async function getMemberData(id) {
 
 unsafeWindow.requestPrivateAccess = (e, memberid) => {
     e.preventDefault();
-    friend(memberid);
+    friend(memberid, "add me pls");
     e.target.innerText = e.target.innerText.replace('🚑', '🍆');
 }
 
@@ -288,7 +296,7 @@ async function checkPrivateVideoAccess(url) {
     const access = !holder;
 
     const uploaderEl = holder ? holder.querySelector('a') : html.querySelector('a.author');
-    const uploaderURL = uploaderEl.href.replace(/.*\/(\d+)\/$/, (a, b) => b);
+    const uploaderURL = uploaderEl.href.match(/\d+/).at(-1);
     const uploaderName = uploaderEl.innerText;
 
     return {
@@ -307,7 +315,7 @@ function checkPrivateVidsAccess() {
         thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
         thumb.querySelector('.title').innerText += access ? ' ✅ ' : ' ❌ ';
         thumb.querySelector('.title').appendChild(parseDom(access ? `<span>${uploaderName}</span>` :
-            `<button onclick="requestPrivateAccess(event, ${uploaderURL});" style="padding: .2rem; line-height: 1rem;"> 🚑 ${uploaderName}</button>`));
+            `<button onclick="requestPrivateAccess(event, ${uploaderURL}); this.onclick=null;" style="padding: .2rem; line-height: 1rem;"> 🚑 ${uploaderName}</button>`));
     });
 }
 
@@ -560,7 +568,14 @@ function route() {
         highlightMessages();
     }
 
-    if (RULES.IS_VIDEO_PAGE) createDownloadButton();
+    if (RULES.IS_VIDEO_PAGE) {
+      const holder = document.querySelector('.video-holder > p');
+      if (holder) {
+        const uploader = document.querySelector('a.author').href.match(/\d+/).at(-1);
+        holder.parentElement.append(parseDom(`<button onclick="requestPrivateAccess(event, ${uploader}); this.onclick=null;">Friend Request</button>`));
+      }
+      createDownloadButton();
+    }
 
     if (!RULES.PAGE_HAS_VIDEO) return;
 
