@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.3.7
+// @version      1.3.8
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -283,9 +283,7 @@ function createFriendButton() {
 //====================================================================================================
 
 async function requestAccess() {
-  if (!Object.keys(localStorage).find(k => k.includes('lsm'))) {
-    checkPrivateVidsAccess();
-  }
+  checkPrivateVidsAccess();
   setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
 }
 
@@ -387,9 +385,7 @@ function route() {
             createFriendButton();
         }
         defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
-        defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "request 🔓", callback: requestAccess });
+            { type: "button", innerText: "check access 🔓", callback: requestAccess });
     }
 
     if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
