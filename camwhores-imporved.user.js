@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.9991
+// @version      1.9992
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -222,12 +222,12 @@ async function getMemberFriends(id) {
 let processFriendshipStarted = false;
 async function processFriendship(batchSize = 30) {
     if (!lskdb.isLocked()) {
+        const friendlist = lskdb.getKeys(batchSize);
+        if (friendlist?.length < 1) return;
         if (!processFriendshipStarted) {
           processFriendshipStarted = true;
           console.log('processFriendshipStarted');
         }
-        const friendlist = lskdb.getKeys(batchSize);
-        if (friendlist?.length < 1) return;
         lskdb.lock(true);
         const urls = friendlist.map(id => `${window.location.origin}/members/${id}/`);
         await computeAsyncOneAtTime(urls.map(url => async () => {
@@ -266,9 +266,7 @@ function createFriendButton() {
 // clean: Object.keys(localStorage).forEach(k => k.includes('lsm') && localStorage.removeItem(k));
 
 async function requestAccess() {
-  if (!Object.keys(localStorage).find(k => k.includes('lsm'))) {
-    checkPrivateVidsAccess();
-  }
+  checkPrivateVidsAccess();
   setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
 }
 
@@ -377,10 +375,7 @@ function route() {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
         defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
-        defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "request 🔓", callback: requestAccess });
-        new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+            { type: "button", innerText: "check access 🔓", callback: requestAccess });
         animate();
     }
 
