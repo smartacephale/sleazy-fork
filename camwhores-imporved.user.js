@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.9992
+// @version      1.9993
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -16,8 +16,7 @@
 // @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
-// @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
-// @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
+// @downloadURL none
 // ==/UserScript==
 /* globals $ PaginationManager DataManager */
 
@@ -376,6 +375,7 @@ function route() {
         containers.forEach(c => handleLoadedHTML(c, c));
         defaultSchemeWithPrivateFilter.privateFilter.push(
             { type: "button", innerText: "check access 🔓", callback: requestAccess });
+        new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
 
