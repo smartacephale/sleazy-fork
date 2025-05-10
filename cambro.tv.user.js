@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.3.8
+// @version      1.3.9
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -307,7 +307,9 @@ async function checkPrivateVidsAccess() {
 
     const f = [];
     document.querySelectorAll('.item.private').forEach(item => {
-      if (!item.classList.contains('haveNoAccess')) f.push(() => checkAccess(item));
+      if (!item.classList.contains('haveNoAccess') && !item.classList.contains('haveAccess')) {
+        f.push(() => checkAccess(item));
+      }
     });
     computeAsyncOneAtTime(f);
 }
