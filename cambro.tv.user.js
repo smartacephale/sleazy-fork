@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.3.9
+// @version      1.4.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -78,30 +78,34 @@ class CAMWHORES_RULES {
         this.IS_MINE_MEMBER_PAGE = /\/my\/$/.test(pathname);
         this.IS_MESSAGES = /^\/my\/messages\//.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
-        this.IS_VIDEO_PAGE = /^\/\d+\//.test(pathname);
         this.IS_COMMUNITY_LIST = /\/members\/$/.test(pathname);
-        this.IS_LOGGED_IN = document.querySelector('.member-links').innerText.includes('Log out');
+        this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
+        this.IS_LOGGED_IN = document.cookie.includes('kt_member');
 
-        this.CALC_CONTAINER();
+        Object.assign(this, this.CALC_CONTAINER());
         this.HAS_VIDEOS = !!this.CONTAINER;
 
         if (this.IS_FAVOURITES || this.IS_MEMBER_VIDEOS) {
             this.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
             watchDomChangesWithThrottle(document.querySelector('.content'), () => {
-                this.CALC_CONTAINER();
+                Object.assign(this, this.CALC_CONTAINER());
             }, 10);
         }
     }
 
-    CALC_CONTAINER = () => {
-        const paginationEls = Array.from(document.querySelectorAll('.pagination'));
-        this.PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
-        this.PAGINATION_LAST = parseInt(Array.from(this.PAGINATION?.querySelectorAll('.pagination-holder > ul > .page > a') || []).pop()
-            ?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
-        if (this.PAGINATION_LAST === 9) this.PAGINATION_LAST = 999;
-        this.CONTAINER = (this.PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
-            this.PAGINATION?.parentElement.querySelector('.list-videos>div') ||
-            document.querySelector('.list-videos>div'));
+    CALC_CONTAINER = (document_ = document) => {
+        const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
+        const PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
+
+        let PAGINATION_LAST = Math.max(...Array.from(PAGINATION?.querySelectorAll('a[href][data-parameters]'),
+          v => parseInt(v.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1])), 1);
+        if (PAGINATION_LAST === 9) PAGINATION_LAST = 999;
+
+        const CONTAINER = (PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
+                            PAGINATION?.parentElement.querySelector('.list-videos>div') ||
+                              document.querySelector('.list-videos>div'));
+
+        return { PAGINATION, PAGINATION_LAST, CONTAINER };
     }
 
     IS_PRIVATE(thumb) {
@@ -124,25 +128,17 @@ class CAMWHORES_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const title = thumb.querySelector('.title').innerText.toLowerCase();
-        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText || '0');
+            const title = sanitizeStr(thumb.querySelector('.title').innerText);
+            const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
         return { title, duration };
     }
 
     URL_DATA(url_, document_) {
-        const { href } = url_ || window.location;
-        const url = new URL(href);
+        const url = new URL((url_ || window.location).href);
         const offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
+        const { PAGINATION, PAGINATION_LAST } = this.CALC_CONTAINER(document_ || document);
 
-        let pag = document_ ? Array.from(document_?.querySelectorAll('.pagination')).pop() : this.PAGINATION;
-        let pag_last = parseInt(pag?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]) || 99;
-
-        if (RULES.IS_COMMUNITY_LIST) {
-            pag = document.querySelector('.pagination');
-            pag_last = 50;
-        }
-
-        const el = pag?.querySelector('a[data-block-id][data-parameters]');
+        const el = PAGINATION?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
 
         const attrs = {
@@ -160,7 +156,7 @@ class CAMWHORES_RULES {
             return url.href;
         }
 
-        return { offset, iteratable_url, pag_last };
+        return { offset, iteratable_url, PAGINATION_LAST };
     }
 }
 
@@ -231,8 +227,8 @@ async function getMemberFriends(id) {
     const url = RULES.IS_COMMUNITY_LIST ?
         `${window.location.origin}/members/` : `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
-    const { iteratable_url, pag_last } = RULES.URL_DATA(new URL(url), document_);
-    const pages = pag_last ? range(pag_last, 1).map(u => iteratable_url(u)) : [url];
+    const { offset, iteratable_url, PAGINATION_LAST } = RULES.URL_DATA(new URL(url), document_);
+    const pages = PAGINATION_LAST ? range(PAGINATION_LAST, 1).map(u => iteratable_url(u)) : [url];
     const friendlist = (await computeAsyncOneAtTime(pages.map(p => () => fetchHtml(p)))).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
     friendlist.forEach(m => lskdb.setKey(m));
     await processFriendship();
