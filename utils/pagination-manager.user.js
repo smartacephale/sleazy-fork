@@ -4,7 +4,7 @@
 // @namespace    Violentmonkey Scripts
 // @author       smartacephale
 // @license      MIT
-// @version      1.42
+// @version      1.43
 // @match        *://*/*
 // @grant        unsafeWindow
 // @downloadURL https://update.greasyfork.org/scripts/494205/pagination-manager.user.js
@@ -42,7 +42,6 @@ class PaginationManager {
         if (!this.state.infiniteScrollEnabled) return;
         const { value: { url, offset } = {}, done } = await this.paginationGenerator.next();
         if (!done) {
-            console.log(url);
             const nextPageHTML = await unsafeWindow.bhutils.fetchHtml(url);
             const prevScrollPos = document.documentElement.scrollTop;
             this.handleHtmlCallback(nextPageHTML);
