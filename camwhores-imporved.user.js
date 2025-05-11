@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -384,7 +384,7 @@ function route() {
         watchDomChangesWithThrottle(document.querySelector('.content'), () => {
           const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
           containers.forEach(c => handleLoadedHTML(c, c));
-        }, 1000, 3);
+        }, 1000, 5);
         const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
