@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.9994
+// @version      2.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.camwhores.tv/*
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
@@ -87,10 +87,14 @@ class CAMWHORES_RULES {
     CALC_CONTAINER = (document_ = document) => {
         const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
         const PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
-        const PAGINATION_LAST = parseInt(PAGINATION?.querySelector('.last > a')?.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]);
+
+        const PAGINATION_LAST = Math.max(...Array.from(PAGINATION?.querySelectorAll('a[href][data-parameters]')  || [],
+          v => parseInt(v.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1])), 1);
+
         const CONTAINER = (PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
             PAGINATION?.parentElement.querySelector('.list-videos>div') ||
             document.querySelector('.list-videos>div'));
+
         return { PAGINATION, PAGINATION_LAST, CONTAINER };
     }
 
@@ -365,6 +369,10 @@ function route() {
         if (RULES.IS_MEMBER_PAGE) {
             createFriendButton();
         }
+        if (RULES.HAS_VIDEOS) {
+          defaultSchemeWithPrivateFilter.privateFilter.push(
+            { type: "button", innerText: "check access 🔓", callback: requestAccess });
+        }
     }
 
     if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
@@ -373,11 +381,11 @@ function route() {
     }
 
     if (RULES.HAS_VIDEOS) {
-        const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
-        containers.forEach(c => handleLoadedHTML(c, c));
-        defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "check access 🔓", callback: requestAccess });
-        new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+        watchDomChangesWithThrottle(document.querySelector('.content'), () => {
+          const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
+          containers.forEach(c => handleLoadedHTML(c, c));
+        }, 1000, 3);
+        const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
 
