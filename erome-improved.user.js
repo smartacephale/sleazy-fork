@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.4.0
+// @version      2.4.1
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -61,11 +61,8 @@ GM_addStyle(`
 //=================================================================================================
 
 function togglePhotoElements() {
-    document.querySelectorAll('.media-group > div:last-child:not(.video)').forEach(a => {
-        $(a.parentElement).toggle(config.showPhotos);
-    });
-
-    document.querySelector('#togglePhotos').classList.toggle('active-gm', config.showPhotos);
+    $('.media-group > div:last-child:not(.video)').toggle(config.showPhotos);
+    $('#togglePhotos').toggleClass('active-gm', config.showPhotos);
     $('#togglePhotos').text(!config.showPhotos ? 'show photos' : 'hide photos');
 }
 
@@ -84,14 +81,14 @@ function toggleAlbums() {
       $('div[id^=album-]').filter((_, e) => $(e).find('.album-videos').length).toggle(false);
     }
 
-    document.querySelector('#photoAlbumsEnabled').classList.toggle('active-gm0', config.showAlbumsState !== 1);
-    document.querySelector('#videoAlbumsEnabled').classList.toggle('active-gm0', config.showAlbumsState !== 2);
+    $('#photoAlbumsEnabled').toggleClass('active-gm0', config.showAlbumsState !== 1);
+    $('#videoAlbumsEnabled').toggleClass('active-gm0', config.showAlbumsState !== 2);
 
     triggerScroll();
 }
 
 function infiniteScrollAndLazyLoading() {
-    if (!document.querySelector('.pagination')) return;
+    if (!$('.pagination').length) return;
 
     const url = new URL(window.location.href);
 
