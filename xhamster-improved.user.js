@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.62
+// @version      2.63
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
@@ -11,10 +11,10 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1587432
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.meta.js
@@ -188,7 +188,6 @@ defaultSchemeWithPrivateFilter.privateFilter = [
 
 const SCROLL_RESET_DELAY = 350;
 
-console.log({defaultStateWithDurationAndPrivacy})
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
