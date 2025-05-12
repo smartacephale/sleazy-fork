@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.3.3
+// @version      2.4.0
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        *://*.erome.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @run-at       document-idle
-// @grant        none
+// @grant        GM_addStyle
 // @downloadURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.meta.js
 // ==/UserScript==
@@ -39,7 +39,17 @@ const LOGO = `
 ⡪⡢⠣⢣⢡⡑⡔⡑⢍⢆⠇⡏⢎⠌⠆⢕⠨⡐⠌⡢⢱⢹⢝⡾⣽⣺⢮⡫⣞⠎⡎⡪⢪⠢⡣⡳⣹⢜⡵⣹⣪⢳⡑⢅⠕⡜⡰⢑⠜⢌⢊⠢⡑⢅⠣⡑⢅⠣⡑⠕
 ⢕⠬⡩⠪⡒⡜⡬⡪⡜⡔⡥⡣⡣⣑⢅⢅⢂⢂⠑⢌⠪⡪⡯⣞⣞⢮⡻⣾⢑⠕⢅⠣⡑⢕⢱⢱⢱⣻⣺⡵⣳⣇⢧⢣⠣⣊⢢⠱⡘⡔⢕⠱⡘⣌⢎⢌⠆⡇⡣⠣
 ⣷⣵⣮⣧⣧⣷⣾⣾⣾⣯⣯⣯⣯⣷⣿⣾⣷⣷⣵⣶⣵⣵⣿⣾⣾⣷⣯⣿⣼⣼⣼⣼⣼⣼⣶⣷⣿⣽⣾⣿⣷⣷⣷⣯⣷⣾⣾⣾⣾⣾⣾⣾⣾⣮⣾⣶⣵⣵⣮⣷`;
+
 console.log(LOGO);
+
+GM_addStyle(`
+.inactive-gm { background: #a09f9d; }
+.inactive-gm0 { color: #a09f9d; }
+.active-gm { background: #eb6395 !important; }
+.active-gm0 { color: #eb6395 !important; }
+`);
+
+//=================================================================================================
 
 (function disableDisclaimer() {
     if (!$('#disclaimer').length) return;
@@ -48,23 +58,36 @@ console.log(LOGO);
     $('body').css('overflow', 'visible');
 })();
 
-const PINK = '#eb6395';
-const GREY = '#a09f9d';
-
-function isActiveColor(condition) { return condition ? PINK : GREY; };
+//=================================================================================================
 
 function togglePhotoElements() {
     document.querySelectorAll('.media-group > div:last-child:not(.video)').forEach(a => {
         $(a.parentElement).toggle(config.showPhotos);
     });
-    $('#togglePhotos').css('backgroundColor', isActiveColor(config.showPhotos));
+
+    document.querySelector('#togglePhotos').classList.toggle('active-gm', config.showPhotos);
     $('#togglePhotos').text(!config.showPhotos ? 'show photos' : 'hide photos');
 }
 
-function hidePhotoOnlyAlbums() {
-    $('div[id^=album]').filter((_, e) => !$(e).find('.album-videos').length).toggle(config.showPhotoAlbums);
-    $('#togglePhotoAlbums').css('color', isActiveColor(!config.showPhotoAlbums));
-    window.dispatchEvent(new Event('scroll'));
+function triggerScroll() {
+   window.dispatchEvent(new Event('scroll'));
+}
+
+function toggleAlbums() {
+    if (config.showAlbumsState === 0) {
+      $('div[id^=album-]').toggle(true);
+    }
+    if (config.showAlbumsState === 1) {
+      $('div[id^=album-]').filter((_, e) => !$(e).find('.album-videos').length).toggle(false);
+    }
+    if (config.showAlbumsState === 2) {
+      $('div[id^=album-]').filter((_, e) => $(e).find('.album-videos').length).toggle(false);
+    }
+
+    document.querySelector('#photoAlbumsEnabled').classList.toggle('active-gm0', config.showAlbumsState !== 1);
+    document.querySelector('#videoAlbumsEnabled').classList.toggle('active-gm0', config.showAlbumsState !== 2);
+
+    triggerScroll();
 }
 
 function infiniteScrollAndLazyLoading() {
@@ -83,7 +106,7 @@ function infiniteScrollAndLazyLoading() {
     const infinite = $('#page').infiniteScroll({ path: nextPageUrl, append: '.page-content', scrollThreshold: 1800 });
 
     $('#page').on('append.infiniteScroll', () => {
-        hidePhotoOnlyAlbums();
+        toggleAlbums();
         new LazyLoad();
         nextPage++;
         if (nextPage > limit) infinite.destroy();
@@ -93,8 +116,8 @@ function infiniteScrollAndLazyLoading() {
 /******************************************* STATE ***********************************************/
 
 const config = {
-    showPhotos: false,
-    showPhotoAlbums: false
+    showPhotos: true,
+    showAlbumsState: 0
 }
 
 function sync() {
@@ -114,26 +137,48 @@ function pageAction() {
     if (IS_ALBUM_PAGE) {
         togglePhotoElements();
     } else {
-        hidePhotoOnlyAlbums();
+        toggleAlbums();
     }
 }
 
-if (IS_ALBUM_PAGE) {
-    $('#user_name').parent().append('<button id="togglePhotos" class="btn btn-pink">show/hide photos</button>');
-    $('#togglePhotos').on('click', () => {
-        config.showPhotos = !config.showPhotos;
-        togglePhotoElements();
+function setupAlbumPage() {
+  $('#user_name').parent().append('<button id="togglePhotos" class="btn btn-pink inactive-gm">show/hide photos</button>');
+
+  $('#togglePhotos').on('click', () => {
+    config.showPhotos = !config.showPhotos;
+    togglePhotoElements();
+    save();
+  });
+}
+
+function setupAlbumsGalleryPage() {
+   infiniteScrollAndLazyLoading();
+
+    $('.navbar-nav').append('<li><a href="#" id="videoAlbumsEnabled" class="fa fa-video inactive-gm0"></span></a></li>');
+    $('.navbar-nav').append('<li><a href="#" id="photoAlbumsEnabled" class="fa fa-camera inactive-gm0"></span></a></li>');
+
+    $('#videoAlbumsEnabled').on('click', () => {
+        config.showAlbumsState = config.showAlbumsState === 1 ? 0 : 1;
+        toggleAlbums();
         save();
     });
-} else {
-    infiniteScrollAndLazyLoading();
-    $('.navbar-nav').append('<li><a href="#" id="togglePhotoAlbums" class="fa fa-video"></span></a></li>');
-    $('#togglePhotoAlbums').on('click', () => {
-        config.showPhotoAlbums = !config.showPhotoAlbums;
-        hidePhotoOnlyAlbums();
+
+    $('#photoAlbumsEnabled').on('click', () => {
+        config.showAlbumsState = config.showAlbumsState === 2 ? 0 : 2;
+        toggleAlbums();
         save();
     });
 }
 
-window.addEventListener('focus', pageAction);
-pageAction();
+function init() {
+  if (IS_ALBUM_PAGE) {
+    setupAlbumPage();
+  } else {
+    setupAlbumsGalleryPage();
+  }
+
+  window.addEventListener('focus', pageAction);
+  pageAction();
+}
+
+init();
