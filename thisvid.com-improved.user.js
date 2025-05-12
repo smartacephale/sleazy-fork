@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.1.1
+// @version      5.1.2
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
@@ -21,7 +21,7 @@
 /* globals $ DataManager PaginationManager */
 
 const { Tick, parseDom, fetchWith, fetchHtml, timeToSeconds, parseCSSUrl, circularShift, range, listenEvents, replaceElementTag,
-    sanitizeStr, chunks, downloader, AsyncPool } = window.bhutils;
+    sanitizeStr, chunks, downloader, AsyncPool, computeAsyncOneAtTime } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
@@ -42,11 +42,14 @@ const SponsaaLogo = `
   ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣮⣧⣫⣪⡪⡣⣫⣪⣣⣯⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
   ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿`;
 
-const haveAccessColor = 'linear-gradient(90deg, #31623b, #212144)';
-const haveNoAccessColor = 'linear-gradient(90deg, #462525, #46464a)';
-const succColor = 'linear-gradient(#2f6eb34f, #66666647)';
-const failColor = 'linear-gradient(rgba(179, 47, 47, 0.31), rgba(102, 102, 102, 0.28))';
-const friendProfileColor = 'radial-gradient(circle, rgb(28, 42, 50) 48%, rgb(0, 0, 0) 100%)';
+GM_addStyle(`
+.haveNoAccess { background: linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red !important; }
+.haveAccess { background: linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green !important; }
+.success { background: linear-gradient(#2f6eb34f, #66666647) !important; }
+.failure { background: linear-gradient(rgba(179, 47, 47, 0.31), rgba(102, 102, 102, 0.28)) !important; }
+.friend-button { background: radial-gradient(#5ccbf4, #e1ccb1) !important; }
+.friendProfile { background: radial-gradient(circle, rgb(28, 42, 50) 48%, rgb(0, 0, 0) 100%) !important; }
+`);
 
 class THISVID_RULES {
     constructor() {
@@ -81,9 +84,8 @@ class THISVID_RULES {
         this.IS_OTHER_MEMBER_PAGE = !this.IS_MY_MEMBER_PAGE && this.IS_MEMBER_PAGE;
         this.IS_MEMBER_FRIEND = this.IS_OTHER_MEMBER_PAGE && document.querySelector('.case-left')?.innerText.includes('is in your friends');
 
-        // highlight friend page profile
         if (this.IS_MEMBER_FRIEND) {
-            document.querySelector('.profile').style.background = friendProfileColor;
+            document.querySelector('.profile').classList.add('friendProfile');
         }
 
         // playlist page add link to video
@@ -308,25 +310,28 @@ async function checkPrivateVideoAccess(url) {
 
 const uploadersNotInFriendlist = new Set();
 
-function friendRequestPrivateVidsUploaders() {
-  Array.from(uploadersNotInFriendlist).forEach(uid => {
-    friend(uid, "add me pls");
-  });
-}
-
-function checkPrivateVidsAccess() {
-    document.querySelectorAll('.tumbpu > .private, .thumb.private').forEach(async t => {
-        const thumb = t.parentElement;
+async function requestAccess() {
+    const checkAccess = async (thumb) => {
         if (thumb.querySelector('.title > button')) return;
-        const { access, uploaderURL, uploaderName } = await checkPrivateVideoAccess(thumb.href);
+        const { access, uploaderURL } = await checkPrivateVideoAccess(thumb.href);
 
-        if (!access) uploadersNotInFriendlist.add(uploaderURL);
+        if (!access) {
+          thumb.classList.add('haveNoAccess');
 
-        thumb.style.background = access ? haveAccessColor : haveNoAccessColor;
-        thumb.querySelector('.title').innerText += access ? ' ✅ ' : ' ❌ ';
-        thumb.querySelector('.title').appendChild(parseDom(access ? `<span>${uploaderName}</span>` :
-            `<button onclick="requestPrivateAccess(event, ${uploaderURL}); this.onclick=null;" style="padding: .2rem; line-height: 1rem;"> 🚑 ${uploaderName}</button>`));
+          if (!uploadersNotInFriendlist.has(uploaderURL)) friend(uploaderURL);
+
+        } else {
+          thumb.classList.add('haveAccess');
+        }
+    }
+
+    const f = [];
+    document.querySelectorAll('.tumbpu:has(.private), .thumb:has(.private)').forEach(thumb => {
+      if (!thumb.classList.contains('haveNoAccess') && !thumb.classList.contains('haveAccess')) {
+        f.push(() => checkAccess(thumb));
+      }
     });
+    computeAsyncOneAtTime(f);
 }
 
 //====================================================================================================
@@ -368,7 +373,7 @@ function highlightMessages() {
         getMemberData(member.href).then(({ uploadedPublic, uploadedPrivate }) => {
             if (uploadedPrivate > 0) {
                 const success = !member.parentElement.nextElementSibling.innerText.includes('declined');
-                member.parentElement.parentElement.style.background = success ? succColor : failColor;
+                member.parentElement.parentElement.classList.add(success ? 'success' : 'failure');
             }
             member.parentElement.parentElement.querySelector('.user-comment p').innerText +=
                 `  |  videos: ${uploadedPublic} public, ${uploadedPrivate} private`;
@@ -566,9 +571,7 @@ function route() {
 
     if (RULES.LOGGED_IN) {
         defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "check access 🔓", callback: checkPrivateVidsAccess });
-        defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "🤹", callback: friendRequestPrivateVidsUploaders });
+            { type: "button", innerText: "request access 🔓", callback: requestAccess });
     }
 
     if (RULES.IS_MY_MEMBER_PAGE) {
