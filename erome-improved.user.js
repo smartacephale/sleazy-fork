@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.3.2
+// @version      2.3.3
 // @license      MIT
 // @description  Infinite scroll. Filter photo albums. Filter photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -127,7 +127,7 @@ if (IS_ALBUM_PAGE) {
     });
 } else {
     infiniteScrollAndLazyLoading();
-    $('.navbar-nav').append('<li><a href="#" id="togglePhotoAlbums">video only</span></a></li>');
+    $('.navbar-nav').append('<li><a href="#" id="togglePhotoAlbums" class="fa fa-video"></span></a></li>');
     $('#togglePhotoAlbums').on('click', () => {
         config.showPhotoAlbums = !config.showPhotoAlbums;
         hidePhotoOnlyAlbums();
