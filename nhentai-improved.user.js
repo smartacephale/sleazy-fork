@@ -1,18 +1,20 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.88
+// @version      1.9
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.nhentai.net/*
+// @match        https://*.nhentai.to/*
+// @match        https://*.3hentai.net/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
+// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1587432
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
@@ -113,7 +115,73 @@ class NHENTAI_RULES {
     }
 }
 
-const RULES = new NHENTAI_RULES();
+
+class _3HENTAI_RULES {
+    constructor() {
+        const { pathname } = window.location;
+
+        this.IS_VIDEO_PAGE = /^\/d\/\d+/.test(pathname);
+        this.IS_SEARCH_PAGE = /^\/search/.test(pathname);
+
+        this.PAGINATION = document.querySelector('.pagination');
+        this.PAGINATION_LAST = Math.max(...Array.from(this.PAGINATION?.querySelectorAll('.page-link') || [], e => parseInt(e.innerText)).filter(Number), 1);
+        this.CONTAINER = [...document.querySelectorAll('.listing-container')].pop();
+    }
+
+    THUMB_URL(thumb) {
+        return thumb.querySelector('a').href;
+    }
+
+    GET_THUMBS(html) {
+        return html.querySelectorAll('.doujin-col');
+    }
+
+    THUMB_IMG_DATA(thumb) {
+        const img = thumb.querySelector('img');
+        let imgSrc = img.getAttribute('data-src') || img.getAttribute('src');
+        if (!this.IS_VIDEO_PAGE) imgSrc = imgSrc?.replace('t5', 't3');
+        img.classList.remove('lazyload');
+        if ((img.complete && img.getAttribute('src') && !img.src.includes('data:image'))) { return ({}); }
+        return { img, imgSrc };
+    }
+
+    THUMB_DATA(thumb) {
+        const title = sanitizeStr(thumb.querySelector('.title').innerText);
+        const duration = 0;
+        return { title, duration };
+    }
+
+    URL_DATA() {
+        const url = new URL(window.location.href);
+
+        let offset = parseInt(url.searchParams.get('page')) || 1;
+        let iteratable_url = n => {
+          url.searchParams.set('page', n);
+          return url.href;
+        }
+
+        if (!this.IS_SEARCH_PAGE) {
+          offset = parseInt(url.pathname.match(/\d+$/)) || 1;
+          iteratable_url = n => {
+            if (/\d+$/.test(url.pathname)) {
+              url.pathname = url.pathname.replace(/\d+$/, n);
+            } else {
+              url.pathname = `${url.pathname}/${n}`;
+            }
+            return url.href;
+          }
+        }
+
+        return { offset, iteratable_url }
+    }
+}
+
+const isNHENTAI = window.location.href.includes('nhentai');
+const is3HENTAI = window.location.href.includes('3hentai');
+
+let RULES;
+if (is3HENTAI) RULES = new _3HENTAI_RULES();
+if (isNHENTAI) RULES = new NHENTAI_RULES();
 
 //====================================================================================================
 
@@ -146,7 +214,7 @@ function filtersUI(state) {
             });
             btns.append(btn);
         });
-        btnContainer.after(btns);
+        btnContainer?.after(btns);
     });
     const fixedURL = checkURL(window.location.href);
     if (window.location.href !== fixedURL) window.location.href = checkURL(window.location.href);
@@ -183,13 +251,13 @@ const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
-if (!state.custom) {
+if (!state.custom && isNHENTAI) {
     const custom = Object.entries(filterDescriptors).reduce((acc, [k, _]) => { acc[k] = false; return acc }, {});
     Object.assign(state, { custom });
 }
 
 if (RULES.IS_VIDEO_PAGE) {
-    findSimilar(state);
+    if (isNHENTAI) findSimilar(state);
 }
 
 if (RULES.CONTAINER) {
