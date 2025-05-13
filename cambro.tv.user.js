@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.4.5
+// @version      1.4.6
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -79,7 +79,7 @@ class CAMWHORES_RULES {
         this.IS_MESSAGES = /^\/my\/messages\//.test(pathname);
         this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
         this.IS_COMMUNITY_LIST = /\/members\/$/.test(pathname);
-        this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
+        this.IS_VIDEO_PAGE = /^\/\d+\//.test(pathname);
         this.IS_LOGGED_IN = document.cookie.includes('kt_member');
 
         Object.assign(this, this.CALC_CONTAINER());
