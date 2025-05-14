@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -190,7 +190,7 @@ class EHENTAI_RULES {
         }
 
         this.PAGINATION = [...document.querySelectorAll('.searchnav')].pop();
-        this.PAGINATION_LAST = 90000000;
+        this.PAGINATION_LAST = 9999;
         this.CONTAINER = [...document.querySelectorAll('.itg.gld')].pop();
 
         this.eHentaiNext();
