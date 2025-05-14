@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.9
+// @version      2.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -9,6 +9,7 @@
 // @match        https://*.nhentai.net/*
 // @match        https://*.nhentai.to/*
 // @match        https://*.3hentai.net/*
+// @match        https://*.e-hentai.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
@@ -176,12 +177,84 @@ class _3HENTAI_RULES {
     }
 }
 
+
+class EHENTAI_RULES {
+    constructor() {
+        const { pathname, search } = window.location;
+
+        this.IS_VIDEO_PAGE = /^\/g\/\d+/.test(pathname);
+        this.IS_SEARCH_PAGE = /f_search/.test(search) || /^\/tag\//.test(pathname);
+
+        if (this.IS_SEARCH_PAGE) {
+          this.setThumbnailMode();
+        }
+
+        this.PAGINATION = [...document.querySelectorAll('.searchnav')].pop();
+        this.PAGINATION_LAST = 90000000;
+        this.CONTAINER = [...document.querySelectorAll('.itg.gld')].pop();
+
+        this.eHentaiNext();
+    }
+
+    setThumbnailMode() {
+      const selectInputT = document.querySelector('option[value=t]');
+      if (selectInputT) {
+        const select = selectInputT.parentElement;
+        if (select.value === 't') return;
+        select.value = 't';
+        select.dispatchEvent(new Event('change'));
+      }
+    }
+
+    THUMB_URL(thumb) {
+        return thumb.querySelector('a').href;
+    }
+
+    GET_THUMBS(html) {
+        return html.querySelectorAll('.gl1t');
+    }
+
+    THUMB_IMG_DATA(thumb) {
+        const img = thumb.querySelector('img');
+        let imgSrc = img.getAttribute('data-lazy-load') || img.getAttribute('src');
+        if (!img.getAttribute('data-lazy-load'))  return ({});
+        if ((img.complete && img.getAttribute('src') && !img.src.includes('data:image'))) { return ({}); }
+        return { img, imgSrc };
+    }
+
+    THUMB_DATA(thumb) {
+        const title = sanitizeStr(thumb.querySelector('.glname').innerText);
+        const duration = 0;
+        return { title, duration };
+    }
+
+    eHentaiNext = async () => {
+      if (!unsafeWindow.PAGINATION_NEXT_) {
+        unsafeWindow.PAGINATION_NEXT_ = [...document.querySelectorAll('a#dnext[href]')].pop().href;
+      }
+      const doc = await bhutils.fetchHtml(unsafeWindow.PAGINATION_NEXT_);
+      unsafeWindow.PAGINATION_NEXT_ = [...doc.querySelectorAll('a#dnext[href]')].pop().href;
+    }
+
+    URL_DATA() {
+        return {
+          offset: 1,
+          iteratable_url: () => {
+            this.eHentaiNext();
+            return unsafeWindow.PAGINATION_NEXT_;
+          }
+        }
+    }
+}
+
 const isNHENTAI = window.location.href.includes('nhentai');
 const is3HENTAI = window.location.href.includes('3hentai');
+const isEHENTAI = window.location.href.includes('e-hentai');
 
 let RULES;
 if (is3HENTAI) RULES = new _3HENTAI_RULES();
 if (isNHENTAI) RULES = new NHENTAI_RULES();
+if (isEHENTAI) RULES = new EHENTAI_RULES();
 
 //====================================================================================================
 
@@ -264,7 +337,7 @@ if (RULES.CONTAINER) {
     handleLoadedHTML(RULES.CONTAINER);
 }
 
-if (RULES.IS_SEARCH_PAGE) {
+if (RULES.IS_SEARCH_PAGE && isNHENTAI) {
     filtersUI(state);
 }
 
