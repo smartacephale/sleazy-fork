@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.4.2
+// @version      2.4.3
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -87,26 +87,42 @@ function toggleAlbums() {
     triggerScroll();
 }
 
+function removeHTMLDuplicatesById(selector) {
+  const elements = document.querySelectorAll(selector);
+  const uniqueIds = new Set();
+
+  for (let i = elements.length - 1; i >= 0; i--) {
+    const element = elements[i];
+    const eid = element.id;
+
+    if (uniqueIds.has(eid)) {
+      element.remove();
+    } else {
+      uniqueIds.add(eid);
+    }
+  }
+}
+
 function infiniteScrollAndLazyLoading() {
     if (!$('.pagination').length) return;
 
     const url = new URL(window.location.href);
+    const limit = parseInt($('.pagination li:last-child()').prev().text()) || 50;
+    let nextPage = (parseInt(url.searchParams.get('page')) || 1) + 1;
 
-    const nextPageUrl = () => {
+    const path = () => {
         url.searchParams.set('page', nextPage);
         return url.href;
     }
 
-    let nextPage = (parseInt(url.searchParams.get('page')) || 1) + 1;
-    const limit = parseInt($('.pagination li:last-child()').prev().text()) || 50;
-
-    const infinite = $('#page').infiniteScroll({ path: nextPageUrl, append: '.page-content', scrollThreshold: 1800 });
+    const infinite = $('#page').infiniteScroll({ path, append: '.page-content', scrollThreshold: 400 });
 
     $('#page').on('append.infiniteScroll', () => {
         toggleAlbums();
         new LazyLoad();
         nextPage++;
         if (nextPage > limit) infinite.destroy();
+        removeHTMLDuplicatesById('div[id^=album-]');
     });
 }
 
