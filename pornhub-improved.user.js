@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.1.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -10,17 +10,14 @@
 // @exclude      https://*.pornhub.com/embed/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pornhub.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
 // ==/UserScript==
-/* globals $ DataManager PaginationManager */
 
-const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr, findNextSibling } = window.bhutils;
+const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr, findNextSibling, DataManager, InfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -49,20 +46,55 @@ const LOGO = `
 ⡯⡺⣪⢺⣪⣻⣺⡺⣮⣻⣺⡺⣽⣺⡺⡽⡽⡮⡯⡯⣗⡯⣿⢽⢯⣗⡯⣟⣞⣎⠐⢌⠪⡂⠑⠌⡆⢇⢇⢇⢇⢏⢮⡪⡫⣯⡳⡯⡯⣟⣞⢮⢯⣳⡳⡕⠅⠅⡀⢂
 ⡮⡪⡪⡳⡵⣕⢗⣝⣞⣞⢮⣻⡺⡮⡯⡯⡯⣯⢯⣟⡾⣽⢽⡽⣽⡺⣽⣳⡳⡕⡈⡢⢑⠌⡄⢔⠸⡘⡜⡜⡜⡜⡜⣎⢯⢮⢯⢯⢯⡳⡽⣝⣗⢕⠇⠁⠀⠂⡂⠂`;
 
+class UNIVERSAL_RULES {
+  static parsePagination(document) {
+    const paginations = document.querySelectorAll('.pagination');
+    return Array.from(paginations).pop();
+  }
+
+  static parsePaginationLast(pagination) {
+    const el = pagination.querySelector('.last-page');
+    return parseInt(el.innerText) || 1;
+  }
+
+  static parseThumbData(thumb, thumbCallback) {
+    const uploader = bhutils.sanitizeStr(thumb.querySelector('[class*=name]')?.innerText);
+    let title = bhutils.sanitizeStr(thumb.querySelector('[class*=title]')?.innerText);
+    let duration = bhutils.sanitizeStr(thumb.querySelector('[class*=duration]')?.innerText);
+
+    if (uploader) {
+      title = title.concat(` user:${uploader}`);
+    }
+
+    duration = bhutils.timeToSeconds(duration);
+
+    if (thumbCallback) {
+      thumbCallback();
+    }
+
+    return { title, duration }
+  }
+}
+
 class PORNHUB_RULES {
+    delay = 350;
+
     constructor() {
         const { pathname } = window.location;
+        const url = new URL(window.location.href);
 
         this.IS_MODEL_PAGE = pathname.startsWith('/model/');
         this.IS_VIDEO_PAGE = pathname.startsWith('/view_video.php');
         this.IS_PLAYLIST_PAGE = pathname.startsWith('/playlist/');
 
-        this.PAGINATION = document.querySelector('.paginationGated');
-        this.PAGINATION_LAST = parseInt(document.querySelector('.page_next')?.previousElementSibling.innerText) || 1;
+        this.paginationElement = document.querySelector('.paginationGated');
+        this.paginationLast = parseInt(document.querySelector('.page_next')?.previousElementSibling.innerText) || 1;
+        if (this.paginationLast === 10) this.paginationLast = 999;
+        this.paginationOffset = parseInt(url.searchParams.get('page')) || 1;
 
         this.CONTAINER = document.querySelector('ul.videos.row-5-thumbs, ul.videos.nf-videos, ul#singleFeedSection, ul#videoSearchResult, ul#singleFeedSection');
 
-        this.INTERSECTION_OBSERVABLE = this.CONTAINER && findNextSibling(this.CONTAINER);
+        this.intersectionObservable = this.CONTAINER && findNextSibling(this.CONTAINER);
     }
 
     THUMB_URL(thumb) {
@@ -82,22 +114,13 @@ class PORNHUB_RULES {
     }
 
     THUMB_DATA(thumb) {
-        const name = sanitizeStr(thumb.querySelector('.usernameWrap')?.innerText);
-        const title = sanitizeStr(thumb.querySelector('span.title')?.innerText).concat(` user:${name}`);
-        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
-        return { title, duration };
+      return UNIVERSAL_RULES.parseThumbData(thumb);
     }
 
-    URL_DATA() {
-        const url = new URL(window.location.href);
-        const offset = parseInt(url.searchParams.get('page')) || 1;
-
-        const iteratable_url = n => {
-            url.searchParams.set('page', n);
-            return url.href;
-        }
-
-        return { offset, iteratable_url }
+    paginationUrlGenerator = (n) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', n);
+      return url.href;
     }
 }
 
@@ -105,31 +128,52 @@ const RULES = new PORNHUB_RULES();
 
 //====================================================================================================
 
-console.log(LOGO);
+function initInfiniteScroll() {
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: handleLoadedHTML,
+    ...RULES,
+  }).onScroll(({paginationLast, paginationOffset}) => {
+    stateLocale.pagIndexLast = paginationLast;
+    stateLocale.pagIndexCur = paginationOffset;
+  }, true);
 
-const SCROLL_RESET_DELAY = 350;
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
+
+  return iscroller;
+}
+
+function route() {
+  if (RULES.IS_VIDEO_PAGE) {
+      const containers = getAllUniqueParents(document.querySelectorAll('li.pcVideoListItem.js-pop.videoBox')).slice(2);
+      containers.forEach(c => handleLoadedHTML(c, c));
+  }
+
+  if (RULES.CONTAINER) {
+      handleLoadedHTML(RULES.CONTAINER);
+  }
+
+  if (RULES.IS_PLAYLIST_PAGE) {
+      handleLoadedHTML(RULES.CONTAINER);
+      watchElementChildrenCount(RULES.CONTAINER, () => handleLoadedHTML(RULES.CONTAINER));
+  }
+
+  if (RULES.paginationElement) {
+      initInfiniteScroll();
+  }
+
+  new JabroniOutfitUI(store);
+}
+
+//====================================================================================================
+
+console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
-if (RULES.IS_VIDEO_PAGE) {
-    const containers = getAllUniqueParents(document.querySelectorAll('li.pcVideoListItem.js-pop.videoBox')).slice(2);
-    containers.forEach(c => handleLoadedHTML(c, c));
-}
-
-if (RULES.CONTAINER) {
-    handleLoadedHTML(RULES.CONTAINER);
-}
-
-if (RULES.IS_PLAYLIST_PAGE) {
-    handleLoadedHTML(RULES.CONTAINER);
-    watchElementChildrenCount(RULES.CONTAINER, () => handleLoadedHTML(RULES.CONTAINER));
-}
-
-if (RULES.PAGINATION) {
-    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
-}
-
-new JabroniOutfitUI(store);
+route();
