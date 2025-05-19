@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.1
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -74,7 +74,7 @@ class EromeRules {
 
   constructor() {
     this.url = new URL(window.location.href);
-    this.paginationOffset = (parseInt(this.url.searchParams.get('page')) || 1) + 1;
+    this.paginationOffset = parseInt(this.url.searchParams.get('page')) || 1;
     this.paginationLast = parseInt($('.pagination li:last-child()').prev().text()) || 50;
     this.paginationElement = document.querySelector('.pagination');
     this.CONTAINER = document.querySelector('#albums');
