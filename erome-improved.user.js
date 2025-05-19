@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.4.3
+// @version      3.0.0
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -10,10 +10,21 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @run-at       document-idle
 // @grant        GM_addStyle
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.0/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @downloadURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.meta.js
 // ==/UserScript==
 /* globals $ LazyLoad */
+
+const { parseDom, sanitizeStr, DataManager, InfiniteScroller } = window.bhutils;
+Object.assign(unsafeWindow, { bhutils: window.bhutils });
+const {
+  JabroniOutfitStore,
+  defaultStateWithDurationAndPrivacy,
+  JabroniOutfitUI,
+  defaultSchemeWithPrivateFilter,
+} = window.jabronioutfit;
 
 const LOGO = `
 ⡝⣝⢝⢝⢝⢝⢝⢝⢍⠭⡩⢍⠭⡩⡍⡭⢍⠭⡍⡭⡙⡍⢏⢝⠩⡩⡋⡍⡏⡝⡝⡽⡹⡹⡹⡙⡝⡙⡝⢍⠭⡩⢍⠭⡩⡩⡩⡩⡩⡍⡭⡩⡍⣍⢫⡩⡹⡩⡹⡩
@@ -44,154 +55,138 @@ console.log(LOGO);
 
 GM_addStyle(`
 .inactive-gm { background: #a09f9d; }
-.inactive-gm0 { color: #a09f9d; }
 .active-gm { background: #eb6395 !important; }
-.active-gm0 { color: #eb6395 !important; }
 `);
 
 //=================================================================================================
 
 (function disableDisclaimer() {
-    if (!$('#disclaimer').length) return;
-    $.ajax({ type: 'POST', url: '/user/disclaimer', async: true });
-    $('#disclaimer').remove();
-    $('body').css('overflow', 'visible');
+  if (!$('#disclaimer').length) return;
+  $.ajax({ type: 'POST', url: '/user/disclaimer', async: true });
+  $('#disclaimer').remove();
+  $('body').css('overflow', 'visible');
 })();
 
 //=================================================================================================
 
-function togglePhotoElements() {
-    $('.media-group > div:last-child:not(.video)').toggle(config.showPhotos);
-    $('#togglePhotos').toggleClass('active-gm', config.showPhotos);
-    $('#togglePhotos').text(!config.showPhotos ? 'show photos' : 'hide photos');
-}
+class EromeRules {
+  delay = 150;
 
-function triggerScroll() {
-   window.dispatchEvent(new Event('scroll'));
-}
+  constructor() {
+    this.url = new URL(window.location.href);
+    this.paginationOffset = (parseInt(this.url.searchParams.get('page')) || 1) + 1;
+    this.paginationLast = parseInt($('.pagination li:last-child()').prev().text()) || 50;
+    this.paginationElement = document.querySelector('.pagination');
+    this.CONTAINER = document.querySelector('#albums');
+  }
 
-function toggleAlbums() {
-    if (config.showAlbumsState === 0) {
-      $('div[id^=album-]').toggle(true);
-    }
-    if (config.showAlbumsState === 1) {
-      $('div[id^=album-]').filter((_, e) => !$(e).find('.album-videos').length).toggle(false);
-    }
-    if (config.showAlbumsState === 2) {
-      $('div[id^=album-]').filter((_, e) => $(e).find('.album-videos').length).toggle(false);
-    }
+  paginationUrlGenerator = (offset) => {
+    this.url.searchParams.set('page', offset);
+    return this.url.href;
+  };
 
-    $('#photoAlbumsEnabled').toggleClass('active-gm0', config.showAlbumsState !== 1);
-    $('#videoAlbumsEnabled').toggleClass('active-gm0', config.showAlbumsState !== 2);
+  IS_PRIVATE(thumb) {
+    return !!thumb.querySelector('.album-videos');
+  }
 
-    triggerScroll();
-}
+  THUMB_URL(thumb) {
+    return thumb.querySelector('a[href]').href;
+  }
 
-function removeHTMLDuplicatesById(selector) {
-  const elements = document.querySelectorAll(selector);
-  const uniqueIds = new Set();
+  GET_THUMBS(html) {
+    return html.querySelectorAll('div[id^=album-]');
+  }
 
-  for (let i = elements.length - 1; i >= 0; i--) {
-    const element = elements[i];
-    const eid = element.id;
+  THUMB_IMG_DATA() {
+    return {};
+  }
 
-    if (uniqueIds.has(eid)) {
-      element.remove();
-    } else {
-      uniqueIds.add(eid);
-    }
+  THUMB_DATA(thumb) {
+    const title = sanitizeStr(thumb.querySelector('.album-title').innerText);
+    const user = sanitizeStr(thumb.querySelector('.album-user')?.innerText);
+    const duration = 0;
+    return { title: title.concat(` user:${user}`), duration };
   }
 }
 
+const Rules = new EromeRules();
+
+//=================================================================================================
+
 function infiniteScrollAndLazyLoading() {
-    if (!$('.pagination').length) return;
+  handleLoadedHTML(Rules.CONTAINER);
 
-    const url = new URL(window.location.href);
-    const limit = parseInt($('.pagination li:last-child()').prev().text()) || 50;
-    let nextPage = (parseInt(url.searchParams.get('page')) || 1) + 1;
+  const update = () => {
+    stateLocale.pagIndexLast = iscroller.paginationLast;
+    stateLocale.pagIndexCur = iscroller.paginationOffset;
+  };
 
-    const path = () => {
-        url.searchParams.set('page', nextPage);
-        return url.href;
-    }
-
-    const infinite = $('#page').infiniteScroll({ path, append: '.page-content', scrollThreshold: 400 });
-
-    $('#page').on('append.infiniteScroll', () => {
-        toggleAlbums();
-        new LazyLoad();
-        nextPage++;
-        if (nextPage > limit) infinite.destroy();
-        removeHTMLDuplicatesById('div[id^=album-]');
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: (v) => handleLoadedHTML(v, undefined, true),
+    ...Rules,
+  })
+    .onScroll(update)
+    .onScroll(() => {
+      new LazyLoad();
     });
+  update();
+
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
 }
 
-/******************************************* STATE ***********************************************/
+//=================================================================================================
 
-const config = {
-    showPhotos: true,
-    showAlbumsState: 0
-}
+Object.assign(defaultStateWithDurationAndPrivacy, {
+  EROME: {
+    showPhotos: { value: false, persistent: true, watch: true },
+  },
+});
 
-function sync() {
-    Object.assign(config, JSON.parse(localStorage.getItem("config")));
-}
+const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
+const { state, stateLocale } = store;
+const { applyFilters, handleLoadedHTML } = new DataManager(Rules, state);
+store.subscribe(applyFilters);
 
-function save() {
-    localStorage.setItem("config", JSON.stringify(config));
-}
+delete defaultSchemeWithPrivateFilter.durationFilter;
+defaultSchemeWithPrivateFilter.privateFilter[0].label = 'photos';
+defaultSchemeWithPrivateFilter.privateFilter[1].label = 'videos';
 
 //=================================================================================================
 
 const IS_ALBUM_PAGE = /^\/a\//.test(window.location.pathname);
 
-function pageAction() {
-    sync();
-    if (IS_ALBUM_PAGE) {
-        togglePhotoElements();
-    } else {
-        toggleAlbums();
-    }
+function togglePhotoElements() {
+  $('.media-group > div:last-child:not(.video)').toggle(state.showPhotos);
+  $('#togglePhotos').toggleClass('active-gm', state.showPhotos);
+  $('#togglePhotos').text(!state.showPhotos ? 'show photos' : 'hide photos');
 }
 
 function setupAlbumPage() {
-  $('#user_name').parent().append('<button id="togglePhotos" class="btn btn-pink inactive-gm">show/hide photos</button>');
+  $('#user_name')
+    .parent()
+    .append('<button id="togglePhotos" class="btn btn-pink inactive-gm">show/hide photos</button>');
 
   $('#togglePhotos').on('click', () => {
-    config.showPhotos = !config.showPhotos;
+    state.showPhotos = !state.showPhotos;
     togglePhotoElements();
-    save();
   });
+
+  window.addEventListener('focus', togglePhotoElements);
+  togglePhotoElements();
 }
 
-function setupAlbumsGalleryPage() {
-   infiniteScrollAndLazyLoading();
-
-    $('.navbar-nav').append('<li><a href="#" id="videoAlbumsEnabled" class="fa fa-video inactive-gm0"></span></a></li>');
-    $('.navbar-nav').append('<li><a href="#" id="photoAlbumsEnabled" class="fa fa-camera inactive-gm0"></span></a></li>');
-
-    $('#videoAlbumsEnabled').on('click', () => {
-        config.showAlbumsState = config.showAlbumsState === 1 ? 0 : 1;
-        toggleAlbums();
-        save();
-    });
-
-    $('#photoAlbumsEnabled').on('click', () => {
-        config.showAlbumsState = config.showAlbumsState === 2 ? 0 : 2;
-        toggleAlbums();
-        save();
-    });
-}
+//=================================================================================================
 
 function init() {
   if (IS_ALBUM_PAGE) {
     setupAlbumPage();
   } else {
-    setupAlbumsGalleryPage();
+    infiniteScrollAndLazyLoading();
+    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
   }
-
-  window.addEventListener('focus', pageAction);
-  pageAction();
 }
 
 init();
