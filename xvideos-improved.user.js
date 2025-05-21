@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.1
+// @version      2.1.0
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -9,17 +9,15 @@
 // @match        https://*.xvideos.com/*
 // @exclude      https://*.xvideos.com/embedframe/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
 // @downloadURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.meta.js
 // ==/UserScript==
-/* globals DataManager PaginationManager */
 
+const { DataManager, InfiniteScroller, sanitizeStr, timeToSeconds, parseDom } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -54,11 +52,14 @@ const LOGO = `
 
 
 class XVIDEOS_RULES {
+    delay = 300;
+
     constructor() {
-        this.PAGINATION = Array.from(document.querySelectorAll('.pagination')).pop();
-        this.PAGINATION_LAST = parseInt(Array.from(document.querySelectorAll('.pagination a:not(.next-page)')).pop()?.innerText);
+        this.paginationElement = [...document.querySelectorAll('.pagination')].pop();
+        this.paginationLast = parseInt(document.querySelector('.last-page')?.innerText) || 1;
+        Object.assign(this, this.URL_DATA());
         this.CONTAINER = document.querySelector('#content')?.firstElementChild;
-        this.HAS_VIDEOS = document.querySelector('div.thumb-block[id^=video_]');
+        this.HAS_VIDEOS = !!document.querySelector('div.thumb-block[id^=video_]');
     }
 
     GET_THUMBS(html) { return html.querySelectorAll('div.thumb-block[id^=video_]:not(.thumb-ad)'); }
@@ -68,28 +69,28 @@ class XVIDEOS_RULES {
     THUMB_URL(thumb) { return thumb.querySelector('.title a').innerText; }
 
     THUMB_DATA(thumb) {
-        const name = bhutils.sanitizeStr(thumb.querySelector('.name').innerText);
-        const title = bhutils.sanitizeStr(thumb.querySelector('.title').innerText).concat(` user:${name}`);
-        const durationEl = thumb.querySelector('.duration').innerText;
-        const duration = parseInt(durationEl) * (durationEl.includes('m') ? 60 : 1);
+      const uploader = sanitizeStr(thumb.querySelector('[class*=name]')?.innerText);
+      const title = sanitizeStr(thumb.querySelector('[class*=title]')?.innerText)
+        .concat(uploader ? ` user:${uploader}` : "");
+      const duration = timeToSeconds(sanitizeStr(thumb.querySelector('[class*=duration]')?.innerText));
 
-        setTimeout(() => {
-            const id = parseInt(thumb.getAttribute('data-id'));
-            unsafeWindow.xv.thumbs.prepareVideo(id);
-        }, 200);
+      setTimeout(() => {
+          const id = parseInt(thumb.getAttribute('data-id'));
+          unsafeWindow.xv.thumbs.prepareVideo(id);
+      }, 200);
 
-        return { title, duration }
+      return { title, duration }
     }
 
     URL_DATA() {
         const url = new URL(window.location.href);
-        const offset = parseInt(url.searchParams.get('p') || url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 0;
+        const paginationOffset = parseInt(url.searchParams.get('p') || url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 0;
         if (!url.searchParams.get('k')) {
             if (url.pathname === '/') url.pathname = '/new';
-            if (!/\/(\d+)\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
+            if (!/\/(\d+)\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${paginationOffset}/`;
         }
 
-        const iteratable_url = (n) => {
+        const paginationUrlGenerator = (n) => {
             if (url.searchParams.get('k')) {
                 url.searchParams.set('p', n);
             } else {
@@ -98,7 +99,7 @@ class XVIDEOS_RULES {
             return url.href;
         }
 
-        return { offset, iteratable_url }
+        return { paginationOffset, paginationUrlGenerator }
     }
 }
 
@@ -107,7 +108,7 @@ const RULES = new XVIDEOS_RULES();
 //====================================================================================================
 
 function createPreviewElement(src, mount) {
-    const elem = bhutils.parseDom(`
+    const elem = parseDom(`
     <div class="videopv" style="display: none;">
         <video autoplay="autoplay" playsinline="playsinline" muted="muted"></video>
     </div>`);
@@ -152,9 +153,26 @@ function animate() {
 
 //====================================================================================================
 
+function createInfiniteScroller() {
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: handleLoadedHTML,
+    ...RULES,
+  }).onScroll(({paginationLast, paginationOffset}) => {
+      stateLocale.pagIndexLast = paginationLast;
+      stateLocale.pagIndexCur = paginationOffset;
+    }, true);
+
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
+}
+
+//====================================================================================================
+
 function route() {
-    if (RULES.PAGINATION) {
-        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    if (RULES.paginationElement) {
+      createInfiniteScroller();
     }
 
     if (RULES.HAS_VIDEOS) {
@@ -167,8 +185,6 @@ function route() {
 //====================================================================================================
 
 console.log(LOGO);
-
-const SCROLL_RESET_DELAY = 350;
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
