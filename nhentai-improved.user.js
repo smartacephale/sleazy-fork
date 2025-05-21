@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.1
+// @version      2.1.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -12,17 +12,14 @@
 // @match        https://*.e-hentai.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1587432
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
 // ==/UserScript==
-/* globals $ DataManager PaginationManager */
 
-const { parseDom, sanitizeStr } = window.bhutils;
+const { parseDom, sanitizeStr, DataManager, InfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -71,14 +68,18 @@ const LOGO = `⠡⠡⠡⠡⠡⠅⠅⢥⢡⢡⢠⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡
 ⠡⢁⢂⢂⢂⠂⠌⡐⠨⢐⢈⠢⢑⠄⢍⠘⠌⢅⢂⢂⢂⠢⠡⠡⡁⡂⡂⠢⠨⠨⠨⣰⢣⡣⡋⠌⠌⠌⢌⠢⠨⠨⡐⡐⡐⠌⢌⠐⠌⠌⢌⢂⠢⢂⢂⢂⢐⢐⢐⢐`;
 
 class NHENTAI_RULES {
+    delay = 250;
+
     constructor() {
+        const url = new URL(window.location.href);
         const { pathname } = window.location;
 
         this.IS_VIDEO_PAGE = /^\/g\/\d+/.test(pathname);
         this.IS_SEARCH_PAGE = /^\/search\//.test(pathname);
 
-        this.PAGINATION = document.querySelector('.pagination');
-        this.PAGINATION_LAST = parseInt(document.querySelector('.pagination .last')?.href.match(/\d+/)[0]) || 1;
+        this.paginationOffset = parseInt(url.searchParams.get('page')) || 1;
+        this.paginationElement = document.querySelector('.pagination');
+        this.paginationLast = parseInt(document.querySelector('.pagination .last')?.href.match(/\d+/)[0]) || 1;
         this.CONTAINER = Array.from(document.querySelectorAll('.index-container, .container')).pop();
     }
 
@@ -105,27 +106,27 @@ class NHENTAI_RULES {
         return { title, duration };
     }
 
-    URL_DATA() {
-        const url = new URL(window.location.href);
-        const offset = parseInt(url.searchParams.get('page')) || 1;
-        const iteratable_url = n => {
-            url.searchParams.set('page', n);
-            return url.href;
-        }
-        return { offset, iteratable_url }
+    paginationUrlGenerator = (offset) => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', offset);
+      return url.href;
     }
 }
 
 
 class _3HENTAI_RULES {
+    delay = 250;
+
     constructor() {
         const { pathname } = window.location;
 
         this.IS_VIDEO_PAGE = /^\/d\/\d+/.test(pathname);
         this.IS_SEARCH_PAGE = /^\/search/.test(pathname);
 
-        this.PAGINATION = document.querySelector('.pagination');
-        this.PAGINATION_LAST = Math.max(...Array.from(this.PAGINATION?.querySelectorAll('.page-link') || [], e => parseInt(e.innerText)).filter(Number), 1);
+        Object.assign(this, this.URL_DATA());
+
+        this.paginationElement = document.querySelector('.pagination');
+        this.paginationLast = Math.max(...Array.from(document.querySelectorAll('.pagination .page-link') || [], e => parseInt(e.innerText)).filter(Number), 1);
         this.CONTAINER = [...document.querySelectorAll('.listing-container')].pop();
     }
 
@@ -155,15 +156,15 @@ class _3HENTAI_RULES {
     URL_DATA() {
         const url = new URL(window.location.href);
 
-        let offset = parseInt(url.searchParams.get('page')) || 1;
-        let iteratable_url = n => {
+        let paginationOffset = parseInt(url.searchParams.get('page')) || 1;
+        let paginationUrlGenerator = n => {
           url.searchParams.set('page', n);
           return url.href;
         }
 
         if (!this.IS_SEARCH_PAGE) {
-          offset = parseInt(url.pathname.match(/\d+$/)) || 1;
-          iteratable_url = n => {
+          paginationOffset = parseInt(url.pathname.match(/\d+$/)) || 1;
+          paginationUrlGenerator = n => {
             if (/\d+$/.test(url.pathname)) {
               url.pathname = url.pathname.replace(/\d+$/, n);
             } else {
@@ -173,12 +174,14 @@ class _3HENTAI_RULES {
           }
         }
 
-        return { offset, iteratable_url }
+        return { paginationOffset, paginationUrlGenerator };
     }
 }
 
 
 class EHENTAI_RULES {
+    delay = 250;
+
     constructor() {
         const { pathname, search } = window.location;
 
@@ -189,8 +192,10 @@ class EHENTAI_RULES {
           this.setThumbnailMode();
         }
 
-        this.PAGINATION = [...document.querySelectorAll('.searchnav')].pop();
-        this.PAGINATION_LAST = 9999;
+        Object.assign(this, this.URL_DATA());
+
+        this.paginationElement = [...document.querySelectorAll('.searchnav')].pop();
+        this.paginationLast = 9999;
         this.CONTAINER = [...document.querySelectorAll('.itg.gld')].pop();
 
         this.eHentaiNext();
@@ -238,8 +243,8 @@ class EHENTAI_RULES {
 
     URL_DATA() {
         return {
-          offset: 1,
-          iteratable_url: () => {
+          paginationOffset: 1,
+          paginationUrlGenerator: () => {
             this.eHentaiNext();
             return unsafeWindow.PAGINATION_NEXT_;
           }
@@ -315,35 +320,57 @@ function findSimilar(state) {
 
 //====================================================================================================
 
-console.log(LOGO);
+function createInfiniteScroller() {
+  console.log(RULES)
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: handleLoadedHTML,
+    ...RULES,
+  }).onScroll(({paginationLast, paginationOffset}) => {
+      stateLocale.pagIndexLast = paginationLast;
+      stateLocale.pagIndexCur = paginationOffset;
+    }, true);
 
-const SCROLL_RESET_DELAY = 350;
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
+}
+
+//====================================================================================================
+
+function route() {
+  if (!state.custom && isNHENTAI) {
+      const custom = Object.entries(filterDescriptors).reduce((acc, [k, _]) => { acc[k] = false; return acc }, {});
+      Object.assign(state, { custom });
+  }
+
+  if (RULES.IS_VIDEO_PAGE) {
+      if (isNHENTAI) findSimilar(state);
+  }
+
+  if (RULES.CONTAINER) {
+      handleLoadedHTML(RULES.CONTAINER);
+  }
+
+  if (RULES.IS_SEARCH_PAGE && isNHENTAI) {
+      filtersUI(state);
+  }
+
+  if (RULES.paginationElement) {
+    createInfiniteScroller();
+  }
+
+  delete DefaultScheme.durationFilter;
+  new JabroniOutfitUI(store, DefaultScheme);
+}
+
+//====================================================================================================
+
+console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateInclExclMiscPagination);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
+route();
 
-if (!state.custom && isNHENTAI) {
-    const custom = Object.entries(filterDescriptors).reduce((acc, [k, _]) => { acc[k] = false; return acc }, {});
-    Object.assign(state, { custom });
-}
-
-if (RULES.IS_VIDEO_PAGE) {
-    if (isNHENTAI) findSimilar(state);
-}
-
-if (RULES.CONTAINER) {
-    handleLoadedHTML(RULES.CONTAINER);
-}
-
-if (RULES.IS_SEARCH_PAGE && isNHENTAI) {
-    filtersUI(state);
-}
-
-if (RULES.PAGINATION) {
-    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
-}
-
-delete DefaultScheme.durationFilter;
-new JabroniOutfitUI(store, DefaultScheme);
