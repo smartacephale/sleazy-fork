@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ebalka improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.9
+// @version      1.2.0
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -9,15 +9,13 @@
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=wwwa.ebalka.link
 // ==/UserScript==
-/* globals DataManager PaginationManager */
 
+const { timeToSeconds, sanitizeStr, parseDom, DataManager, InfiniteScroller, parseDataParams } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -60,12 +58,15 @@ const LOGO = `
 ⣿⣞⢗⣗⢯⣞⢽⡺⣝⡜⡜⡜⡜⡜⡜⡔⡕⢕⢱⣑⡧⡣⡊⢎⠔⢌⠢⡡⢱⠸⡸⣺⡽⣽⣳⢽⢽⣺⢝⣮⣳⢳⡫⣗⡿⡽⡪⡢⡑⢌⢂⠪⠨⡨⠪⡸⢸⢮⢯⢯`;
 
 class EBALKA_RULES {
+    delay = 250;
+
     constructor() {
-        this.PAGINATION = Array.from(document.querySelectorAll('.pagination')).pop();
-        const dataparams = bhutils.parseDataParams(document.querySelector('.pagination__item.last').getAttribute('data-parameters'));
+        this.paginationElement = [...document.querySelectorAll('.pagination')].pop();
+        const dataparams = parseDataParams(document.querySelector('.pagination__item.last').getAttribute('data-parameters'));
         const lastfrom = dataparams[Object.keys(dataparams).filter(k => k.includes('from'))?.pop()];
-        this.PAGINATION_LAST = parseInt(lastfrom) || 1;
-        this.CONTAINER = document.querySelector('.content__video');
+        this.paginationLast = parseInt(lastfrom) || 1;
+        Object.assign(this, this.URL_DATA());
+        this.CONTAINER = [...document.querySelectorAll('.content__video')].pop();
         this.HAS_VIDEOS = !!document.querySelector('.card_video');
     }
 
@@ -76,14 +77,14 @@ class EBALKA_RULES {
     THUMB_URL(thumb) { return thumb.querySelector('.root__link').href; }
 
     THUMB_DATA(thumb) {
-        const title = bhutils.sanitizeStr(thumb.querySelector('.card__title').innerText);
-        const duration = bhutils.timeToSeconds(Array.from(thumb.querySelector('.card__spot').children).pop().innerText);
+        const title = sanitizeStr(thumb.querySelector('.card__title').innerText);
+        const duration = timeToSeconds([...thumb.querySelector('.card__spot').children].pop().innerText);
         return { title, duration }
     }
 
     URL_DATA() {
         const url = new URL(window.location.href);
-        const offset = parseInt(document.querySelector('.pagination__item_active,input.pagination__item').innerText) || 1;
+        const paginationOffset = parseInt(document.querySelector('.pagination__item_active,input.pagination__item').innerText) || 1;
         const el = document.querySelector('.pagination__item.next');
 
         const attrs = {
@@ -95,13 +96,13 @@ class EBALKA_RULES {
 
         Object.keys(attrs).forEach(k => url.searchParams.set(k, attrs[k]));
 
-        const iteratable_url = n => {
+        const paginationUrlGenerator = n => {
             Object.keys(attrs).forEach(k => k.includes('from') && url.searchParams.set(k, n));
             url.searchParams.set('_', Date.now());
             return url.href;
         }
 
-        return { offset, iteratable_url }
+        return { paginationOffset, paginationUrlGenerator }
     }
 }
 
@@ -115,7 +116,7 @@ function animateThumb(thumb) {
 
     el.classList.add('video-on');
 
-    const videoElem = bhutils.parseDom(`<video style="position: absolute; left: 0px; top: 0px; width: 330px; height: 187px; visibility: visible; margin-top: -1px;"
+    const videoElem = parseDom(`<video style="position: absolute; left: 0px; top: 0px; width: 330px; height: 187px; visibility: visible; margin-top: -1px;"
                             autoplay="" loop="" playsinline="true" webkit-playsinline="true" src="${src}"></video>`);
     el.appendChild(videoElem);
 
@@ -140,9 +141,26 @@ function animate() {
 
 //====================================================================================================
 
+function createInfiniteScroller() {
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: handleLoadedHTML,
+    ...RULES,
+  }).onScroll(({paginationLast, paginationOffset}) => {
+    stateLocale.pagIndexLast = paginationLast;
+    stateLocale.pagIndexCur = paginationOffset;
+  }, true);
+
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
+}
+
+//====================================================================================================
+
 function route() {
-    if (RULES.PAGINATION) {
-        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    if (RULES.paginationElement) {
+      createInfiniteScroller();
     }
 
     if (RULES.HAS_VIDEOS) {
@@ -156,7 +174,6 @@ function route() {
 
 console.log(LOGO);
 
-const SCROLL_RESET_DELAY = 250;
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
