@@ -1,23 +1,22 @@
 // ==UserScript==
 // @name         missav.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.1.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
-// @match        https://*.missav.com/*
+// @match        https://*.missav.*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=missav.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
+// @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
 // ==/UserScript==
-/* globals $ DataManager PaginationManager */
 
-const { timeToSeconds, sanitizeStr } = window.bhutils;
+const { timeToSeconds, sanitizeStr, DataManager, InfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -66,15 +65,14 @@ const LOGO = `
 
 GM_addStyle(`#tapermonkey-app input[type=checkbox] { all: revert-layer; }`);
 
-class PORNHUB_RULES {
+class MISSAV_RULES {
+    delay = 300;
+
     constructor() {
-        //this.HAS_VIDEOS = !!this.GET_THUMBS(document.body).length;
-        //this.IS_VIDEO_PAGE = /^(\/\w{2}\/)?[\w|-]+$/.test(location.pathname);
-
-        this.PAGINATION = document.querySelector('a[href^="https://missav.com/"][aria-label]')?.parentElement;
-        this.PAGINATION_LAST = Math.max(
-          ...Array.from(document.querySelectorAll('a[href^="https://missav.com/"][aria-label]'), (a) => parseInt(a.href.match(/\d+/g)?.pop() || 1)));
-
+        this.paginationElement = document.querySelector('a[href^="https://missav."][aria-label]')?.parentElement;
+        this.paginationLast = Math.max(
+          ...Array.from(document.querySelectorAll('a[href^="https://missav."][aria-label]'), (a) => parseInt(a.href.match(/\d+/g)?.pop() || 1)));
+        Object.assign(this, this.URL_DATA());
         this.CONTAINER = this.GET_THUMBS(document.body)?.[0].parentElement;
     }
 
@@ -100,36 +98,56 @@ class PORNHUB_RULES {
 
     URL_DATA() {
         const url = new URL(window.location.href);
-        const offset = parseInt(url.searchParams.get('page')) || 1;
+        const paginationOffset = parseInt(url.searchParams.get('page')) || 1;
 
-        const iteratable_url = n => {
+        const paginationUrlGenerator = n => {
             url.searchParams.set('page', n);
             return url.href;
         }
 
-        return { offset, iteratable_url }
+        return { paginationOffset, paginationUrlGenerator }
     }
 }
 
-const RULES = new PORNHUB_RULES();
+const RULES = new MISSAV_RULES();
+
+//====================================================================================================
+
+function createInfiniteScroller() {
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: handleLoadedHTML,
+    ...RULES,
+  }).onScroll(({paginationLast, paginationOffset}) => {
+    stateLocale.pagIndexLast = paginationLast;
+    stateLocale.pagIndexCur = paginationOffset;
+  }, true);
+
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
+}
+
+//====================================================================================================
+
+function route() {
+  if (RULES.CONTAINER) {
+      handleLoadedHTML(RULES.CONTAINER);
+  }
+
+  if (RULES.paginationElement) {
+    createInfiniteScroller();
+  }
+
+  new JabroniOutfitUI(store);
+}
 
 //====================================================================================================
 
 console.log(LOGO);
 
-const SCROLL_RESET_DELAY = 350;
-
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
-
-if (RULES.CONTAINER) {
-    handleLoadedHTML(RULES.CONTAINER);
-}
-
-if (RULES.PAGINATION) {
-    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
-}
-
-new JabroniOutfitUI(store);
+route();
