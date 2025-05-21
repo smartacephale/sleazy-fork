@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.1.0
+// @version      3.1.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -49,38 +49,6 @@ const LOGO = `
 // Enable internal downloader
 unsafeWindow.__is_premium = true;
 
-class UNIVERSAL_RULES {
-  static parsePagination(document) {
-    const paginations = document.querySelectorAll('.pagination');
-    return Array.from(paginations).pop();
-  }
-
-  static parsePaginationLast(pagination) {
-    const el = pagination.querySelector('.last-page');
-    return parseInt(el.innerText) || 1;
-  }
-
-  static parseThumbData(thumb, thumbCallback) {
-    const uploader = bhutils.sanitizeStr(thumb.querySelector('[class*=name], .uploader')?.innerText);
-    let title = bhutils.sanitizeStr(
-      thumb.querySelector('[title]')?.getAttribute('title') ||
-      thumb.querySelector('[class*=title], header')?.innerText);
-    let duration = bhutils.sanitizeStr(thumb.querySelector('[class*=duration], .size')?.innerText);
-
-    if (uploader && title !== uploader) {
-      title = title.concat(` user:${uploader}`);
-    }
-
-    duration = bhutils.timeToSeconds(duration);
-
-    if (thumbCallback) {
-      thumbCallback();
-    }
-
-    return { title, duration }
-  }
-}
-
 class MOTHERLESS_RULES {
     delay = 50;
 
@@ -107,7 +75,12 @@ class MOTHERLESS_RULES {
 
     THUMB_URL(thumb) { return thumb.querySelector('.img-container').href; };
 
-    THUMB_DATA(thumb) { return UNIVERSAL_RULES.parseThumbData(thumb); }
+    THUMB_DATA(thumb) {
+        const uploader = sanitizeStr(thumb.querySelector('.uploader')?.innerText);
+        const title = sanitizeStr(thumb.querySelector('.title')?.innerText).concat(` user:${uploader}`);
+        const duration = timeToSeconds(thumb.querySelector('.size')?.innerText);
+        return { title, duration }
+    }
 
     THUMB_IMG_DATA(thumb) {
         const img = thumb.querySelector('.static');
