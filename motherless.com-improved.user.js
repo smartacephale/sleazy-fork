@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.1
+// @version      3.1.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
 // @author       smartacephale
@@ -10,17 +10,15 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.1.8/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
 // ==/UserScript==
-/* globals $ DataManager PaginationManager */
+/* globals $ */
 
-const { Tick, fetchWith, timeToSeconds, replaceElementTag, isMob, sanitizeStr, getAllUniqueParents } = window.bhutils;
+const { Tick, fetchWith, timeToSeconds, replaceElementTag, isMob, sanitizeStr, getAllUniqueParents, DataManager, InfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -51,13 +49,56 @@ const LOGO = `
 // Enable internal downloader
 unsafeWindow.__is_premium = true;
 
+class UNIVERSAL_RULES {
+  static parsePagination(document) {
+    const paginations = document.querySelectorAll('.pagination');
+    return Array.from(paginations).pop();
+  }
+
+  static parsePaginationLast(pagination) {
+    const el = pagination.querySelector('.last-page');
+    return parseInt(el.innerText) || 1;
+  }
+
+  static parseThumbData(thumb, thumbCallback) {
+    const uploader = bhutils.sanitizeStr(thumb.querySelector('[class*=name], .uploader')?.innerText);
+    let title = bhutils.sanitizeStr(
+      thumb.querySelector('[title]')?.getAttribute('title') ||
+      thumb.querySelector('[class*=title], header')?.innerText);
+    let duration = bhutils.sanitizeStr(thumb.querySelector('[class*=duration], .size')?.innerText);
+
+    if (uploader && title !== uploader) {
+      title = title.concat(` user:${uploader}`);
+    }
+
+    duration = bhutils.timeToSeconds(duration);
+
+    if (thumbCallback) {
+      thumbCallback();
+    }
+
+    return { title, duration }
+  }
+}
+
 class MOTHERLESS_RULES {
+    delay = 50;
+
     constructor() {
-        this.PAGINATION = document.querySelector('.pagination_link, .ml-pagination');
-        this.PAGINATION_LAST = parseInt(
+        const url = new URL(window.location.href);
+
+        this.paginationOffset = parseInt(url.searchParams.get('page')) || 1;
+        this.paginationUrlGenerator = (n) => {
+            url.searchParams.set('page', n);
+            return url.href;
+        }
+
+        this.paginationElement = document.querySelector('.pagination_link, .ml-pagination');
+        this.paginationLast = parseInt(
             document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText.replace(',', '') ||
             document.querySelector('.ml-pagination li:last-child')?.innerText.replace(',', '')
         );
+
         this.CONTAINER = Array.from(document.querySelectorAll('.content-inner')).pop();
         this.IS_SEARCH = /^\/term\//.test(window.location.pathname);
     }
@@ -66,28 +107,11 @@ class MOTHERLESS_RULES {
 
     THUMB_URL(thumb) { return thumb.querySelector('.img-container').href; };
 
-    THUMB_DATA(thumb) {
-        const uploader = sanitizeStr(thumb.querySelector('.uploader')?.innerText);
-        const title = sanitizeStr(thumb.querySelector('.title')?.innerText).concat(` user:${uploader}`);
-        const duration = timeToSeconds(thumb.querySelector('.size')?.innerText);
-        return { title, duration }
-    }
+    THUMB_DATA(thumb) { return UNIVERSAL_RULES.parseThumbData(thumb); }
 
     THUMB_IMG_DATA(thumb) {
         const img = thumb.querySelector('.static');
         return { img, imgSrc: img.getAttribute('src') };
-    }
-
-    URL_DATA() {
-        const url = new URL(window.location.href);
-        const offset = parseInt(url.searchParams.get('page')) || 1;
-
-        const iteratable_url = (n) => {
-            url.searchParams.set('page', n);
-            return url.href;
-        }
-
-        return { offset, iteratable_url }
     }
 }
 
@@ -165,11 +189,6 @@ function fixURLs() {
 
 //====================================================================================================
 
-function displayAll() {
-    $('.group-minibio').attr('style', 'display: block !important');
-    $('.gallery-container').attr('style', 'display: block !important');
-}
-
 function mobileGalleryToDesktop(e) {
     e.querySelector('.clear-left').remove();
     e.firstElementChild.appendChild(e.firstElementChild.nextElementSibling);
@@ -192,26 +211,26 @@ async function desktopAddMobGalleries() {
                 galleriesContainer.append(mobileGalleryToDesktop(x));
             }
         }
-        displayAll();
     }
 }
 
 //====================================================================================================
 
-GM_addStyle('.img-container, .desktop-thumb { min-height: 150px; max-height: 150px; }');
-
 GM_addStyle(`
+.img-container, .desktop-thumb { min-height: 150px; max-height: 150px; }
+
+.group-minibio, .gallery-container { display: block !important; }
+
 @media only screen and (max-width: 1280px) {
   #categories-page.inner .filtered-duration { display: none !important; }
   #categories-page.inner .filtered-exclude { display: none !important; }
   #categories-page.inner .filtered-include { display: none !important; }
-}`);
+}
 
-GM_addStyle(`
-  .ml-masonry-images.masonry-columns-4 .content-inner { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .ml-masonry-images.masonry-columns-6 .content-inner { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .ml-masonry-images.masonry-columns-8 .content-inner { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
-`)
+.ml-masonry-images.masonry-columns-4 .content-inner { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ml-masonry-images.masonry-columns-6 .content-inner { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.ml-masonry-images.masonry-columns-8 .content-inner { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
+`);
 
 //====================================================================================================
 
@@ -231,7 +250,44 @@ function useWebsiteSearchFilters() {
 
 //====================================================================================================
 
-const SCROLL_RESET_DELAY = 50;
+function createInfiniteScroller() {
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: handleLoadedHTML,
+    ...RULES,
+  }).onScroll(({paginationLast, paginationOffset}) => {
+      stateLocale.pagIndexLast = paginationLast;
+      stateLocale.pagIndexCur = paginationOffset;
+    }, true);
+
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
+}
+
+//====================================================================================================
+
+function route() {
+  desktopAddMobGalleries().then(() => fixURLs());
+
+  if (RULES.paginationElement) {
+      createInfiniteScroller();
+      animate();
+  }
+
+  if (RULES.GET_THUMBS(document.body).length > 0) {
+      new JabroniOutfitUI(store);
+      getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => {
+          handleLoadedHTML(c, c, true);
+      });
+  }
+
+  if (RULES.IS_SEARCH) {
+    useWebsiteSearchFilters();
+  }
+}
+
+//====================================================================================================
 
 console.log(LOGO);
 
@@ -239,21 +295,4 @@ const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
-
-desktopAddMobGalleries().then(() => fixURLs());
-
-if (RULES.PAGINATION) {
-    new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
-    animate();
-}
-
-if (RULES.GET_THUMBS(document.body).length > 0) {
-    new JabroniOutfitUI(store);
-    getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => {
-        handleLoadedHTML(c, c, true);
-    });
-}
-
-if (RULES.IS_SEARCH) {
-  useWebsiteSearchFilters();
-}
+route();
