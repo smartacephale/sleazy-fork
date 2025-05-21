@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.1
+// @version      3.0.2
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @run-at       document-idle
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.0/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @downloadURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.meta.js
@@ -114,23 +114,17 @@ const Rules = new EromeRules();
 //=================================================================================================
 
 function infiniteScrollAndLazyLoading() {
-  handleLoadedHTML(Rules.CONTAINER);
-
-  const update = () => {
-    stateLocale.pagIndexLast = iscroller.paginationLast;
-    stateLocale.pagIndexCur = iscroller.paginationOffset;
-  };
-
   const iscroller = new InfiniteScroller({
     enabled: state.infiniteScrollEnabled,
     handleHtmlCallback: (v) => handleLoadedHTML(v, undefined, true),
     ...Rules,
-  })
-    .onScroll(update)
+  }).onScroll(({paginationLast, paginationOffset}) => {
+      stateLocale.pagIndexLast = paginationLast;
+      stateLocale.pagIndexCur = paginationOffset;
+    }, true)
     .onScroll(() => {
       new LazyLoad();
     });
-  update();
 
   store.subscribe(() => {
     iscroller.enabled = state.infiniteScrollEnabled;
@@ -184,6 +178,7 @@ function init() {
   if (IS_ALBUM_PAGE) {
     setupAlbumPage();
   } else {
+    handleLoadedHTML(Rules.CONTAINER);
     infiniteScrollAndLazyLoading();
     new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
   }
