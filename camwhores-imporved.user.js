@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.2
+// @version      2.2.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -9,20 +9,17 @@
 // @match        https://*.camwhores.tv/*
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1459738
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
-// @downloadURL none
 // ==/UserScript==
-/* globals $ PaginationManager DataManager */
+/* globals $ */
 
 const { Tick, parseDom, fetchHtml, AsyncPool, wait, computeAsyncOneAtTime, timeToSeconds,
     circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
-    getAllUniqueParents, downloader } = window.bhutils;
+    getAllUniqueParents, downloader, DataManager, InfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
@@ -63,6 +60,8 @@ GM_addStyle(`
 `);
 
 class CAMWHORES_RULES {
+    delay = 350;
+
     constructor() {
         const { pathname } = window.location;
         this.IS_FAVOURITES = /\/my\/\w+\/videos/.test(pathname);
@@ -73,6 +72,7 @@ class CAMWHORES_RULES {
         this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
         this.IS_LOGGED_IN = document.cookie.includes('kt_member');
 
+        Object.assign(this, this.URL_DATA());
         Object.assign(this, this.CALC_CONTAINER());
         this.HAS_VIDEOS = !!this.CONTAINER;
 
@@ -86,16 +86,16 @@ class CAMWHORES_RULES {
 
     CALC_CONTAINER = (document_ = document) => {
         const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
-        const PAGINATION = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
+        const paginationElement = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
 
-        const PAGINATION_LAST = Math.max(...Array.from(PAGINATION?.querySelectorAll('a[href][data-parameters]')  || [],
+        const paginationLast = Math.max(...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]')  || [],
           v => parseInt(v.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1])), 1);
 
-        const CONTAINER = (PAGINATION?.parentElement.querySelector('.list-videos>div>form') ||
-            PAGINATION?.parentElement.querySelector('.list-videos>div') ||
+        const CONTAINER = (paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
+            paginationElement?.parentElement.querySelector('.list-videos>div') ||
             document.querySelector('.list-videos>div'));
 
-        return { PAGINATION, PAGINATION_LAST, CONTAINER };
+        return { paginationElement, paginationLast, CONTAINER };
     }
 
     IS_PRIVATE(thumb) {
@@ -125,10 +125,10 @@ class CAMWHORES_RULES {
 
     URL_DATA(url_, document_) {
         const url = new URL((url_ || window.location).href);
-        const offset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
+        const paginationOffset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const { PAGINATION, PAGINATION_LAST } = this.CALC_CONTAINER(document_ || document);
-        const el = PAGINATION?.querySelector('a[data-block-id][data-parameters]');
+        const { paginationElement, paginationLast } = this.CALC_CONTAINER(document_ || document);
+        const el = paginationElement?.querySelector('a[data-block-id][data-parameters]');
         const dataParameters = el?.getAttribute('data-parameters') || "";
 
         const attrs = {
@@ -140,13 +140,13 @@ class CAMWHORES_RULES {
 
         Object.keys(attrs).forEach(k => url.searchParams.set(k, attrs[k]));
 
-        const iteratable_url = n => {
+        const paginationUrlGenerator = n => {
             Object.keys(attrs).forEach(k => k.includes('from') && url.searchParams.set(k, n));
             url.searchParams.set('_', Date.now());
             return url.href;
         }
 
-        return { offset, iteratable_url, PAGINATION_LAST };
+        return { paginationOffset, paginationUrlGenerator, paginationLast };
     }
 }
 
@@ -215,8 +215,8 @@ function getMemberLinks(document) {
 async function getMemberFriends(id) {
     const url = `${window.location.origin}/members/${id}/friends/`;
     const document_ = await fetchHtml(url);
-    const { offset, iteratable_url, PAGINATION_LAST } = RULES.URL_DATA(new URL(url), document_);
-    const pages = PAGINATION_LAST ? range(PAGINATION_LAST, 1).map(u => iteratable_url(u)) : [url];
+    const { paginationOffset, paginationUrlGenerator, paginationLast } = RULES.URL_DATA(new URL(url), document_);
+    const pages = paginationLast ? range(paginationLast, 1).map(u => paginationUrlGenerator(u)) : [url];
     const friendlist = (await computeAsyncOneAtTime(pages.map(p => () => fetchHtml(p)))).flatMap(getMemberLinks).map(u => u.match(/\d+/)[0]);
     friendlist.forEach(m => lskdb.setKey(m));
     await processFriendship();
@@ -363,6 +363,23 @@ function clearMessages() {
 
 //====================================================================================================
 
+function createInfiniteScroller() {
+    const iscroller = new InfiniteScroller({
+      enabled: state.infiniteScrollEnabled,
+      handleHtmlCallback: handleLoadedHTML,
+      ...RULES,
+    }).onScroll(({paginationLast, paginationOffset}) => {
+      stateLocale.pagIndexLast = paginationLast;
+      stateLocale.pagIndexCur = paginationOffset;
+    }, true);
+
+    store.subscribe(() => {
+      iscroller.enabled = state.infiniteScrollEnabled;
+    });
+  }
+
+//====================================================================================================
+
 function route() {
     if (RULES.IS_LOGGED_IN) {
         setTimeout(processFriendship, 3000);
@@ -375,8 +392,8 @@ function route() {
         }
     }
 
-    if (RULES.PAGINATION && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
+        createInfiniteScroller();
         shouldReload();
     }
 
@@ -385,7 +402,7 @@ function route() {
           const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
           containers.forEach(c => handleLoadedHTML(c, c));
         }, 1000, 1);
-        const ui = new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+        new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
         animate();
     }
 
@@ -403,7 +420,6 @@ function route() {
 
 //====================================================================================================
 
-const SCROLL_RESET_DELAY = 500;
 const ANIMATION_DELAY = 500;
 const FRIEND_REQUEST_INTERVAL = 5000;
 
