@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.63
+// @version      3.0.0
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
 // @author       smartacephale
@@ -11,17 +11,14 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.2.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
-// @require      https://update.greasyfork.org/scripts/494204/data-manager.user.js?version=1458190
-// @require      https://update.greasyfork.org/scripts/494205/pagination-manager.user.js?version=1587432
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.meta.js
 // ==/UserScript==
-/* globals $ DataManager PaginationManager */
 
-const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, Observer, sanitizeStr } = window.bhutils;
+const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, Observer, sanitizeStr, DataManager, InfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 
@@ -61,11 +58,14 @@ const LOGO = `
  ⢀⠈⠄⠂⠈⠄⠡⠀⠄⠁⡀⠂⠀⠀⠀⠀⠀⠀⠁⠈⡐⠠⠀⠂⠐⠠⠀⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠂⠐⠠⠈⠐⢀⠂⠐⠈⡐⠀⡈⠐⠈⠀`;
 
 class XHAMSTER_RULES {
+    delay = 300;
+
     constructor() {
         this.IS_VIDEO_PAGE = /^\/videos|moments\//.test(window.location.pathname);
-        this.PAGINATION = document.querySelector('.prev-next-list, .test-pager');
-        this.PAGINATION_LAST = parseInt(Array.from(
-            (this.PAGINATION || document).querySelectorAll('.page-button-link, .xh-paginator-button')).pop()?.innerText.replace(/\,/g, ''));
+        this.paginationElement = document.querySelector('.prev-next-list, .test-pager');
+        this.paginationLast = parseInt(Array.from(
+            (this.paginationElement || document).querySelectorAll('.page-button-link, .xh-paginator-button')).pop()?.innerText.replace(/\,/g, ''));
+        Object.assign(this, this.URL_DATA());
         this.CONTAINER = Array.from(document.querySelectorAll('.thumb-list')).pop();
     }
 
@@ -97,19 +97,19 @@ class XHAMSTER_RULES {
 
     URL_DATA() {
         const url = new URL(window.location.href);
-        const offset = parseInt(url.searchParams.get('page') || url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 1;
+        const paginationOffset = parseInt(url.searchParams.get('page') || url.pathname.match(/\/(\d+)\/?$/)?.pop()) || 1;
 
-        const iteratable_url = n => {
+        const paginationUrlGenerator = n => {
             if (/^\/search\//.test(url.pathname)) {
                 url.searchParams.set('page', n);
             } else {
-                if (!/\/\d+\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${offset}/`;
+                if (!/\/\d+\/?$/.test(url.pathname)) url.pathname = `${url.pathname}/${paginationOffset}/`;
                 url.pathname = url.pathname.replace(/\/\d+\/?$/, `/${n}/`);
             }
             return url.href;
         }
 
-        return { offset, iteratable_url }
+        return { paginationOffset, paginationUrlGenerator }
     }
 }
 
@@ -126,6 +126,12 @@ function expandMoreVideoPage() {
 
 //====================================================================================================
 
+function removeVideo(video) {
+  video.removeAttribute('src');
+  video.load();
+  video.remove();
+}
+
 function createPreviewVideoElement(src, mount) {
     const video = document.createElement('video');
     video.playsinline = true;
@@ -136,23 +142,36 @@ function createPreviewVideoElement(src, mount) {
     video.addEventListener('loadeddata', () => {
         mount.before(video);
     }, false);
-    const removeVideo = () => {
-            video.removeAttribute('src');
-            video.load();
-            video.remove();
-    }
-    return { video, removeVideo };
+    const stop = () => removeVideo(video);
+    return { video, stop };
 }
 
 function handleThumbHover(e) {
     if (!e.target.classList.contains('thumb-image-container__image')) return;
     const videoSrc = e.target.parentElement.getAttribute('data-previewvideo');
-    const { removeVideo } = createPreviewVideoElement(videoSrc, e.target);
-    e.target.parentElement.parentElement.addEventListener('mouseleave', removeVideo, { once: true });
+    const { stop } = createPreviewVideoElement(videoSrc, e.target);
+    e.target.parentElement.parentElement.addEventListener('mouseleave', stop, { once: true });
 }
 
 function animate() {
     document.body.addEventListener('mouseover', handleThumbHover);
+}
+
+//====================================================================================================
+
+function createInfiniteScroller() {
+  const iscroller = new InfiniteScroller({
+    enabled: state.infiniteScrollEnabled,
+    handleHtmlCallback: handleLoadedHTML,
+    ...RULES,
+  }).onScroll(({paginationLast, paginationOffset}) => {
+      stateLocale.pagIndexLast = paginationLast;
+      stateLocale.pagIndexCur = paginationOffset;
+    }, true);
+
+  store.subscribe(() => {
+    iscroller.enabled = state.infiniteScrollEnabled;
+  });
 }
 
 //====================================================================================================
@@ -170,8 +189,8 @@ function route() {
         watchElementChildrenCount(RULES.CONTAINER, () => setTimeout(parseInPLace, 1800));
     }
 
-    if (RULES.PAGINATION) {
-        new PaginationManager(state, stateLocale, RULES, handleLoadedHTML, SCROLL_RESET_DELAY);
+    if (RULES.paginationElement) {
+      createInfiniteScroller();
     }
 
     parseInPLace();
@@ -179,14 +198,11 @@ function route() {
     new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
 }
 
-
 defaultSchemeWithPrivateFilter.privateFilter = [
   { type: "checkbox", model: "state.filterPrivate", label: "unwatched" },
   { type: "checkbox", model: "state.filterPublic", label: "watched" }];
 
 //====================================================================================================
-
-const SCROLL_RESET_DELAY = 350;
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
 const { state, stateLocale } = store;
