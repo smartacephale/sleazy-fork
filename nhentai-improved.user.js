@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.1.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -12,14 +12,14 @@
 // @match        https://*.e-hentai.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.4/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
 // ==/UserScript==
 
-const { parseDom, sanitizeStr, DataManager, InfiniteScroller } = window.bhutils;
+const { parseDom, sanitizeStr, DataManager, InfiniteScroller, createInfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
@@ -113,7 +113,6 @@ class NHENTAI_RULES {
     }
 }
 
-
 class _3HENTAI_RULES {
     delay = 250;
 
@@ -163,6 +162,7 @@ class _3HENTAI_RULES {
         }
 
         if (!this.IS_SEARCH_PAGE) {
+          if (url.pathname === '/') url.pathname = '/1';
           paginationOffset = parseInt(url.pathname.match(/\d+$/)) || 1;
           paginationUrlGenerator = n => {
             if (/\d+$/.test(url.pathname)) {
@@ -177,7 +177,6 @@ class _3HENTAI_RULES {
         return { paginationOffset, paginationUrlGenerator };
     }
 }
-
 
 class EHENTAI_RULES {
     delay = 250;
@@ -254,7 +253,7 @@ class EHENTAI_RULES {
 
 const isNHENTAI = window.location.href.includes('nhentai');
 const is3HENTAI = window.location.href.includes('3hentai');
-const isEHENTAI = window.location.href.includes('e-hentai');
+const isEHENTAI = window.location.href.includes('e-henta');
 
 let RULES;
 if (is3HENTAI) RULES = new _3HENTAI_RULES();
@@ -320,24 +319,6 @@ function findSimilar(state) {
 
 //====================================================================================================
 
-function createInfiniteScroller() {
-  console.log(RULES)
-  const iscroller = new InfiniteScroller({
-    enabled: state.infiniteScrollEnabled,
-    handleHtmlCallback: handleLoadedHTML,
-    ...RULES,
-  }).onScroll(({paginationLast, paginationOffset}) => {
-      stateLocale.pagIndexLast = paginationLast;
-      stateLocale.pagIndexCur = paginationOffset;
-    }, true);
-
-  store.subscribe(() => {
-    iscroller.enabled = state.infiniteScrollEnabled;
-  });
-}
-
-//====================================================================================================
-
 function route() {
   if (!state.custom && isNHENTAI) {
       const custom = Object.entries(filterDescriptors).reduce((acc, [k, _]) => { acc[k] = false; return acc }, {});
@@ -357,7 +338,8 @@ function route() {
   }
 
   if (RULES.paginationElement) {
-    createInfiniteScroller();
+    store.localState = stateLocale;
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
   }
 
   delete DefaultScheme.durationFilter;
