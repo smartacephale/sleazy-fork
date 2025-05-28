@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.1
+// @version      1.5.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -21,7 +21,7 @@
 
 const { Tick, parseDom, fetchHtml, AsyncPool, wait, computeAsyncOneAtTime, timeToSeconds,
   circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
-  getAllUniqueParents, downloader, DataManager, createInfiniteScroller } = window.bhutils;
+  getAllUniqueParents, downloader, DataManager, InfiniteScroller, createInfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
@@ -105,8 +105,6 @@ class CAMWHORES_RULES {
       const CONTAINER = (paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
                           paginationElement?.parentElement.querySelector('.list-videos>div') ||
                             document.querySelector('.list-videos>div'));
-
-      console.log(this);
 
       return { paginationElement, paginationLast, CONTAINER };
   }
