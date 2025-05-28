@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.0
+// @version      1.5.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.cambro.tv/*
 // @exclude      *.cambro.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.4/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
@@ -21,7 +21,7 @@
 
 const { Tick, parseDom, fetchHtml, AsyncPool, wait, computeAsyncOneAtTime, timeToSeconds,
   circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
-  getAllUniqueParents, downloader, DataManager, InfiniteScroller } = window.bhutils;
+  getAllUniqueParents, downloader, DataManager, createInfiniteScroller } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
@@ -95,7 +95,7 @@ class CAMWHORES_RULES {
   }
 
   CALC_CONTAINER = (document_ = document) => {
-      const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
+      const paginationEls = [...document_.querySelectorAll('.pagination')];
       const paginationElement = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
 
       let paginationLast = Math.max(...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]')  || [],
@@ -105,6 +105,8 @@ class CAMWHORES_RULES {
       const CONTAINER = (paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
                           paginationElement?.parentElement.querySelector('.list-videos>div') ||
                             document.querySelector('.list-videos>div'));
+
+      console.log(this);
 
       return { paginationElement, paginationLast, CONTAINER };
   }
@@ -376,23 +378,6 @@ function clearMessages() {
 
 //====================================================================================================
 
-function createInfiniteScroller() {
-  const iscroller = new InfiniteScroller({
-    enabled: state.infiniteScrollEnabled,
-    handleHtmlCallback: handleLoadedHTML,
-    ...RULES,
-  }).onScroll(({paginationLast, paginationOffset}) => {
-    stateLocale.pagIndexLast = paginationLast;
-    stateLocale.pagIndexCur = paginationOffset;
-  }, true);
-
-  store.subscribe(() => {
-    iscroller.enabled = state.infiniteScrollEnabled;
-  });
-}
-
-//====================================================================================================
-
 function route() {
   if (RULES.IS_LOGGED_IN) {
       setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
@@ -406,7 +391,8 @@ function route() {
   }
 
   if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-      createInfiniteScroller();
+      store.localState = stateLocale;
+      createInfiniteScroller(store, handleLoadedHTML, RULES);
       shouldReload();
   }
 
@@ -414,6 +400,7 @@ function route() {
       watchDomChangesWithThrottle(document.querySelector('.content'), () => {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach(c => handleLoadedHTML(c, c));
+        createInfiniteScroller(store, handleLoadedHTML, RULES);
       }, 1000, 1);
       new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
       animate();
