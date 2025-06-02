@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.2
+// @version      1.5.6
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.cambro.tv/*
 // @exclude      *.cambro.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.4/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
@@ -21,8 +21,7 @@
 
 const { Tick, parseDom, fetchHtml, AsyncPool, wait, computeAsyncOneAtTime, timeToSeconds,
   circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
-  getAllUniqueParents, downloader, DataManager, InfiniteScroller, createInfiniteScroller } = window.bhutils;
-Object.assign(unsafeWindow, { bhutils: window.bhutils });
+  getAllUniqueParents, downloader, DataManager, createInfiniteScroller } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
 
@@ -71,17 +70,16 @@ GM_addStyle(`
 class CAMWHORES_RULES {
   delay = 300;
 
-  constructor() {
-      const { pathname } = window.location;
-      this.IS_FAVOURITES = /\/my\/\w+\/videos/.test(pathname);
-      this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
-      this.IS_MINE_MEMBER_PAGE = /\/my\/$/.test(pathname);
-      this.IS_MESSAGES = /^\/my\/messages\//.test(pathname);
-      this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
-      this.IS_COMMUNITY_LIST = /\/members\/$/.test(pathname);
-      this.IS_VIDEO_PAGE = /^\/\d+\//.test(pathname);
-      this.IS_LOGGED_IN = document.cookie.includes('kt_member');
+  IS_FAVOURITES = /\/my\/\w+\/videos/.test(location.pathname);
+  IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(location.pathname);
+  IS_MINE_MEMBER_PAGE = /\/my\/$/.test(location.pathname);
+  IS_MESSAGES = /^\/my\/messages\//.test(location.pathname);
+  IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(location.pathname);
+  IS_COMMUNITY_LIST = /\/members\/$/.test(location.pathname);
+  IS_VIDEO_PAGE = /^\/\d+\//.test(location.pathname);
+  IS_LOGGED_IN = document.cookie.includes('kt_member');
 
+  constructor() {
       Object.assign(this, this.URL_DATA());
       Object.assign(this, this.CALC_CONTAINER());
       this.HAS_VIDEOS = !!this.CONTAINER;
@@ -215,7 +213,7 @@ const lskdb = new LSKDB();
 const spool = new AsyncPool();
 
 function friendRequest(id) {
-  const url = Number.isInteger(id) ? `${window.location.origin}/members/${id}/` : id;
+  const url = Number.isInteger(id) ? `${location.origin}/members/${id}/` : id;
   return fetch(url, { body: DEFAULT_FRIEND_REQUEST_FORMDATA, method: "post" });
 }
 
@@ -279,26 +277,26 @@ function createFriendButton() {
 //====================================================================================================
 
 async function requestAccess() {
-checkPrivateVidsAccess();
-setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
+  checkPrivateVidsAccess();
+  setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
 }
 
 async function checkPrivateVidsAccess() {
   const checkAccess = async (item) => {
-      const videoURL = item.firstElementChild.href;
-      const doc = await fetchHtml(videoURL);
+    const videoURL = item.firstElementChild.href;
+    const doc = await fetchHtml(videoURL);
 
-      if (!doc.querySelector('.player')) return;
+    if (!doc.querySelector('.player')) return;
 
-      const haveAccess = !doc.querySelector('.no-player');
+    const haveAccess = !doc.querySelector('.no-player');
 
-      if (!haveAccess) {
-        const uid = doc.querySelector('.message a').href.match(/\d+/).at(-1);
-        lskdb.setKey(uid);
-        item.classList.add('haveNoAccess');
-      } else {
-        item.classList.add('haveAccess');
-      }
+    if (!haveAccess) {
+      const uid = doc.querySelector('.message a').href.match(/\d+/).at(-1);
+      lskdb.setKey(uid);
+      item.classList.add('haveNoAccess');
+    } else {
+      item.classList.add('haveAccess');
+    }
   }
 
   const f = [];
@@ -378,45 +376,48 @@ function clearMessages() {
 
 function route() {
   if (RULES.IS_LOGGED_IN) {
-      setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
-      if (RULES.IS_MEMBER_PAGE || RULES.IS_COMMUNITY_LIST) {
-          createFriendButton();
-      }
-      if (RULES.HAS_VIDEOS) {
-        defaultSchemeWithPrivateFilter.privateFilter.push(
-          { type: "button", innerText: "check access 🔓", callback: requestAccess });
-      }
+    setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
+    if (RULES.IS_MEMBER_PAGE || RULES.IS_COMMUNITY_LIST) {
+      createFriendButton();
+    }
+    if (RULES.HAS_VIDEOS) {
+      defaultSchemeWithPrivateFilter.privateFilter.push(
+        { type: 'button', innerText: 'check access 🔓', callback: requestAccess });
+    }
   }
 
   if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-      store.localState = stateLocale;
-      createInfiniteScroller(store, handleLoadedHTML, RULES);
-      shouldReload();
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    shouldReload();
   }
 
   if (RULES.HAS_VIDEOS) {
-      watchDomChangesWithThrottle(document.querySelector('.content'), () => {
+    watchDomChangesWithThrottle(
+      document.querySelector('.content'),
+      () => {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
-        containers.forEach(c => handleLoadedHTML(c, c));
+        containers.forEach((c) => handleLoadedHTML(c, c));
         createInfiniteScroller(store, handleLoadedHTML, RULES);
       }, 1000, 1);
-      new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
-      animate();
+    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+    animate();
   }
 
   if (RULES.IS_VIDEO_PAGE) {
-      createDownloadButton();
-      createPrivateVideoFriendButton();
+    createDownloadButton();
+    createPrivateVideoFriendButton();
   }
 
   if (RULES.IS_MESSAGES) {
-      const button = parseDom('<button>clear messages</button>');
-      document.querySelector('.headline').append(button);
-      button.addEventListener('click', clearMessages);
+    const button = parseDom('<button>clear messages</button>');
+    document.querySelector('.headline').append(button);
+    button.addEventListener('click', clearMessages);
   }
 }
 
 //====================================================================================================
+
+console.log(LOGO);
 
 const ANIMATION_DELAY = 500;
 const FRIEND_REQUEST_INTERVAL = 5000;
@@ -426,5 +427,4 @@ const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
-console.log(LOGO);
 route();
