@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.2
+// @version      2.2.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -59,94 +59,102 @@ GM_addStyle(`
 `);
 
 class CAMWHORES_RULES {
-    delay = 350;
+  delay = 350;
 
-    constructor() {
-        const { pathname } = window.location;
-        this.IS_FAVOURITES = /\/my\/\w+\/videos/.test(pathname);
-        this.IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(pathname);
-        this.IS_MINE_MEMBER_PAGE = /\/my\/$/.test(pathname);
-        this.IS_MESSAGES = /^\/my\/messages\//.test(pathname);
-        this.IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(pathname);
-        this.IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(pathname);
-        this.IS_LOGGED_IN = document.cookie.includes('kt_member');
+  IS_FAVOURITES = /\/my\/\w+\/videos/.test(location.pathname);
+  IS_MEMBER_PAGE = /\/members\/\d+\/$/.test(location.pathname);
+  IS_MINE_MEMBER_PAGE = /\/my\/$/.test(location.pathname);
+  IS_MESSAGES = /^\/my\/messages\//.test(location.pathname);
+  IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(location.pathname);
+  IS_VIDEO_PAGE = /^\/videos\/\d+\//.test(location.pathname);
+  IS_LOGGED_IN = document.cookie.includes('kt_member');
 
-        Object.assign(this, this.URL_DATA());
-        Object.assign(this, this.CALC_CONTAINER());
-        this.HAS_VIDEOS = !!this.CONTAINER;
+  constructor() {
+    Object.assign(this, this.URL_DATA());
+    Object.assign(this, this.CALC_CONTAINER());
+    this.HAS_VIDEOS = !!this.CONTAINER;
 
-        if (this.IS_FAVOURITES || this.IS_MEMBER_VIDEOS) {
-            this.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
-            watchDomChangesWithThrottle(document.querySelector('.content'), () => {
-                Object.assign(this, this.CALC_CONTAINER());
-            }, 10);
-        }
+    if (this.IS_FAVOURITES || this.IS_MEMBER_VIDEOS) {
+      this.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
+      watchDomChangesWithThrottle(document.querySelector('.content'), () => {
+          Object.assign(this, this.CALC_CONTAINER());
+      }, 10);
     }
+  }
 
-    CALC_CONTAINER = (document_ = document) => {
-        const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
-        const paginationElement = paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
+  CALC_CONTAINER = (document_ = document) => {
+    const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
+    const paginationElement =
+      paginationEls?.[this.IS_MEMBER_PAGE && paginationEls.length > 1 ? 1 : 0];
 
-        const paginationLast = Math.max(...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]')  || [],
-          v => parseInt(v.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1])), 1);
+    const paginationLast = Math.max(
+      ...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]') || [], (v) =>
+        parseInt(v.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1]),
+      ), 1);
 
-        const CONTAINER = (paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
-            paginationElement?.parentElement.querySelector('.list-videos>div') ||
-            document.querySelector('.list-videos>div'));
+    const CONTAINER =
+      paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
+      paginationElement?.parentElement.querySelector('.list-videos>div') ||
+      document.querySelector('.list-videos>div');
 
-        return { paginationElement, paginationLast, CONTAINER };
-    }
+    return { paginationElement, paginationLast, CONTAINER };
+  };
 
-    IS_PRIVATE(thumb) {
-        return thumb.classList.contains('private');
-    }
+  IS_PRIVATE(thumb) {
+    return thumb.classList.contains('private');
+  }
 
-    GET_THUMBS(html) {
-        return Array.from(html.querySelectorAll('.list-videos .item') || html.querySelectorAll('.item') || html.children);
-    }
+  GET_THUMBS(html) {
+    return Array.from(
+      html.querySelectorAll('.list-videos .item') ||
+        html.querySelectorAll('.item') ||
+        html.children,
+    );
+  }
 
-    THUMB_IMG_DATA(thumb) {
-        const img = thumb.querySelector('img.thumb');
-        const imgSrc = img.getAttribute('data-original');
-        img.removeAttribute('data-original');
-        return { img, imgSrc };
-    }
+  THUMB_IMG_DATA(thumb) {
+    const img = thumb.querySelector('img.thumb');
+    const imgSrc = img.getAttribute('data-original');
+    img.removeAttribute('data-original');
+    return { img, imgSrc };
+  }
 
-    THUMB_URL(thumb) {
-        return thumb.firstElementChild.href;
-    }
+  THUMB_URL(thumb) {
+    return thumb.firstElementChild.href;
+  }
 
-    THUMB_DATA(thumb) {
-        const title = sanitizeStr(thumb.querySelector('.title').innerText);
-        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
-        return { title, duration };
-    }
+  THUMB_DATA(thumb) {
+    const title = sanitizeStr(thumb.querySelector('.title').innerText);
+    const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
+    return { title, duration };
+  }
 
-    URL_DATA(url_, document_) {
-        const url = new URL((url_ || window.location).href);
-        const paginationOffset = parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
+  URL_DATA(url_, document_) {
+    const url = new URL((url_ || window.location).href);
+    const paginationOffset =
+      parseInt((document_ || document).querySelector('.page-current')?.innerText) || 1;
 
-        const { paginationElement, paginationLast } = this.CALC_CONTAINER(document_ || document);
-        const el = paginationElement?.querySelector('a[data-block-id][data-parameters]');
-        const dataParameters = el?.getAttribute('data-parameters') || "";
+    const { paginationElement, paginationLast } = this.CALC_CONTAINER(document_ || document);
+    const el = paginationElement?.querySelector('a[data-block-id][data-parameters]');
+    const dataParameters = el?.getAttribute('data-parameters') || '';
 
-        const attrs = {
-            mode: 'async',
-            function: 'get_block',
-            block_id: el?.getAttribute('data-block-id'),
-            ...parseDataParams(dataParameters)
-        };
+    const attrs = {
+      mode: 'async',
+      function: 'get_block',
+      block_id: el?.getAttribute('data-block-id'),
+      ...parseDataParams(dataParameters),
+    };
 
-        Object.keys(attrs).forEach(k => url.searchParams.set(k, attrs[k]));
+    Object.keys(attrs).forEach((k) => url.searchParams.set(k, attrs[k]));
 
-        const paginationUrlGenerator = n => {
-            Object.keys(attrs).forEach(k => k.includes('from') && url.searchParams.set(k, n));
-            url.searchParams.set('_', Date.now());
-            return url.href;
-        }
+    const paginationUrlGenerator = (n) => {
+      Object.keys(attrs).forEach((k) => k.includes('from') && url.searchParams.set(k, n));
+      url.searchParams.set('_', Date.now());
+      return url.href;
+    };
 
-        return { paginationOffset, paginationUrlGenerator, paginationLast };
-    }
+    return { paginationOffset, paginationUrlGenerator, paginationLast };
+  }
 }
 
 const RULES = new CAMWHORES_RULES();
