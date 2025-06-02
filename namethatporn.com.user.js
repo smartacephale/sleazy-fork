@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0.0
 // @license      MIT
-// @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
+// @description  Infinite scroll (optional). Filter by solved/unsolved, include/exclude phrases.
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://namethatporn.*/*
