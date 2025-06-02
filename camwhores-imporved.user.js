@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.1
+// @version      2.2.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.camwhores.tv/*
 // @exclude      *.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.4/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
@@ -20,7 +20,6 @@
 const { Tick, parseDom, fetchHtml, AsyncPool, wait, computeAsyncOneAtTime, timeToSeconds,
     circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
     getAllUniqueParents, downloader, DataManager, createInfiniteScroller } = window.bhutils;
-Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
 
@@ -364,46 +363,49 @@ function clearMessages() {
 //====================================================================================================
 
 function route() {
-    if (RULES.IS_LOGGED_IN) {
-        setTimeout(processFriendship, 3000);
-        if (RULES.IS_MEMBER_PAGE) {
-            createFriendButton();
-        }
-        if (RULES.HAS_VIDEOS) {
-          defaultSchemeWithPrivateFilter.privateFilter.push(
-            { type: "button", innerText: "check access 🔓", callback: requestAccess });
-        }
+  if (RULES.IS_LOGGED_IN) {
+    setTimeout(processFriendship, 3000);
+    if (RULES.IS_MEMBER_PAGE) {
+      createFriendButton();
     }
-
-    if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-        store.localState = stateLocale;
-        createInfiniteScroller(store, handleLoadedHTML, RULES);
-        shouldReload();
-    }
-
     if (RULES.HAS_VIDEOS) {
-        watchDomChangesWithThrottle(document.querySelector('.content'), () => {
-          const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
-          containers.forEach(c => handleLoadedHTML(c, c));
-          createInfiniteScroller(store, handleLoadedHTML, RULES);
-        }, 1000, 1);
-        new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
-        animate();
+      defaultSchemeWithPrivateFilter.privateFilter.push(
+        { type: 'button', innerText: 'check access 🔓', callback: requestAccess });
     }
+  }
 
-    if (RULES.IS_VIDEO_PAGE) {
-        createDownloadButton();
-        createPrivateVideoFriendButton();
-    }
+  if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    shouldReload();
+  }
 
-    if (RULES.IS_MESSAGES) {
-        const button = parseDom('<button>clear messages</button>');
-        document.querySelector('.headline').append(button);
-        button.addEventListener('click', clearMessages);
-    }
+  if (RULES.HAS_VIDEOS) {
+    watchDomChangesWithThrottle(
+      document.querySelector('.content'),
+      () => {
+        const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
+        containers.forEach((c) => handleLoadedHTML(c, c));
+        createInfiniteScroller(store, handleLoadedHTML, RULES);
+      }, 1000, 1);
+    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+    animate();
+  }
+
+  if (RULES.IS_VIDEO_PAGE) {
+    createDownloadButton();
+    createPrivateVideoFriendButton();
+  }
+
+  if (RULES.IS_MESSAGES) {
+    const button = parseDom('<button>clear messages</button>');
+    document.querySelector('.headline').append(button);
+    button.addEventListener('click', clearMessages);
+  }
 }
 
 //====================================================================================================
+
+console.log(LOGO);
 
 const ANIMATION_DELAY = 500;
 const FRIEND_REQUEST_INTERVAL = 5000;
@@ -413,5 +415,4 @@ const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
-console.log(LOGO);
 route();
