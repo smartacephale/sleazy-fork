@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.1
 // @license      MIT
-// @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page
+// @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page.
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.xhamster.*/*
@@ -11,15 +11,14 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.meta.js
 // ==/UserScript==
 
-const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, Observer, sanitizeStr, DataManager, InfiniteScroller } = window.bhutils;
-Object.assign(unsafeWindow, { bhutils: window.bhutils });
+const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, exterminateVideo, Observer, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
 
 if (window.top != window.self) return;
@@ -66,7 +65,7 @@ class XHAMSTER_RULES {
         this.paginationLast = parseInt(Array.from(
             (this.paginationElement || document).querySelectorAll('.page-button-link, .xh-paginator-button')).pop()?.innerText.replace(/\,/g, ''));
         Object.assign(this, this.URL_DATA());
-        this.CONTAINER = Array.from(document.querySelectorAll('.thumb-list')).pop();
+        this.CONTAINER = [...document.querySelectorAll('.thumb-list')].pop();
     }
 
     IS_PRIVATE(thumb) {
@@ -82,7 +81,7 @@ class XHAMSTER_RULES {
     }
 
     THUMB_IMG_DATA(thumb) {
-        if (stateLocale.pagIndexCur === 1) return ({});
+        if (store?.stateLocale.pagIndexCur === 1) return ({});
         const img = thumb.querySelector('img[loading]');
         if (img) img.removeAttribute('loading');
         if (!img?.complete || img.naturalWidth === 0) return ({});
@@ -126,12 +125,6 @@ function expandMoreVideoPage() {
 
 //====================================================================================================
 
-function removeVideo(video) {
-  video.removeAttribute('src');
-  video.load();
-  video.remove();
-}
-
 function createPreviewVideoElement(src, mount) {
     const video = document.createElement('video');
     video.playsinline = true;
@@ -142,8 +135,8 @@ function createPreviewVideoElement(src, mount) {
     video.addEventListener('loadeddata', () => {
         mount.before(video);
     }, false);
-    const stop = () => removeVideo(video);
-    return { video, stop };
+    const stop = () => exterminateVideo(video);
+    return { stop };
 }
 
 function handleThumbHover(e) {
@@ -155,23 +148,6 @@ function handleThumbHover(e) {
 
 function animate() {
     document.body.addEventListener('mouseover', handleThumbHover);
-}
-
-//====================================================================================================
-
-function createInfiniteScroller() {
-  const iscroller = new InfiniteScroller({
-    enabled: state.infiniteScrollEnabled,
-    handleHtmlCallback: handleLoadedHTML,
-    ...RULES,
-  }).onScroll(({paginationLast, paginationOffset}) => {
-      stateLocale.pagIndexLast = paginationLast;
-      stateLocale.pagIndexCur = paginationOffset;
-    }, true);
-
-  store.subscribe(() => {
-    iscroller.enabled = state.infiniteScrollEnabled;
-  });
 }
 
 //====================================================================================================
@@ -190,13 +166,15 @@ function route() {
     }
 
     if (RULES.paginationElement) {
-      createInfiniteScroller();
+      createInfiniteScroller(store, handleLoadedHTML, RULES);
     }
 
     parseInPLace();
+    setTimeout(parseInPLace, 500);
 
     new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
 }
+
 
 defaultSchemeWithPrivateFilter.privateFilter = [
   { type: "checkbox", model: "state.filterPrivate", label: "unwatched" },
@@ -204,10 +182,9 @@ defaultSchemeWithPrivateFilter.privateFilter = [
 
 //====================================================================================================
 
-const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
-store.subscribe(applyFilters);
-
 console.log(LOGO);
+
+const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
+store.subscribe(applyFilters);
 route();
