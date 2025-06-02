@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.1.1
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.xvideos.com/*
 // @exclude      https://*.xvideos.com/embedframe/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
@@ -17,8 +17,7 @@
 // @updateURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.meta.js
 // ==/UserScript==
 
-const { DataManager, InfiniteScroller, sanitizeStr, timeToSeconds, parseDom } = window.bhutils;
-Object.assign(unsafeWindow, { bhutils: window.bhutils });
+const { DataManager, createInfiniteScroller, sanitizeStr, timeToSeconds, parseDom } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
@@ -123,7 +122,6 @@ function createPreviewElement(src, mount) {
     }, false);
 
     return {
-        elem,
         removeElem: () => {
             video.removeAttribute('src');
             video.load();
@@ -153,26 +151,9 @@ function animate() {
 
 //====================================================================================================
 
-function createInfiniteScroller() {
-  const iscroller = new InfiniteScroller({
-    enabled: state.infiniteScrollEnabled,
-    handleHtmlCallback: handleLoadedHTML,
-    ...RULES,
-  }).onScroll(({paginationLast, paginationOffset}) => {
-      stateLocale.pagIndexLast = paginationLast;
-      stateLocale.pagIndexCur = paginationOffset;
-    }, true);
-
-  store.subscribe(() => {
-    iscroller.enabled = state.infiniteScrollEnabled;
-  });
-}
-
-//====================================================================================================
-
 function route() {
     if (RULES.paginationElement) {
-      createInfiniteScroller();
+      createInfiniteScroller(store, handleLoadedHTML, RULES);
     }
 
     if (RULES.HAS_VIDEOS) {
@@ -187,7 +168,7 @@ function route() {
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
+
 route();
