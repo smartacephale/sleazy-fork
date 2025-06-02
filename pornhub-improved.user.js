@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.1.2
+// @version      2.3.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -45,80 +45,49 @@ const LOGO = `
 ⡯⡺⣪⢺⣪⣻⣺⡺⣮⣻⣺⡺⣽⣺⡺⡽⡽⡮⡯⡯⣗⡯⣿⢽⢯⣗⡯⣟⣞⣎⠐⢌⠪⡂⠑⠌⡆⢇⢇⢇⢇⢏⢮⡪⡫⣯⡳⡯⡯⣟⣞⢮⢯⣳⡳⡕⠅⠅⡀⢂
 ⡮⡪⡪⡳⡵⣕⢗⣝⣞⣞⢮⣻⡺⡮⡯⡯⡯⣯⢯⣟⡾⣽⢽⡽⣽⡺⣽⣳⡳⡕⡈⡢⢑⠌⡄⢔⠸⡘⡜⡜⡜⡜⡜⣎⢯⢮⢯⢯⢯⡳⡽⣝⣗⢕⠇⠁⠀⠂⡂⠂`;
 
-class UNIVERSAL_RULES {
-  static parsePagination(document) {
-    const paginations = document.querySelectorAll('.pagination');
-    return Array.from(paginations).pop();
-  }
-
-  static parsePaginationLast(pagination) {
-    const el = pagination.querySelector('.last-page');
-    return parseInt(el.innerText) || 1;
-  }
-
-  static parseThumbData(thumb, thumbCallback) {
-    const uploader = bhutils.sanitizeStr(thumb.querySelector('[class*=name]')?.innerText);
-    let title = bhutils.sanitizeStr(thumb.querySelector('[class*=title]')?.innerText);
-    let duration = bhutils.sanitizeStr(thumb.querySelector('[class*=duration]')?.innerText);
-
-    if (uploader) {
-      title = title.concat(` user:${uploader}`);
-    }
-
-    duration = bhutils.timeToSeconds(duration);
-
-    if (thumbCallback) {
-      thumbCallback();
-    }
-
-    return { title, duration }
-  }
-}
-
 class PORNHUB_RULES {
     delay = 350;
 
+    IS_MODEL_PAGE = location.pathname.startsWith('/model/');
+    IS_VIDEO_PAGE = location.pathname.startsWith('/view_video.php');
+    IS_PLAYLIST_PAGE = location.pathname.startsWith('/playlist/');
+
+    paginationElement = document.querySelector('.paginationGated');
+    paginationOffset = parseInt(new URLSearchParams(location.search).get('page')) || 1;
+    paginationLast = parseInt(document.querySelector('.page_next')?.previousElementSibling.innerText) || 1;
+
+    CONTAINER = document.querySelector('ul.videos:not([id*=trailer]):not([class*=drop])');
+    intersectionObservable = this.CONTAINER && findNextSibling(this.CONTAINER);
+
     constructor() {
-        const { pathname } = window.location;
-
-        this.IS_MODEL_PAGE = pathname.startsWith('/model/');
-        this.IS_VIDEO_PAGE = pathname.startsWith('/view_video.php');
-        this.IS_PLAYLIST_PAGE = pathname.startsWith('/playlist/');
-
-        this.paginationElement = document.querySelector('.paginationGated');
-
-        this.paginationLast = parseInt(document.querySelector('.page_next')?.previousElementSibling.innerText) || 1;
-        if (this.paginationLast === 10) this.paginationLast = 999;
-
-        this.paginationOffset = parseInt(new URLSearchParams(location.search).get('page')) || 1;
-
-        this.CONTAINER = document.querySelector('ul.videos.row-5-thumbs, ul.videos.nf-videos, ul#singleFeedSection, ul#videoSearchResult, ul#singleFeedSection');
-
-        this.intersectionObservable = this.CONTAINER && findNextSibling(this.CONTAINER);
+      if (this.paginationLast === 10) this.paginationLast = 999;
     }
 
     THUMB_URL(thumb) {
-        return thumb.querySelector('.linkVideoThumb').href;
+      return thumb.querySelector('.linkVideoThumb').href;
     }
 
     GET_THUMBS(html) {
-        const parent = html.querySelector(this.IS_MODEL_PAGE ? '.videos.row-5-thumbs' : 'ul.videos.nf-videos') || html;
-        return parent.querySelectorAll('li.videoBox.videoblock, li.videoblock');
+      const parent = html.querySelector('ul.videos:not([id*=trailer]):not([class*=drop])') || html;
+      return [...parent.querySelectorAll('li.videoBox.videoblock, li.videoblock')];
     }
 
     THUMB_IMG_DATA(thumb) {
-        const img = thumb.querySelector('.js-videoThumb.thumb.js-videoPreview');
-        const imgSrc = img?.getAttribute('data-mediumthumb') || img?.getAttribute('data-path').replace('{index}', '1');
-        if (!img?.complete || img.naturalWidth === 0) { return ({}); }
-        return { img, imgSrc };
+      const img = thumb.querySelector('.js-videoThumb.thumb.js-videoPreview');
+      const imgSrc = img?.getAttribute('data-mediumthumb') || img?.getAttribute('data-path').replace('{index}', '1');
+      if (!img?.complete || img.naturalWidth === 0) { return ({}); }
+      return { img, imgSrc };
     }
 
     THUMB_DATA(thumb) {
-      return UNIVERSAL_RULES.parseThumbData(thumb);
+        const name = sanitizeStr(thumb.querySelector('.usernameWrap')?.innerText);
+        const title = sanitizeStr(thumb.querySelector('span.title')?.innerText).concat(` user:${name}`);
+        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
+        return { title, duration };
     }
 
     paginationUrlGenerator = (n) => {
-      const url = new URL(window.location.href);
+      const url = new URL(location.href);
       url.searchParams.set('page', n);
       return url.href;
     }
@@ -130,7 +99,7 @@ const RULES = new PORNHUB_RULES();
 
 function route() {
   if (RULES.IS_VIDEO_PAGE) {
-      const containers = getAllUniqueParents(document.querySelectorAll('li.pcVideoListItem.js-pop.videoBox')).slice(2);
+      const containers = getAllUniqueParents(document.querySelectorAll('li.js-pop.videoBox, li.js-pop.videoblock')).slice(2);
       containers.forEach(c => handleLoadedHTML(c, c));
   }
 
