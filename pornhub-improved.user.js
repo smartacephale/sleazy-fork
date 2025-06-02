@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.1.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -10,15 +10,14 @@
 // @exclude      https://*.pornhub.com/embed/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pornhub.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
 // ==/UserScript==
 
-const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr, findNextSibling, DataManager, InfiniteScroller } = window.bhutils;
-Object.assign(unsafeWindow, { bhutils: window.bhutils });
+const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr, findNextSibling, DataManager, createInfiniteScroller } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
@@ -81,16 +80,17 @@ class PORNHUB_RULES {
 
     constructor() {
         const { pathname } = window.location;
-        const url = new URL(window.location.href);
 
         this.IS_MODEL_PAGE = pathname.startsWith('/model/');
         this.IS_VIDEO_PAGE = pathname.startsWith('/view_video.php');
         this.IS_PLAYLIST_PAGE = pathname.startsWith('/playlist/');
 
         this.paginationElement = document.querySelector('.paginationGated');
+
         this.paginationLast = parseInt(document.querySelector('.page_next')?.previousElementSibling.innerText) || 1;
         if (this.paginationLast === 10) this.paginationLast = 999;
-        this.paginationOffset = parseInt(url.searchParams.get('page')) || 1;
+
+        this.paginationOffset = parseInt(new URLSearchParams(location.search).get('page')) || 1;
 
         this.CONTAINER = document.querySelector('ul.videos.row-5-thumbs, ul.videos.nf-videos, ul#singleFeedSection, ul#videoSearchResult, ul#singleFeedSection');
 
@@ -128,23 +128,6 @@ const RULES = new PORNHUB_RULES();
 
 //====================================================================================================
 
-function initInfiniteScroll() {
-  const iscroller = new InfiniteScroller({
-    enabled: state.infiniteScrollEnabled,
-    handleHtmlCallback: handleLoadedHTML,
-    ...RULES,
-  }).onScroll(({paginationLast, paginationOffset}) => {
-    stateLocale.pagIndexLast = paginationLast;
-    stateLocale.pagIndexCur = paginationOffset;
-  }, true);
-
-  store.subscribe(() => {
-    iscroller.enabled = state.infiniteScrollEnabled;
-  });
-
-  return iscroller;
-}
-
 function route() {
   if (RULES.IS_VIDEO_PAGE) {
       const containers = getAllUniqueParents(document.querySelectorAll('li.pcVideoListItem.js-pop.videoBox')).slice(2);
@@ -161,7 +144,7 @@ function route() {
   }
 
   if (RULES.paginationElement) {
-      initInfiniteScroll();
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
   }
 
   new JabroniOutfitUI(store);
@@ -172,8 +155,7 @@ function route() {
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 
 route();
