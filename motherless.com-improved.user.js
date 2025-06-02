@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.1.1
+// @version      3.2.0
 // @license      MIT
-// @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available
+// @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available.
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://motherless.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.1/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
@@ -18,8 +18,7 @@
 // ==/UserScript==
 /* globals $ */
 
-const { Tick, fetchWith, timeToSeconds, replaceElementTag, isMob, sanitizeStr, getAllUniqueParents, DataManager, InfiniteScroller } = window.bhutils;
-Object.assign(unsafeWindow, { bhutils: window.bhutils });
+const { Tick, fetchWith, timeToSeconds, replaceElementTag, isMob, sanitizeStr, getAllUniqueParents, DataManager, createInfiniteScroller } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `
@@ -50,42 +49,47 @@ const LOGO = `
 unsafeWindow.__is_premium = true;
 
 class MOTHERLESS_RULES {
-    delay = 50;
+  delay = 150;
 
-    constructor() {
-        const url = new URL(window.location.href);
+  IS_SEARCH = /^\/term\//.test(location.pathname);
+  CONTAINER = [...document.querySelectorAll('.content-inner')].pop();
 
-        this.paginationOffset = parseInt(url.searchParams.get('page')) || 1;
-        this.paginationUrlGenerator = (n) => {
-            url.searchParams.set('page', n);
-            return url.href;
-        }
+  paginationElement = document.querySelector('.pagination_link, .ml-pagination');
+  paginationLast = parseInt(
+    document
+      .querySelector('.pagination_link a:last-child')
+      ?.previousSibling.innerText.replace(',', '') ||
+      document.querySelector('.ml-pagination li:last-child')?.innerText.replace(',', ''),
+  );
 
-        this.paginationElement = document.querySelector('.pagination_link, .ml-pagination');
-        this.paginationLast = parseInt(
-            document.querySelector('.pagination_link a:last-child')?.previousSibling.innerText.replace(',', '') ||
-            document.querySelector('.ml-pagination li:last-child')?.innerText.replace(',', '')
-        );
+  paginationOffset = parseInt(new URLSearchParams(location.search).get('page')) || 1;
 
-        this.CONTAINER = Array.from(document.querySelectorAll('.content-inner')).pop();
-        this.IS_SEARCH = /^\/term\//.test(window.location.pathname);
-    }
+  paginationUrlGenerator = (offset) => {
+    const url = new URL(location.href);
+    url.searchParams.set('page', offset);
+    return url.href;
+  };
 
-    GET_THUMBS(html) { return html.querySelectorAll('.thumb-container, .mobile-thumb'); }
+  GET_THUMBS(html) {
+    return html.querySelectorAll('.thumb-container, .mobile-thumb');
+  }
 
-    THUMB_URL(thumb) { return thumb.querySelector('.img-container').href; };
+  THUMB_URL(thumb) {
+    return thumb.querySelector('a').href;
+  }
 
-    THUMB_DATA(thumb) {
-        const uploader = sanitizeStr(thumb.querySelector('.uploader')?.innerText);
-        const title = sanitizeStr(thumb.querySelector('.title')?.innerText).concat(` user:${uploader}`);
-        const duration = timeToSeconds(thumb.querySelector('.size')?.innerText);
-        return { title, duration }
-    }
+  THUMB_DATA(thumb) {
+    const uploader = sanitizeStr(thumb.querySelector('.uploader')?.innerText);
+    const title = sanitizeStr(thumb.querySelector('.title')?.innerText).concat(` user:${uploader}`);
+    const duration = timeToSeconds(thumb.querySelector('.size')?.innerText);
+    return { title, duration };
+  }
 
-    THUMB_IMG_DATA(thumb) {
-        const img = thumb.querySelector('.static');
-        return { img, imgSrc: img.getAttribute('src') };
-    }
+  THUMB_IMG_DATA(thumb) {
+    const img = thumb.querySelector('.static');
+    const imgSrc = img.getAttribute('src');
+    return { img, imgSrc };
+  }
 }
 
 const RULES = new MOTHERLESS_RULES();
@@ -93,98 +97,112 @@ const RULES = new MOTHERLESS_RULES();
 //====================================================================================================
 
 function animate() {
-    $(RULES.CONTAINER).find("a, div, span, ul, li, p, button").off();
-    const ANIMATION_INTERVAL = 500;
-    const tick = new Tick(ANIMATION_INTERVAL);
-    let container;
+  $(RULES.CONTAINER).find('a, div, span, ul, li, p, button').off();
+  const ANIMATION_INTERVAL = 500;
+  const tick = new Tick(ANIMATION_INTERVAL);
+  let container;
 
-    function handleLeave(e) {
-        tick.stop();
-        const preview = e.target.className.includes('desktop') ? e.target.querySelector('.static') :
-            (e.target.classList.contains('static') ? e.target : undefined);
-        $(preview.nextElementSibling).hide();
-        preview.classList.remove('animating');
+  function handleLeave(e) {
+    tick.stop();
+    const preview = e.target.className.includes('desktop')
+      ? e.target.querySelector('.static')
+      : e.target.classList.contains('static')
+        ? e.target
+        : undefined;
+    $(preview.nextElementSibling).hide();
+    preview.classList.remove('animating');
+  }
+
+  function handleOn(e) {
+    const { target, type } = e;
+    if (
+      !(target.tagName === 'IMG' && target.classList.contains('static')) ||
+      target.classList.contains('animating') ||
+      target.parentElement.parentElement.classList.contains('image') ||
+      target.getAttribute('src') === target.getAttribute('data-strip-src')
+    ) return;
+    target.classList.toggle('animating');
+
+    container = target.parentElement.parentElement;
+    const eventType = type === 'mouseover' ? 'mouseleave' : 'touchend';
+    container.addEventListener(eventType, handleLeave, { once: true });
+
+    let j = 0;
+    const d = $(container.querySelector('.img-container'));
+    const m = $(
+      target.nextElementSibling ||
+        '<div style="z-index: 8; position: absolute; top: -11px;"></div>',
+    );
+    if (!target.nextElementSibling) {
+      $(target.parentElement).append(m);
     }
+    const c = $(target);
+    const stripSrc = target.getAttribute('data-strip-src');
+    m.show();
 
-    function handleOn(e) {
-        const { target, type } = e;
-        if (!(target.tagName === 'IMG' && target.classList.contains('static')) ||
-            target.classList.contains('animating') ||
-            target.parentElement.parentElement.classList.contains('image') ||
-            target.getAttribute('src') === target.getAttribute('data-strip-src')) return;
-        target.classList.toggle('animating');
+    tick.start(() => {
+      const widthRatio = Math.floor((1000.303 * c.width()) / 100);
+      const heightRatio = Math.floor((228.6666 * c.height()) / 100);
 
-        container = target.parentElement.parentElement;
-        container.addEventListener(type === 'mouseover' ? 'mouseleave' : 'touchend', handleLeave, { once: true });
+      m.css({
+        width: d.width(),
+        height: c.height(),
+        'background-image': `url('${stripSrc}')`,
+        'background-size': `${widthRatio}px ${heightRatio}px`,
+        'background-position': `${(j++ * d.width()) % widthRatio}px 0`,
+      });
+    });
+  }
 
-        let j = 0;
-        const d = $(container.querySelector('.img-container'));
-        const m = $(target.nextElementSibling || '<div style="z-index: 8; position: absolute; top: -11px;"></div>');
-        if (!target.nextElementSibling) {
-            $(target.parentElement).append(m);
-        }
-        const c = $(target);
-        const stripSrc = target.getAttribute('data-strip-src');
-        m.show();
-
-        tick.start(() => {
-            const widthRatio = Math.floor(1000.303 * c.width() / 100);
-            const heightRatio = Math.floor(228.6666 * c.height() / 100);
-
-            m.css({
-                width: d.width(),
-                height: c.height(),
-                "background-image": `url('${stripSrc}')`,
-                "background-size": `${widthRatio}px ${heightRatio}px`,
-                "background-position": `${(j++ * d.width()) % widthRatio}px 0`
-            });
-        });
-    }
-
-    document.body.addEventListener('mouseover', handleOn);
-    document.body.addEventListener('touchstart', handleOn);
+  document.body.addEventListener('mouseover', handleOn);
+  document.body.addEventListener('touchstart', handleOn);
 }
 
 //====================================================================================================
 
 function fixURLs() {
-    document.querySelector('a[href^="https://motherless.com/random/image"]').href = "https://motherless.com/m/calypso_jim_asi";
-    document.querySelectorAll(('.gallery-container')).forEach(g => {
-        const hasVideos = parseInt(g.innerText.match(/([\d|\.]+)k? videos/gi)?.[0]) > 0;
-        const header = hasVideos ? '/GV' : '/GI';
-        g.querySelectorAll('a').forEach(a => { a.href = a.href.replace(/\/G/, () => header); });
+  document.querySelector('a[href^="https://motherless.com/random/image"]').href =
+    'https://motherless.com/m/calypso_jim_asi';
+  document.querySelectorAll('.gallery-container').forEach((g) => {
+    const hasVideos = parseInt(g.innerText.match(/([\d|\.]+)k? videos/gi)?.[0]) > 0;
+    const header = hasVideos ? '/GV' : '/GI';
+    g.querySelectorAll('a').forEach((a) => {
+      a.href = a.href.replace(/\/G/, () => header);
     });
-    document.querySelectorAll('a[href^="/term/"]').forEach(a => {
-        a.href = a.href.replace(/[\w|+]+$/, (v) => `videos/${v}?term=${v}&range=0&size=0&sort=date`);
-    });
-    document.querySelectorAll('#media-groups-container a[href^="/g/"]').forEach(a => { a.href = a.href.replace(/\/g\//, '/gv/') });
+  });
+  document.querySelectorAll('a[href^="/term/"]').forEach((a) => {
+    a.href = a.href.replace(/[\w|+]+$/, (v) => `videos/${v}?term=${v}&range=0&size=0&sort=date`);
+  });
+  document.querySelectorAll('#media-groups-container a[href^="/g/"]').forEach((a) => {
+    a.href = a.href.replace(/\/g\//, '/gv/');
+  });
 }
 
 //====================================================================================================
 
 function mobileGalleryToDesktop(e) {
-    e.querySelector('.clear-left').remove();
-    e.firstElementChild.appendChild(e.firstElementChild.nextElementSibling);
-    e.className = 'thumb-container gallery-container';
-    e.firstElementChild.className = 'desktop-thumb image medium';
-    e.firstElementChild.firstElementChild.nextElementSibling.className = 'gallery-captions';
-    replaceElementTag(e.firstElementChild.firstElementChild, 'a');
-    return e;
+  e.querySelector('.clear-left').remove();
+  e.firstElementChild.appendChild(e.firstElementChild.nextElementSibling);
+  e.className = 'thumb-container gallery-container';
+  e.firstElementChild.className = 'desktop-thumb image medium';
+  e.firstElementChild.firstElementChild.nextElementSibling.className = 'gallery-captions';
+  replaceElementTag(e.firstElementChild.firstElementChild, 'a');
+  return e;
 }
 
 async function desktopAddMobGalleries() {
-    const galleries = document.querySelector('.media-related-galleries');
-    if (galleries) {
-        const galleriesContainer = galleries.querySelector('.content-inner');
-        const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
-        const mobDom = await fetchWith(window.location.href, { html: true, mobile: true });
-        const mobGalleries = mobDom.querySelectorAll('.ml-gallery-thumb');
-        for (const [i, x] of mobGalleries.entries()) {
-            if (i > galleriesCount - 1) {
-                galleriesContainer.append(mobileGalleryToDesktop(x));
-            }
-        }
+  const galleries = document.querySelector('.media-related-galleries');
+  if (galleries) {
+    const galleriesContainer = galleries.querySelector('.content-inner');
+    const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
+    const mobDom = await fetchWith(window.location.href, { html: true, mobile: true });
+    const mobGalleries = mobDom.querySelectorAll('.ml-gallery-thumb');
+    for (const [i, x] of mobGalleries.entries()) {
+      if (i > galleriesCount - 1) {
+        galleriesContainer.append(mobileGalleryToDesktop(x));
+      }
     }
+  }
 }
 
 //====================================================================================================
@@ -207,35 +225,18 @@ GM_addStyle(`
 
 //====================================================================================================
 
-function useWebsiteSearchFilters() {
-    let url = window.location.pathname;
-    const wordsToFilter = state.filterExcludeWords.replace(/f\:/g, '')
-      .match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];
-    wordsToFilter.forEach(w => {
-        if (!url.includes(w)) {
-            url += `+-${w.trim()}`;
-        }
+function applySearchFilters() {
+  let pathname = window.location.pathname;
+  const wordsToFilter =
+    state.filterExcludeWords.replace(/f\:/g, '').match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];
+  wordsToFilter
+    .filter((w) => !pathname.includes(w))
+    .forEach((w) => {
+      pathname += `+-${w.trim()}`;
     });
-    if (wordsToFilter.some(w => !window.location.href.includes(w))) {
-        window.location.href = url;
-    }
-}
-
-//====================================================================================================
-
-function createInfiniteScroller() {
-  const iscroller = new InfiniteScroller({
-    enabled: state.infiniteScrollEnabled,
-    handleHtmlCallback: handleLoadedHTML,
-    ...RULES,
-  }).onScroll(({paginationLast, paginationOffset}) => {
-      stateLocale.pagIndexLast = paginationLast;
-      stateLocale.pagIndexCur = paginationOffset;
-    }, true);
-
-  store.subscribe(() => {
-    iscroller.enabled = state.infiniteScrollEnabled;
-  });
+  if (wordsToFilter.some((w) => !window.location.href.includes(w))) {
+    window.location.href = pathname;
+  }
 }
 
 //====================================================================================================
@@ -244,19 +245,19 @@ function route() {
   desktopAddMobGalleries().then(() => fixURLs());
 
   if (RULES.paginationElement) {
-      createInfiniteScroller();
-      animate();
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    animate();
   }
 
   if (RULES.GET_THUMBS(document.body).length > 0) {
-      new JabroniOutfitUI(store);
-      getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach(c => {
-          handleLoadedHTML(c, c, true);
-      });
+    new JabroniOutfitUI(store);
+    getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => {
+      handleLoadedHTML(c, c, true);
+    });
   }
 
   if (RULES.IS_SEARCH) {
-    useWebsiteSearchFilters();
+    applySearchFilters();
   }
 }
 
@@ -268,4 +269,5 @@ const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { state, stateLocale } = store;
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
+
 route();
