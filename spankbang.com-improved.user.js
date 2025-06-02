@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.0
+// @version      2.2.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -54,7 +54,7 @@ class SPANKBANG_RULES {
       Array.from(document.querySelectorAll('.pagination a'))?.at(-2)?.innerText,
   );
 
-  CONTAINER = document.querySelectorAll('.main-container .js-media-list')[0];
+  CONTAINER = document.querySelectorAll('.main-container .js-media-list, .main_content_container .video-list')[0];
   HAS_VIDEOS = !!this.GET_THUMBS(document.body).length > 0;
 
   constructor() {
@@ -104,6 +104,7 @@ function route() {
   if (RULES.HAS_VIDEOS) {
     new JabroniOutfitUI(store);
     getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => handleLoadedHTML(c, c));
+    setTimeout(() => getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => handleLoadedHTML(c, c)), 100);
   }
 
   if (RULES.paginationElement) {
@@ -112,7 +113,7 @@ function route() {
 }
 
 //====================================================================================================
-
+console.log(RULES);
 console.log(LOGO);
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
