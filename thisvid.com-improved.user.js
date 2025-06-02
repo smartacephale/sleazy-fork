@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.2.2
+// @version      5.2.4
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.0/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
@@ -35,6 +35,7 @@ const {
   AsyncPool,
   computeAsyncOneAtTime,
   InfiniteScroller,
+  createInfiniteScroller,
   DataManager,
 } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
@@ -365,7 +366,7 @@ const uploadersNotInFriendlist = new Set();
 
 async function requestAccess() {
   const checkAccess = async (thumb) => {
-    const { access, uploaderURL } = await checkPrivateVideoAccess(thumb.querySelector('a').href);
+    const { access, uploaderURL } = await checkPrivateVideoAccess(thumb.href || thumb.querySelector('a').href);
 
     if (!access) {
       thumb.classList.add('haveNoAccess');
@@ -639,7 +640,7 @@ async function createPrivateFeed() {
 
   const filterVidsCount = (count) => filterVideosCount(count);
 
-  initInfiniteScroll();
+  createInfiniteScroller(store, handleLoadedHTML, RULES);
 }
 
 //====================================================================================================
@@ -672,23 +673,6 @@ function clearMessagesButton() {
 }
 
 //====================================================================================================
-
-function initInfiniteScroll() {
-  const iscroller = new InfiniteScroller({
-    enabled: state.infiniteScrollEnabled,
-    handleHtmlCallback: handleLoadedHTML,
-    ...RULES,
-  }).onScroll((i) => {
-    stateLocale.pagIndexLast = i.paginationLast;
-    stateLocale.pagIndexCur = i.paginationOffset;
-  });
-
-  store.subscribe(() => {
-    iscroller.enabled = state.infiniteScrollEnabled;
-  });
-
-  return iscroller;
-}
 
 function route() {
   console.log(SponsaaLogo);
@@ -745,9 +729,8 @@ function route() {
   }
 
   if (RULES._PAGINATION_ALLOWED) {
-    stateLocale.pagIndexLast = RULES.paginationLast;
     if (!RULES.paginationElement) return;
-    initInfiniteScroll();
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
   }
 }
 
