@@ -113,7 +113,7 @@ function route() {
 }
 
 //====================================================================================================
-console.log(RULES);
+
 console.log(LOGO);
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
