@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.1
+// @version      2.2.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -78,7 +78,7 @@ class SPANKBANG_RULES {
 
   THUMB_DATA(thumb) {
     const title = sanitizeStr(thumb.querySelector('[title]')?.getAttribute('title'));
-    const duration = timeToSeconds(thumb.querySelector('span.l')?.innerText);
+    const duration = timeToSeconds(thumb.innerText.match(/\d+m/)?.[0]);
     return { title, duration };
   }
 
@@ -113,9 +113,8 @@ function route() {
 }
 
 //====================================================================================================
-
+console.log(RULES);
 console.log(LOGO);
-
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
