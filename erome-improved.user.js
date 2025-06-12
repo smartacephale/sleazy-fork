@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.5
+// @version      3.0.6
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -98,8 +98,7 @@ class EromeRules {
   THUMB_DATA(thumb) {
     const title = sanitizeStr(thumb.querySelector('.album-title').innerText);
     const user = sanitizeStr(thumb.querySelector('.album-user')?.innerText);
-    const duration = 0;
-    return { title: title.concat(` user:${user}`), duration };
+    return { title: title.concat(` user:${user}`) };
   }
 }
 
