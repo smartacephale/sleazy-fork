@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.4
+// @version      3.0.5
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -122,10 +122,12 @@ function setupAlbumPage() {
 
   $('#togglePhotos').on('click', () => {
     state.showPhotos = !state.showPhotos;
+  });
+
+  store.subscribe(() => {
     togglePhotoElements();
   });
 
-  window.addEventListener('focus', togglePhotoElements);
   togglePhotoElements();
 }
 
@@ -146,9 +148,7 @@ function init() {
 //=================================================================================================
 
 Object.assign(defaultStateWithDurationAndPrivacy, {
-  EROME: {
-    showPhotos: { value: false, persistent: true, watch: true },
-  },
+  showPhotos: { value: true, persistent: true, watch: true },
 });
 
 delete defaultSchemeWithPrivateFilter.durationFilter;
