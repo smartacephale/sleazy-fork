@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.7
+// @version      1.5.8
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -94,8 +94,9 @@ class CAMWHORES_RULES {
   }
 
   CALC_CONTAINER = (document_ = document) => {
-      const paginationEls = [...document_.querySelectorAll('.pagination')];
-      const paginationElement = paginationEls?.[(this.IS_MEMBER_PAGE || this.IS_SUBS) && paginationEls.length > 1 ? 1 : 0];
+      const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
+      let paginationElement = this.IS_MEMBER_PAGE || this.IS_MINE_MEMBER_PAGE ? undefined :
+        paginationEls?.[this.IS_SUBS && paginationEls.length > 1 ? 1 : 0];
 
       let paginationLast = Math.max(...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]')  || [],
         v => parseInt(v.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1])), 1);
