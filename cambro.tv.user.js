@@ -6,7 +6,7 @@
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
-// @match        https://*.cambro.tv/*
+// @match        https://*.cambro.*/*
 // @exclude      *.cambro.tv/*mode=async*
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
