@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.3.0
+// @version      2.3.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -56,7 +56,7 @@ class PORNHUB_RULES {
     paginationOffset = parseInt(new URLSearchParams(location.search).get('page')) || 1;
     paginationLast = parseInt(document.querySelector('.page_next')?.previousElementSibling.innerText) || 1;
 
-    CONTAINER = document.querySelector('ul.videos:not([id*=trailer]):not([class*=drop])');
+    CONTAINER = [...document.querySelectorAll('ul.videos:not([id*=trailer]):not([class*=drop])')].pop();
     intersectionObservable = this.CONTAINER && findNextSibling(this.CONTAINER);
 
     constructor() {
@@ -68,7 +68,7 @@ class PORNHUB_RULES {
     }
 
     GET_THUMBS(html) {
-      const parent = html.querySelector('ul.videos:not([id*=trailer]):not([class*=drop])') || html;
+      const parent = [...html.querySelectorAll('ul.videos:not([id*=trailer]):not([class*=drop])')].pop() || html;
       return [...parent.querySelectorAll('li.videoBox.videoblock, li.videoblock')];
     }
 
@@ -121,7 +121,10 @@ function route() {
 
 //====================================================================================================
 
-console.log(LOGO);
+console.log(RULES);
+
+
+//console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
 const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
