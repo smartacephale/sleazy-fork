@@ -8,6 +8,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
+// @match        https://*.fuckingbear*.*/*
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
