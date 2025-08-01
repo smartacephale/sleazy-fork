@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.5
+// @version      2.2.6
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.camwhores.*/*
-// @exclude      *.camwhores.tv/*mode=async*
+// @exclude      https://*.camwhores.*/*mode=async*
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
@@ -85,7 +85,7 @@ class CAMWHORES_RULES {
 
   CALC_CONTAINER = (document_ = document) => {
     const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
-    let paginationElement = this.IS_MEMBER_PAGE || this.IS_MINE_MEMBER_PAGE ? undefined :
+    const paginationElement = this.IS_MEMBER_PAGE || this.IS_MINE_MEMBER_PAGE ? undefined :
       paginationEls?.[this.IS_SUBS && paginationEls.length > 1 ? 1 : 0];
 
     const paginationLast = Math.max(
@@ -96,7 +96,8 @@ class CAMWHORES_RULES {
     const CONTAINER =
       paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
       paginationElement?.parentElement.querySelector('.list-videos>div') ||
-      document.querySelector('.list-videos>div');
+      document.querySelector('.list-videos>div') ||
+      document_.querySelector('.playlist-holder, .list-playlists > div');
 
     return { paginationElement, paginationLast, CONTAINER };
   };
@@ -106,11 +107,7 @@ class CAMWHORES_RULES {
   }
 
   GET_THUMBS(html) {
-    return Array.from(
-      html.querySelectorAll('.list-videos .item') ||
-        html.querySelectorAll('.item') ||
-        html.children,
-    );
+    return Array.from(html.querySelectorAll('.list-videos .item, .playlist .item, .list-playlists > div > .item') || html.children);
   }
 
   THUMB_IMG_DATA(thumb) {
@@ -121,7 +118,7 @@ class CAMWHORES_RULES {
   }
 
   THUMB_URL(thumb) {
-    return thumb.firstElementChild.href;
+    return thumb.firstElementChild.href || thumb.href;
   }
 
   THUMB_DATA(thumb) {
@@ -159,6 +156,7 @@ class CAMWHORES_RULES {
 }
 
 const RULES = new CAMWHORES_RULES();
+console.log(RULES)
 
 //====================================================================================================
 
@@ -170,7 +168,7 @@ function animate() {
     const tick = new Tick(ANIMATION_DELAY);
     $('img.thumb[data-cnt]').off()
     document.body.addEventListener('mouseover', (e) => {
-        if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src')) return;
+        if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src') || /data:image|avatar/.test(e.target.src)) return;
         const origin = e.target.src;
         if (origin.includes('avatar')) return;
         const count = parseInt(e.target.getAttribute('data-cnt')) || 5;
