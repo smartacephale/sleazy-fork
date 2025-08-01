@@ -104,8 +104,8 @@ class CAMWHORES_RULES {
 
       const CONTAINER = (paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
                           paginationElement?.parentElement.querySelector('.list-videos>div') ||
-                            document.querySelector('.list-videos>div')) ||
-                            document_.querySelector('.playlist-holder');
+                          document.querySelector('.list-videos>div')) ||
+                          document_.querySelector('.playlist-holder, .list-playlists > div');
 
       return { paginationElement, paginationLast, CONTAINER };
   }
@@ -115,7 +115,7 @@ class CAMWHORES_RULES {
   }
 
   GET_THUMBS(html) {
-      return Array.from(html.querySelectorAll('.list-videos .item, .playlist .item') || html.children);
+      return Array.from(html.querySelectorAll('.list-videos .item, .playlist .item, .list-playlists > div > .item') || html.children);
   }
 
   THUMB_IMG_DATA(thumb) {
