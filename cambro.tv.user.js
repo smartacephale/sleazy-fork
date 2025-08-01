@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.5.8
+// @version      1.6.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.cambro.*/*
-// @exclude      *.cambro.tv/*mode=async*
+// @exclude      https://*.cambro.*/*mode=async*
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
@@ -104,7 +104,8 @@ class CAMWHORES_RULES {
 
       const CONTAINER = (paginationElement?.parentElement.querySelector('.list-videos>div>form') ||
                           paginationElement?.parentElement.querySelector('.list-videos>div') ||
-                            document.querySelector('.list-videos>div'));
+                            document.querySelector('.list-videos>div')) ||
+                            document_.querySelector('.playlist-holder');
 
       return { paginationElement, paginationLast, CONTAINER };
   }
@@ -114,7 +115,7 @@ class CAMWHORES_RULES {
   }
 
   GET_THUMBS(html) {
-      return Array.from(html.querySelectorAll('.list-videos .item') || html.querySelectorAll('.item') || html.children);
+      return Array.from(html.querySelectorAll('.list-videos .item, .playlist .item') || html.children);
   }
 
   THUMB_IMG_DATA(thumb) {
@@ -124,7 +125,7 @@ class CAMWHORES_RULES {
   }
 
   THUMB_URL(thumb) {
-      return thumb.firstElementChild.href;
+      return thumb.firstElementChild.href || thumb.href;
   }
 
   THUMB_DATA(thumb) {
@@ -172,9 +173,8 @@ function animate() {
   const tick = new Tick(ANIMATION_DELAY);
   $('img.thumb[data-cnt]').off()
   document.body.addEventListener('mouseover', (e) => {
-      if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src')) return;
+      if (!e.target.tagName === 'IMG' || !e.target.classList.contains('thumb') || !e.target.getAttribute('src') || /data:image|avatar/.test(e.target.src)) return;
       const origin = e.target.src;
-      if (origin.includes('avatar')) return;
       const count = parseInt(e.target.getAttribute('data-cnt')) || 5;
       tick.start(
           () => { e.target.src = rotateImg(e.target.src, count); },
@@ -394,8 +394,6 @@ function route() {
   }
 
   if (RULES.HAS_VIDEOS) {
-    watchDomChangesWithThrottle(
-      document.querySelector('.content'),
       () => {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach((c) => handleLoadedHTML(c, c));
@@ -408,6 +406,8 @@ function route() {
   if (RULES.IS_VIDEO_PAGE) {
     createDownloadButton();
     createPrivateVideoFriendButton();
+    watchDomChangesWithThrottle(
+      document.querySelector('.content'),
   }
 
   if (RULES.IS_MESSAGES) {
