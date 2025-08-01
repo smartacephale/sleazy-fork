@@ -95,7 +95,7 @@ class CAMWHORES_RULES {
 
   CALC_CONTAINER = (document_ = document) => {
       const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
-      let paginationElement = this.IS_MEMBER_PAGE || this.IS_MINE_MEMBER_PAGE ? undefined :
+      const paginationElement = this.IS_MEMBER_PAGE || this.IS_MINE_MEMBER_PAGE ? undefined :
         paginationEls?.[this.IS_SUBS && paginationEls.length > 1 ? 1 : 0];
 
       let paginationLast = Math.max(...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]')  || [],
@@ -376,6 +376,11 @@ function clearMessages() {
 
 //====================================================================================================
 
+function handleLoadedThumbs() {
+  const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
+  containers.forEach((c) => handleLoadedHTML(c, c));
+}
+
 function route() {
   if (RULES.IS_LOGGED_IN) {
     setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
@@ -394,9 +399,10 @@ function route() {
   }
 
   if (RULES.HAS_VIDEOS) {
+    watchDomChangesWithThrottle(
+      document.querySelector('.content'),
       () => {
-        const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
-        containers.forEach((c) => handleLoadedHTML(c, c));
+        handleLoadedThumbs();
         createInfiniteScroller(store, handleLoadedHTML, RULES);
       }, 1000, 1);
     new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
@@ -406,8 +412,6 @@ function route() {
   if (RULES.IS_VIDEO_PAGE) {
     createDownloadButton();
     createPrivateVideoFriendButton();
-    watchDomChangesWithThrottle(
-      document.querySelector('.content'),
   }
 
   if (RULES.IS_MESSAGES) {
