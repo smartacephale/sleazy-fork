@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         NamethatPorn Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.1
 // @license      MIT
-// @description  Infinite scroll (optional). Filter by solved/unsolved, include/exclude phrases.
+// @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
-// @match        https://namethatporn.*/*
+// @match        https://namethatporn.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=namethatporn.com
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.4/dist/billy-herrington-utils.umd.js
@@ -114,6 +114,27 @@ function router() {
 defaultSchemeWithPrivateFilter.privateFilter = [
   { type: "checkbox", model: "state.filterPrivate", label: "unsolved" },
   { type: "checkbox", model: "state.filterPublic", label: "solved" }];
+
+//====================================================================================================
+
+function monkeyPatchConfirm() {
+  const realConfirm = unsafeWindow.confirm;
+  unsafeWindow.confirm = function() {
+    return true;
+  };
+}
+
+monkeyPatchConfirm();
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === 'c') {
+    const name = document.querySelector('#loggedin_box_new_username').innerText;
+    if (!document.querySelector(`.ida_confirm_usernames a[href$="${name}.html"]`)) {
+      document.querySelector('.id_answer_buttons > .iab.iac').click();
+    }
+  }
+}, { once: true });
+
 
 //====================================================================================================
 
