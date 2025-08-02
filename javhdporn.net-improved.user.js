@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         javhdporn.net Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.javhdporn.*/*
+// @match        https://*.javhdporn.net/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=javhdporn.net
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
