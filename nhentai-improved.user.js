@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.0
+// @version      2.2.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.nhentai.*/*
+// @match        https://*.nhentai.net/*
 // @match        https://*.3hentai.net/*
 // @match        https://*.e-hentai.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
