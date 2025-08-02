@@ -1,19 +1,23 @@
 // ==UserScript==
 // @name         missav.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
 // @match        https://*.missav.*/*
+// @match        https://*.missav123.com/*
+// @match        https://*.missav.ws/*
+// @match        https://*.missav.to/*
+// @match        https://*.missav.live/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=missav.com
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
-// @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
-// @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
+// @downloadURL https://update.sleazyfork.org/scripts/511826/missavcom%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/511826/missavcom%20Improved.meta.js
 // ==/UserScript==
 
 const { timeToSeconds, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
