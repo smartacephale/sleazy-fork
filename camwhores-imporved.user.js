@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.7
+// @version      2.2.8
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -104,7 +104,7 @@ class CAMWHORES_RULES {
   };
 
   IS_PRIVATE(thumb) {
-    return thumb.classList.contains('private');
+    return !thumb.classList.contains('private');
   }
 
   GET_THUMBS(html) {
