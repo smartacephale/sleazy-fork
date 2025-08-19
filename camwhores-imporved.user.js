@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.9
+// @version      2.3.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -15,6 +15,8 @@
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
+// @downloadURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.user.js
+// @updateURL https://update.sleazyfork.org/scripts/494528/CamWhorestv%20Improved.meta.js
 // ==/UserScript==
 /* globals $ */
 
@@ -86,8 +88,7 @@ class CAMWHORES_RULES {
 
   CALC_CONTAINER = (document_ = document) => {
     const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
-    const paginationElement = this.IS_MEMBER_PAGE || this.IS_MINE_MEMBER_PAGE ? undefined :
-      paginationEls?.[this.IS_SUBS && paginationEls.length > 1 ? 1 : 0];
+    const paginationElement = paginationEls?.[this.IS_SUBS && paginationEls.length > 1 ? 1 : 0];
 
     const paginationLast = Math.max(
       ...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]') || [], (v) =>
@@ -157,7 +158,6 @@ class CAMWHORES_RULES {
 }
 
 const RULES = new CAMWHORES_RULES();
-console.log(RULES)
 
 //====================================================================================================
 
@@ -370,6 +370,13 @@ function clearMessages() {
 
 //====================================================================================================
 
+function shoudIScroll() {
+  if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    shouldReload();
+  }
+}
+
 function route() {
   if (RULES.IS_LOGGED_IN) {
     setTimeout(processFriendship, 3000);
@@ -382,10 +389,7 @@ function route() {
     }
   }
 
-  if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
-    shouldReload();
-  }
+  shoudIScroll();
 
   if (RULES.HAS_VIDEOS) {
     watchDomChangesWithThrottle(
@@ -393,7 +397,7 @@ function route() {
       () => {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
         containers.forEach((c) => handleLoadedHTML(c, c));
-        createInfiniteScroller(store, handleLoadedHTML, RULES);
+        shoudIScroll();
       }, 1000, 1);
     new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
     animate();
