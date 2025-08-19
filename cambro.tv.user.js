@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.6.3
+// @version      1.6.4
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -96,8 +96,7 @@ class CAMWHORES_RULES {
 
   CALC_CONTAINER = (document_ = document) => {
       const paginationEls = Array.from(document_.querySelectorAll('.pagination'));
-      const paginationElement = this.IS_MEMBER_PAGE || this.IS_MINE_MEMBER_PAGE ? undefined :
-        paginationEls?.[this.IS_SUBS && paginationEls.length > 1 ? 1 : 0];
+      const paginationElement = paginationEls?.[this.IS_SUBS && paginationEls.length > 1 ? 1 : 0];
 
       let paginationLast = Math.max(...Array.from(paginationElement?.querySelectorAll('a[href][data-parameters]')  || [],
         v => parseInt(v.getAttribute('data-parameters').match(/from\w*:(\d+)/)?.[1])), 1);
@@ -382,6 +381,13 @@ function handleLoadedThumbs() {
   containers.forEach((c) => handleLoadedHTML(c, c));
 }
 
+function shoudIScroll() {
+  if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
+    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    shouldReload();
+  }
+}
+
 function route() {
   if (RULES.IS_LOGGED_IN) {
     setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
@@ -394,17 +400,14 @@ function route() {
     }
   }
 
-  if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
-    shouldReload();
-  }
+  shoudIScroll();
 
   if (RULES.HAS_VIDEOS) {
     watchDomChangesWithThrottle(
       document.querySelector('.content'),
       () => {
         handleLoadedThumbs();
-        createInfiniteScroller(store, handleLoadedHTML, RULES);
+        shoudIScroll();
       }, 1000, 1);
     new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
     animate();
