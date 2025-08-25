@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.2.5
+// @version      5.2.6
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -220,20 +220,23 @@ const FRIEND_REQUEST_URL = (id, message = '') =>
 
 const USERS_PER_PAGE = 24;
 
-async function getMemberFriends(memberId, start, end) {
-  const { friendsCount } = await getMemberData(memberId);
-  const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
-  const pages = range(offset)
-    .slice(start, end)
-    .map((o) => `https://thisvid.com/members/${memberId}/friends/${o}/`);
-  const pagesFetched = pages.map((p) => fetchHtml(p));
-  const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
-  return friends;
+async function getMemberFriends(memberId, start, end, by) {
+    const { friendsCount } = await getMemberData(memberId);
+    const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
+
+    let friendsURL = `https://thisvid.com/members/${memberId}/friends/`;
+    if (by === 'activity') friendsURL = 'https://thisvid.com/my_friends_by_activity/';
+    if (by === 'popularity') friendsURL = 'https://thisvid.com/my_friends_by_popularity/';
+
+    const pages = range(offset).slice(start, end).map((o) => `${friendsURL}${o}/`);
+    const pagesFetched = pages.map((p) => fetchHtml(p));
+    const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
+    return friends;
 }
 
 function getMembers(el) {
-  const friendsList = el.querySelector('#list_members_friends_items');
-  return Array.from(friendsList?.querySelectorAll('.tumbpu') || [])
+  const friendsList = el.querySelector('#list_members_friends_items') || el;
+  return Array.from(el?.querySelectorAll('.tumbpu') || [])
     .map((e) => e.href.match(/\d+/)?.[0])
     .filter((_) => _);
 }
@@ -470,7 +473,7 @@ async function getMemberVideos(id, type = 'private') {
   return { name, videosCount, memberVideosGenerator };
 }
 
-async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type = 'private') {
+async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type = 'private', by) {
   let skipFlag = false;
   let skipCount = 1;
   let minVideosCount = 1;
@@ -483,8 +486,8 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
     minVideosCount = n;
   };
 
-  let membersIds = await getMemberFriends(id, 0, 1);
-  getMemberFriends(id, 1).then((r) => {
+  let membersIds = await getMemberFriends(id, 0, 1, by);
+  getMemberFriends(id, 1, 100000, by).then((r) => {
     membersIds = membersIds.concat(r);
   });
 
@@ -530,19 +533,27 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
 
 function createPrivateFeedButton() {
   const container = document.querySelectorAll('.sidebar ul')[1];
-  const buttonPrv = parseDom(
-    `<li><a href="https://thisvid.com/my_wall/#private_feed" class="selective"><i class="ico-arrow"></i>My Friends Private Videos</a></li>`,
-  );
-  const buttonPub = parseDom(
-    `<li><a href="https://thisvid.com/my_wall/#public_feed" class="selective"><i class="ico-arrow"></i>My Friends Public Videos</a></li>`,
-  );
-  container.append(buttonPub, buttonPrv);
+
+  const links = [
+    { hov: '#private_feed', text: 'My Private Feed'},
+    { hov: '#private_feed_popularity', text: 'My Private Feed by Popularity'},
+    { hov: '#private_feed_activity', text: 'My Private Feed by Activity'},
+    { hov: '#public_feed', text: 'My Public Feed'},
+    { hov: '#public_feed_popularity', text: 'My Public Feed by Popularity'},
+    { hov: '#public_feed_activity', text: 'My Public Feed by Activity'},
+  ];
+
+  links.forEach(({hov, text}) => {
+    const button = parseDom(`<li><a href="https://thisvid.com/my_wall/${hov}" class="selective"><i class="ico-arrow"></i>${text}</a></li>`);
+    container.append(button);
+  });
 }
 
 async function createPrivateFeed() {
   createPrivateFeedButton();
   if (!window.location.hash.includes('feed')) return;
-  const isPubKey = window.location.hash === '#public_feed';
+  const isPubKey = window.location.hash.includes('public_feed') ? 'public' : 'private';
+  const sortByFeed = window.location.hash.includes('activity') ? 'activity' : (window.location.hash.includes('popularity') ? 'popularity' : undefined);
 
   const container = parseDom('<div class="thumbs-items"></div>');
   const ignored = parseDom('<div class="ignored"><h2>IGNORED:</h2></div>');
@@ -593,7 +604,8 @@ async function createPrivateFeed() {
        </div>`),
       );
     },
-    isPubKey ? 'public' : 'private',
+    isPubKey,
+    sortByFeed
   );
 
   RULES.alternativeGenerator = pageGenerator;
@@ -693,7 +705,11 @@ function isHD(card) {
   return !!card.querySelector('.quality');
 }
 
-/** 
+
+// no hd first.
+
+
+/**
  * Re-orders all thumbnails in RULES.CONTAINER:
  *   1) HD-first (if hdFirst===true)
  *   2) then by currentSort ('views' or 'duration')
@@ -778,7 +794,7 @@ function route() {
     privateFilter:   base.privateFilter,
     infiniteScroll:  base.infiniteScroll,
 
-    // ====  our single row with 3 buttons ====
+    // ====  our single row with 3 buttons ====
     sortButtonsRow: [
       {
         type:      'button',
