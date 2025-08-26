@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      5.2.6
+// @version      6.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -9,8 +9,8 @@
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
@@ -41,9 +41,10 @@ const {
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const {
   JabroniOutfitStore,
-  defaultStateWithDurationAndPrivacy,
+  defaultStateWithDurationAndPrivacyAndHD,
   JabroniOutfitUI,
-  defaultSchemeWithPrivateFilter,
+    DefaultScheme,
+  defaultSchemeWithPrivacyFilterWithHDwithSort,
 } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
 
@@ -133,6 +134,8 @@ class THISVID_RULES {
     return parseInt(e.querySelector('.pagination-next')?.previousElementSibling?.innerText) || 1;
   }
 
+  IS_HD(e) { return !!!e.querySelector('.quality'); }
+
   GET_THUMBS(html) {
     if (this.IS_WATCHLATER_KIND) {
       return Array.from(html.querySelectorAll('.thumb-holder'));
@@ -199,7 +202,8 @@ class THISVID_RULES {
   THUMB_DATA(thumb) {
     const title = sanitizeStr(thumb.querySelector('.title').innerText);
     const duration = timeToSeconds(thumb.querySelector('.thumb > .duration').textContent);
-    return { title, duration };
+    const view = Number(thumb.querySelector('.view').textContent);
+    return { title, duration, view };
   }
 
   IS_PRIVATE(thumb) {
@@ -558,7 +562,7 @@ async function createPrivateFeed() {
   const container = parseDom('<div class="thumbs-items"></div>');
   const ignored = parseDom('<div class="ignored"><h2>IGNORED:</h2></div>');
 
-  Object.assign(defaultSchemeWithPrivateFilter, {
+  Object.assign(defaultSchemeWithPrivacyFilterWithHDwithSort, {
     controlsSkip: [
       { type: 'button', innerText: 'skip 10', callback: async () => skip(10) },
       { type: 'button', innerText: 'skip 100', callback: async () => skip(100) },
@@ -652,7 +656,7 @@ async function createPrivateFeed() {
 
   const filterVidsCount = (count) => filterVideosCount(count);
 
-  createInfiniteScroller(store, handleLoadedHTML, RULES);
+  createInfiniteScroller(store, parseData, RULES);
 }
 
 //====================================================================================================
@@ -684,56 +688,17 @@ function clearMessagesButton() {
   document.querySelector('.headline').append(btn);
 }
 
-//====================================================================================================
 
-// SORT STATE & HELPERS
-let currentSort = null;   // 'views' | 'duration' | null
-let hdFirst     = false;  // whether “HD first” is on
-
-function extractViewsFromCard(card) {
-  const viewEl = card.querySelector('.view');
-  if (!viewEl) return 0;
-  return parseInt(viewEl.textContent.trim().replace(/,/g, ''), 10) || 0;
-}
-
-function extractDurationFromCard(card) {
-  const m = card.textContent.match(/(\d+):(\d{2})/);
-  return m ? (parseInt(m[1],10)*60 + parseInt(m[2],10)) : 0;
-}
-
-function isHD(card) {
-  return !!card.querySelector('.quality');
-}
-
-
-// no hd first.
-
-
-/**
- * Re-orders all thumbnails in RULES.CONTAINER:
- *   1) HD-first (if hdFirst===true)
- *   2) then by currentSort ('views' or 'duration')
- */
-function applySortAndFilter() {
-  const container = RULES.CONTAINER;
-  const cards = Array.from(container.querySelectorAll('.tumbpu, .thumb-holder'));
-  const sorted = cards.slice().sort((a, b) => {
-    // 1) HD-first?
-    if (hdFirst) {
-      const ah = isHD(a)?1:0, bh = isHD(b)?1:0;
-      if (ah !== bh) return bh - ah;
+function requestAccessVideoPage(){
+    const holder = document.querySelector('.video-holder > p');
+    if (holder) {
+      const uploader = document.querySelector('a.author').href.match(/\d+/).at(-1);
+      holder.parentElement.append(
+        parseDom(
+          `<button onclick="requestPrivateAccess(event, ${uploader}); this.onclick=null;">Friend Request</button>`,
+        ),
+      );
     }
-    // 2) then views or duration?
-    if (currentSort === 'views') {
-      return extractViewsFromCard(b) - extractViewsFromCard(a);
-    }
-    if (currentSort === 'duration') {
-      return extractDurationFromCard(b) - extractDurationFromCard(a);
-    }
-    // 3) else keep original order
-    return 0;
-  });
-  sorted.forEach(card => container.appendChild(card));
 }
 
 //====================================================================================================
@@ -742,7 +707,7 @@ function route() {
   console.log(SponsaaLogo);
 
   if (RULES.LOGGED_IN) {
-    defaultSchemeWithPrivateFilter.privateFilter.push({
+    defaultSchemeWithPrivacyFilterWithHDwithSort.privacyFilter.push({
       type: 'button',
       innerText: 'request access 🔓',
       callback: requestAccess,
@@ -760,15 +725,7 @@ function route() {
   }
 
   if (RULES.IS_VIDEO_PAGE) {
-    const holder = document.querySelector('.video-holder > p');
-    if (holder) {
-      const uploader = document.querySelector('a.author').href.match(/\d+/).at(-1);
-      holder.parentElement.append(
-        parseDom(
-          `<button onclick="requestPrivateAccess(event, ${uploader}); this.onclick=null;">Friend Request</button>`,
-        ),
-      );
-    }
+    requestAccessVideoPage();
     createDownloadButton();
   }
 
@@ -782,56 +739,11 @@ function route() {
 
   if (containers.length > 1 && !RULES.IS_MEMBER_PAGE) RULES.CONTAINER = containers[0];
   containers.forEach((c) => {
-    handleLoadedHTML(c, RULES.IS_MEMBER_PAGE ? c : RULES.CONTAINER, true);
+    parseData(c, RULES.IS_MEMBER_PAGE ? c : RULES.CONTAINER, true);
   });
 
-  // ==== Re-build the scheme so our 3 buttons live in one row ====
-  const base = defaultSchemeWithPrivateFilter;
-
-  const customScheme = {
-    excludeFilter:   base.excludeFilter,
-    includeFilter:   base.includeFilter,
-    privateFilter:   base.privateFilter,
-    infiniteScroll:  base.infiniteScroll,
-
-    // ====  our single row with 3 buttons ====
-    sortButtonsRow: [
-      {
-        type:      'button',
-        innerText: 'sort by views',
-        callback:  () => {
-          currentSort = 'views';
-          hdFirst     = false;
-          applySortAndFilter();
-        },
-      },
-      {
-        type:      'button',
-        innerText: 'sort by duration',
-        callback:  () => {
-          currentSort = 'duration';
-          hdFirst     = false;
-          applySortAndFilter();
-        },
-      },
-      {
-        type:      'button',
-        innerText: 'HD first',
-        callback:  () => {
-          hdFirst     = true;
-          currentSort = null;
-          applySortAndFilter();
-        },
-      },
-    ],
-
-    durationFilter:  base.durationFilter,
-  };
-  //====================================================================================================
-
-  // initialize preview + UI with our new control ordering
   new PreviewAnimation(document.body);
-  new JabroniOutfitUI(store, customScheme);
+  new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilterWithHDwithSort);
 
   if (RULES.IS_OTHER_MEMBER_PAGE) {
     initFriendship();
@@ -839,15 +751,16 @@ function route() {
 
   if (RULES._PAGINATION_ALLOWED) {
     if (!RULES.paginationElement) return;
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    createInfiniteScroller(store, parseData, RULES);
   }
 }
 
 //====================================================================================================
 
-const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacyAndHD);
+console.log(store);
+const { state, localState } = store;
+const { applyFilters, parseData } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
 route();
