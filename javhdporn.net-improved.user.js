@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         javhdporn.net Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.2.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -10,13 +10,13 @@
 // @match        https://*.javhdporn.net/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=javhdporn.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // ==/UserScript==
 
 const { timeToSeconds, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
+const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI } = window.jabronioutfit;
 
 const LOGO = `
 ⢆⠕⡡⡑⢌⠢⡑⢌⠢⡑⠔⢌⠪⡐⢌⢊⠢⡑⢌⠢⡑⡡⡑⢌⡊⡆⣕⡱⣌⣦⣎⣦⣧⣎⡆⢕⠐⢔⠨⡨⢂⠅⢕⠨⡂⡅⡢⢡⠢⡑⢌⠢⡢⢱⠰⡨⢢⢑⠌⡆
@@ -113,11 +113,11 @@ const RULES = new JAVHDPORN_RULES();
 
 function router() {
   if (RULES.CONTAINER) {
-    handleLoadedHTML(RULES.CONTAINER);
+    parseData(RULES.CONTAINER);
   }
 
   if (RULES.paginationElement) {
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    createInfiniteScroller(store, parseData, RULES);
   }
 
   new JabroniOutfitUI(store);
@@ -128,8 +128,7 @@ function router() {
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+const { applyFilters, parseData } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 
 router();
