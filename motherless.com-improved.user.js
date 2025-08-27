@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.2.0
+// @version      3.3.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration and key phrases. Download button fixed. Reveal all related galleries to video at desktop. Galleries and tags url rewritten and redirected to video/image section if available.
 // @author       smartacephale
@@ -10,8 +10,8 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492238/Motherlesscom%20Improved.meta.js
@@ -19,7 +19,7 @@
 /* globals $ */
 
 const { Tick, fetchWith, timeToSeconds, replaceElementTag, isMob, sanitizeStr, getAllUniqueParents, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
+const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI } = window.jabronioutfit;
 
 const LOGO = `
 ⡿⣹⡝⣯⡝⣯⡝⣯⠽⣭⢻⣭⢻⣭⢻⣭⢻⡭⢯⡽⡭⢏⡳⣍⡛⡜⡍⢎⡱⢊⠖⡱⢊⡖⣱⢊⠶⡱⢎⠶⣩⣿⢣⠝⣺⢿⣹⣷⣿⣿⣿⣿⢠⢃⠦⡑⢢⠜⣐⠢
@@ -228,7 +228,7 @@ GM_addStyle(`
 function applySearchFilters() {
   let pathname = window.location.pathname;
   const wordsToFilter =
-    state.filterExcludeWords.replace(/f\:/g, '').match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];
+    store.state.filterExcludeWords.replace(/f\:/g, '').match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];
   wordsToFilter
     .filter((w) => !pathname.includes(w))
     .forEach((w) => {
@@ -245,14 +245,14 @@ function route() {
   desktopAddMobGalleries().then(() => fixURLs());
 
   if (RULES.paginationElement) {
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    createInfiniteScroller(store, parseData, RULES);
     animate();
   }
 
   if (RULES.GET_THUMBS(document.body).length > 0) {
     new JabroniOutfitUI(store);
     getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => {
-      handleLoadedHTML(c, c, true);
+      parseData(c, c, true);
     });
   }
 
@@ -266,8 +266,7 @@ function route() {
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+const { applyFilters, parseData } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 
 route();
