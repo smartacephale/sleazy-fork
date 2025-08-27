@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.2
+// @version      3.1.0
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page.
 // @author       smartacephale
@@ -12,15 +12,15 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @grant        unsafeWindow
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/493935/XHamster%20Improved.meta.js
 // ==/UserScript==
 
 const { getAllUniqueParents, watchElementChildrenCount, waitForElementExists, timeToSeconds, exterminateVideo, Observer, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
+const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivacyFilter } = window.jabronioutfit;
 
 if (window.top != window.self) return;
 
@@ -82,7 +82,7 @@ class XHAMSTER_RULES {
     }
 
     THUMB_IMG_DATA(thumb) {
-        if (store?.stateLocale.pagIndexCur === 1) return ({});
+        if (store?.localState.pagIndexCur === 1) return ({});
         const img = thumb.querySelector('img[loading]');
         if (img) img.removeAttribute('loading');
         if (!img?.complete || img.naturalWidth === 0) return ({});
@@ -155,7 +155,7 @@ function animate() {
 
 function parseInPLace() {
     const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
-    containers.forEach(c => handleLoadedHTML(c, c, false, false));
+    containers.forEach(c => parseData(c, c, false, false));
 }
 
 function route() {
@@ -167,17 +167,17 @@ function route() {
     }
 
     if (RULES.paginationElement) {
-      createInfiniteScroller(store, handleLoadedHTML, RULES);
+      createInfiniteScroller(store, parseData, RULES);
     }
 
     parseInPLace();
     setTimeout(parseInPLace, 500);
 
-    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+    new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilter);
 }
 
 
-defaultSchemeWithPrivateFilter.privateFilter = [
+defaultSchemeWithPrivacyFilter.privacyFilter = [
   { type: "checkbox", model: "state.filterPrivate", label: "unwatched" },
   { type: "checkbox", model: "state.filterPublic", label: "watched" }];
 
@@ -186,6 +186,6 @@ defaultSchemeWithPrivateFilter.privateFilter = [
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
+const { applyFilters, parseData } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 route();
