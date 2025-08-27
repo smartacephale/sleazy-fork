@@ -1,21 +1,21 @@
 // ==UserScript==
 // @name         NamethatPorn Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.1.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
-// @match        https://namethatporn.com/*
+// @match        https://namethatporn.*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=namethatporn.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.4/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // ==/UserScript==
 
 const { timeToSeconds, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, JabroniOutfitUI, defaultSchemeWithPrivateFilter, defaultStateWithDurationAndPrivacy } = window.jabronioutfit;
+const { JabroniOutfitStore, JabroniOutfitUI, defaultSchemeWithPrivacyFilter, defaultStateWithDurationAndPrivacy } = window.jabronioutfit;
 
 const LOGO = `
 ⡳⣝⢮⡳⣝⢮⡳⣝⢮⢳⡣⣗⡳⡳⡳⣕⢗⣝⢮⡳⡽⣯⡿⣽⢯⡿⣽⡯⣿⢽⢿⢽⢯⢿⢽⢽⣫⢯⢯⢯⢯⢯⢯⣗⢯⣟⢮⢗⢽⡘⡐⣞⣯⢿⡽⣽⣺⣝⢮⡳
@@ -97,21 +97,20 @@ const RULES = new NAMETHATPORN_RULES();
 
 function router() {
   if (RULES.CONTAINER) {
-      handleLoadedHTML(RULES.CONTAINER);
+      parseData(RULES.CONTAINER);
   }
 
   if (RULES.paginationElement) {
-    store.localState = store.stateLocale;
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    createInfiniteScroller(store, parseData, RULES);
   }
 
-  delete defaultSchemeWithPrivateFilter.durationFilter;
-  new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+  new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilter);
 }
 
 //====================================================================================================
 
-defaultSchemeWithPrivateFilter.privateFilter = [
+delete defaultSchemeWithPrivacyFilter.durationFilter;
+defaultSchemeWithPrivacyFilter.privacyFilter = [
   { type: "checkbox", model: "state.filterPrivate", label: "unsolved" },
   { type: "checkbox", model: "state.filterPublic", label: "solved" }];
 
@@ -141,6 +140,6 @@ window.addEventListener("keydown", (event) => {
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
+const { applyFilters, parseData } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 router();
