@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.1.1
+// @version      2.2.0
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -9,8 +9,8 @@
 // @match        https://*.xvideos.com/*
 // @exclude      https://*.xvideos.com/embedframe/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
 // @downloadURL https://update.sleazyfork.org/scripts/494005/XVideos%20Improved.user.js
@@ -153,12 +153,12 @@ function animate() {
 
 function route() {
     if (RULES.paginationElement) {
-      createInfiniteScroller(store, handleLoadedHTML, RULES);
+      createInfiniteScroller(store, parseData, RULES);
     }
 
     if (RULES.HAS_VIDEOS) {
         animate();
-        handleLoadedHTML(RULES.CONTAINER)
+        parseData(RULES.CONTAINER)
         new JabroniOutfitUI(store);
     }
 }
@@ -168,7 +168,7 @@ function route() {
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
+const { applyFilters, parseData } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 
 route();
