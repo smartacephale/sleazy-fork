@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.6
+// @version      3.1.0
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -10,15 +10,15 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @run-at       document-idle
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @downloadURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.meta.js
 // ==/UserScript==
 /* globals $ LazyLoad */
 
 const { parseDom, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
+const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivacyFilter } = window.jabronioutfit;
 
 const LOGO = `
 ⡝⣝⢝⢝⢝⢝⢝⢝⢍⠭⡩⢍⠭⡩⡍⡭⢍⠭⡍⡭⡙⡍⢏⢝⠩⡩⡋⡍⡏⡝⡝⡽⡹⡹⡹⡙⡝⡙⡝⢍⠭⡩⢍⠭⡩⡩⡩⡩⡩⡍⡭⡩⡍⣍⢫⡩⡹⡩⡹⡩
@@ -132,15 +132,15 @@ function setupAlbumPage() {
 
 //=================================================================================================
 
-function init() {
+function route() {
   if (IS_ALBUM_PAGE) {
     setupAlbumPage();
   } else {
-    handleLoadedHTML(Rules.CONTAINER);
-    createInfiniteScroller(store, handleLoadedHTML, Rules).onScroll(() => {
+    parseData(Rules.CONTAINER);
+    createInfiniteScroller(store, parseData, Rules).onScroll(() => {
       setTimeout(() => new LazyLoad(), 100);
     });
-    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+    new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilter);
   }
 }
 
@@ -150,15 +150,15 @@ Object.assign(defaultStateWithDurationAndPrivacy, {
   showPhotos: { value: true, persistent: true, watch: true },
 });
 
-delete defaultSchemeWithPrivateFilter.durationFilter;
-defaultSchemeWithPrivateFilter.privateFilter[0].label = 'photos';
-defaultSchemeWithPrivateFilter.privateFilter[1].label = 'videos';
+delete defaultSchemeWithPrivacyFilter.durationFilter;
+defaultSchemeWithPrivacyFilter.privacyFilter[0].label = 'photos';
+defaultSchemeWithPrivacyFilter.privacyFilter[1].label = 'videos';
 
 //=================================================================================================
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(Rules, state);
+const { state } = store;
+const { applyFilters, parseData } = new DataManager(Rules, state);
 store.subscribe(applyFilters);
 
-init();
+route();
