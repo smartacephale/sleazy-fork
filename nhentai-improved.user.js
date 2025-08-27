@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.1
+// @version      2.3.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -12,17 +12,15 @@
 // @match        https://*.e-hentai.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
 // ==/UserScript==
 
-const { parseDom, sanitizeStr, DataManager, InfiniteScroller, createInfiniteScroller } =
-  window.bhutils;
-const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } =
-  window.jabronioutfit;
+const { parseDom, sanitizeStr, DataManager, InfiniteScroller, createInfiniteScroller } = window.bhutils;
+const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
 
 const LOGO = `⠡⠡⠡⠡⠡⠅⠅⢥⢡⢡⢠⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⡥⠨⡨⠈⠌⠌⠌⠌⠌⠌⡐
 ⠡⢡⡃⡅⠅⠅⢅⢦⣂⡂⡒⡜⡈⡚⡂⡥⠡⠡⠡⠡⠡⠡⠡⠡⡡⠡⠡⠑⠅⠣⣕⠡⠡⡡⠡⠡⠡⠡⠡⠡⣡⣡⡡⠡⠡⡑⢑⠡⠡⠡⠡⠩⠩⠨⠩⢹⠨⠨⢐⢐
@@ -353,7 +351,7 @@ function route() {
   }
 
   if (RULES.CONTAINER) {
-    handleLoadedHTML(RULES.CONTAINER);
+    parseData(RULES.CONTAINER);
   }
 
   if (RULES.IS_SEARCH_PAGE && isNHENTAI) {
@@ -361,7 +359,7 @@ function route() {
   }
 
   if (RULES.paginationElement) {
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    createInfiniteScroller(store, parseData, RULES);
   }
 
   delete DefaultScheme.durationFilter;
@@ -373,8 +371,8 @@ function route() {
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateInclExclMiscPagination);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+const { state } = store;
+const { applyFilters, parseData } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
 route();
