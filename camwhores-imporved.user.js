@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.3.0
+// @version      2.4.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -10,8 +10,8 @@
 // @match        https://*.camwhores.tv/*
 // @exclude      https://*.camwhores.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
@@ -23,7 +23,7 @@
 const { Tick, parseDom, fetchHtml, AsyncPool, wait, computeAsyncOneAtTime, timeToSeconds,
     circularShift, range, watchDomChangesWithThrottle, objectToFormData, parseDataParams, sanitizeStr,
     getAllUniqueParents, downloader, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivateFilter } = window.jabronioutfit;
+const { JabroniOutfitStore, defaultStateWithDurationAndPrivacy, JabroniOutfitUI, defaultSchemeWithPrivacyFilter } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
 
 const LOGO = `camwhores admin should burn in hell
@@ -372,7 +372,7 @@ function clearMessages() {
 
 function shoudIScroll() {
   if (RULES.paginationElement && !RULES.IS_MEMBER_PAGE && !RULES.IS_MINE_MEMBER_PAGE) {
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    createInfiniteScroller(store, parseData, RULES);
     shouldReload();
   }
 }
@@ -384,7 +384,7 @@ function route() {
       createFriendButton();
     }
     if (RULES.HAS_VIDEOS) {
-      defaultSchemeWithPrivateFilter.privateFilter.push(
+      defaultSchemeWithPrivacyFilter.privacyFilter.push(
         { type: 'button', innerText: 'check access 🔓', callback: requestAccess });
     }
   }
@@ -396,10 +396,10 @@ function route() {
       document.querySelector('.content'),
       () => {
         const containers = getAllUniqueParents(RULES.GET_THUMBS(document.body));
-        containers.forEach((c) => handleLoadedHTML(c, c));
+        containers.forEach((c) => parseData(c, c));
         shoudIScroll();
       }, 1000, 1);
-    new JabroniOutfitUI(store, defaultSchemeWithPrivateFilter);
+    new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilter);
     animate();
   }
 
@@ -423,8 +423,7 @@ const ANIMATION_DELAY = 500;
 const FRIEND_REQUEST_INTERVAL = 5000;
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
-const { state, stateLocale } = store;
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, state);
+const { applyFilters, parseData } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 
 route();
