@@ -6,7 +6,7 @@
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
-// @match        https://namethatporn.*/*
+// @match        https://namethatporn.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=namethatporn.com
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
