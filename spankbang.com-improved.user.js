@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.2.4
+// @version      2.3.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -9,8 +9,8 @@
 // @match        https://*.spankbang.*/*
 // @match        https://*.spankbang.com/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.3.6/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.4.9/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=spankbang.com
 // @downloadURL https://update.sleazyfork.org/scripts/493946/SpankBangcom%20Improved.user.js
@@ -18,7 +18,7 @@
 // ==/UserScript==
 
 const { getAllUniqueParents, timeToSeconds, parseDom, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
+const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI } = window.jabronioutfit;
 
 const LOGO = `
 ⡕⡧⡳⡽⣿⣇⠀⢀⠀⠄⠐⡐⠌⡂⡂⠠⠀⠠⠀⠠⠀⠠⡐⡆⡇⣇⢎⢆⠆⠌⢯⡷⡥⡂⡐⠨⣻⣳⢽⢝⣵⡫⣗⢯⣺⢵⢹⡪⡳⣝⢮⡳⣿⣿⣿⣿⣿⣿⣿⣿
@@ -104,12 +104,12 @@ const RULES = new SPANKBANG_RULES();
 function route() {
   if (RULES.HAS_VIDEOS) {
     new JabroniOutfitUI(store);
-    getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => handleLoadedHTML(c, c));
-    setTimeout(() => getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => handleLoadedHTML(c, c)), 100);
+    getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => parseData(c, c));
+    setTimeout(() => getAllUniqueParents(RULES.GET_THUMBS(document.body)).forEach((c) => parseData(c, c)), 100);
   }
 
   if (RULES.paginationElement) {
-    createInfiniteScroller(store, handleLoadedHTML, RULES);
+    createInfiniteScroller(store, parseData, RULES);
   }
 }
 
@@ -117,7 +117,7 @@ function route() {
 
 console.log(LOGO);
 const store = new JabroniOutfitStore(defaultStateWithDuration);
-const { applyFilters, handleLoadedHTML } = new DataManager(RULES, store.state);
+const { applyFilters, parseData } = new DataManager(RULES, store.state);
 store.subscribe(applyFilters);
 
 route();
