@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.7.0
+// @version      1.7.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -11,7 +11,7 @@
 // @exclude      https://*.cambro.tv/*mode=async*
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.5/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cambro.tv
@@ -283,6 +283,8 @@ async function requestAccess() {
   setTimeout(processFriendship, FRIEND_REQUEST_INTERVAL);
 }
 
+Object.assign(window, { requestAccess });
+
 async function checkPrivateVidsAccess() {
   const checkAccess = async (item) => {
     const videoURL = item.firstElementChild.href;
@@ -293,8 +295,10 @@ async function checkPrivateVidsAccess() {
     const haveAccess = !doc.querySelector('.no-player');
 
     if (!haveAccess) {
-      const uid = doc.querySelector('.message a').href.match(/\d+/).at(-1);
-      lskdb.setKey(uid);
+      if (store.state.autoRequestAccess) {
+        const uid = doc.querySelector('.message a').href.match(/\d+/).at(-1);
+        lskdb.setKey(uid);
+      }
       item.classList.add('haveNoAccess');
     } else {
       item.classList.add('haveAccess');
@@ -394,10 +398,10 @@ function route() {
     if (RULES.IS_MEMBER_PAGE || RULES.IS_COMMUNITY_LIST) {
       createFriendButton();
     }
-    if (RULES.HAS_VIDEOS) {
-      defaultSchemeWithPrivacyFilter.privacyFilter.push(
-        { type: 'button', innerText: 'check access 🔓', callback: requestAccess });
-    }
+  }
+
+  if (!RULES.HAS_VIDEOS || !RULES.IS_LOGGED_IN) {
+    delete defaultSchemeWithPrivacyFilter.privacyFilter;
   }
 
   shoudIScroll();
