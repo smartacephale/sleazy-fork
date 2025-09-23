@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      6.0.0
+// @version      6.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
 // @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
-// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
+// @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.5/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/485716/ThisVidcom%20Improved.user.js
@@ -377,8 +377,7 @@ async function requestAccess() {
 
     if (!access) {
       thumb.classList.add('haveNoAccess');
-
-      if (!uploadersNotInFriendlist.has(uploaderURL)) friend(uploaderURL);
+      if (!uploadersNotInFriendlist.has(uploaderURL) && state.autoRequestAccess) friend(uploaderURL);
     } else {
       thumb.classList.add('haveAccess');
     }
@@ -394,6 +393,8 @@ async function requestAccess() {
     });
   computeAsyncOneAtTime(f);
 }
+
+Object.assign(window, { requestAccess });
 
 //====================================================================================================
 
@@ -706,12 +707,8 @@ function requestAccessVideoPage(){
 function route() {
   console.log(SponsaaLogo);
 
-  if (RULES.LOGGED_IN) {
-    defaultSchemeWithPrivacyFilterWithHDwithSort.privacyFilter.push({
-      type: 'button',
-      innerText: 'request access 🔓',
-      callback: requestAccess,
-    });
+  if (!RULES.LOGGED_IN) {
+    delete defaultSchemeWithPrivacyFilterWithHDwithSort.privacyAccess
   }
 
   if (RULES.IS_MY_MEMBER_PAGE) {
