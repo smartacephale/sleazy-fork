@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      6.0.1
+// @version      6.0.2
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -37,6 +37,7 @@ const {
   InfiniteScroller,
   createInfiniteScroller,
   DataManager,
+  objectToFormData
 } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const {
@@ -219,6 +220,19 @@ function friend(id, message = '') {
   return fetchWith(FRIEND_REQUEST_URL(id, message));
 }
 
+function acceptFriendship(id) {
+  const body = objectToFormData({
+    action:	"confirm_add_to_friends",
+    function:	"get_block",
+    block_id:	"member_profile_view_view_profile",
+    confirm:	"",
+    format:	"json",
+    mode:	"async"
+  });
+  const url = `https://thisvid.com/members/${id}/`;
+  return fetch(url, { body, method: "post" });
+}
+
 const FRIEND_REQUEST_URL = (id, message = '') =>
   `https://thisvid.com/members/${id}/?action=add_to_friends_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async&message=${message}`;
 
@@ -369,29 +383,34 @@ async function checkPrivateVideoAccess(url) {
   };
 }
 
-const uploadersNotInFriendlist = new Set();
-
 async function requestAccess() {
+  const uploadersChecked = new Set();
+
   const checkAccess = async (thumb) => {
-    const { access, uploaderURL } = await checkPrivateVideoAccess(thumb.href || thumb.querySelector('a').href);
+    const thumbURL = thumb.href || thumb.querySelector('a').href;
+    const { access, uploaderURL } = await checkPrivateVideoAccess(thumbURL);
+
+    if (uploadersChecked.has(uploaderURL)) return;
+    uploadersChecked.add(uploaderURL);
+
+    await acceptFriendship(uploaderURL);
 
     if (!access) {
       thumb.classList.add('haveNoAccess');
-      if (!uploadersNotInFriendlist.has(uploaderURL) && state.autoRequestAccess) friend(uploaderURL);
+      if (state.autoRequestAccess) {
+        friend(uploaderURL);
+      }
     } else {
       thumb.classList.add('haveAccess');
     }
   };
 
-  const f = [];
-  document
-    .querySelectorAll('.tumbpu:has(.private), .thumb-holder:has(.private)')
-    .forEach((thumb) => {
-      if (!thumb.classList.contains('haveNoAccess') && !thumb.classList.contains('haveAccess')) {
-        f.push(() => checkAccess(thumb));
-      }
-    });
-  computeAsyncOneAtTime(f);
+
+  const f_ = Array.from(
+    document.querySelectorAll('.tumbpu:has(.private):not(.haveNoAccess):not(haveAccess), .thumb-holder:has(.private):not(.haveNoAccess):not(haveAccess)'))
+    .map(thumb => (() => checkAccess(thumb)));
+
+  computeAsyncOneAtTime(f_);
 }
 
 Object.assign(window, { requestAccess });
@@ -581,7 +600,9 @@ async function createPrivateFeed() {
   containerParent.nextElementSibling.remove();
   containerParent.append(container);
   container.before(ignored);
-  GM_addStyle(`.content { width: auto; }
+
+  GM_addStyle(`
+   .content { width: auto; }
    .member-videos, .ignored { background: #b3b3b324; min-height: 3rem; margin: 1rem 0px; color: #fff; font-size: 1.24rem; display: flex; flex-wrap: wrap; justify-content: center;
      padding: 10px; width: 100%; }
    .member-videos * {  padding: 5px; margin: 4px; }
@@ -662,6 +683,11 @@ async function createPrivateFeed() {
 
 //====================================================================================================
 
+function deleteMsg(id) {
+  const url = `https://thisvid.com/my_messages/inbox/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages&delete[]=${id}`;
+  fetch(url).then((res) => console.log(url, res?.status));
+}
+
 async function clearMessages() {
   const sortMsgs = (doc) => {
     doc.querySelectorAll('.entry').forEach((e) => {
@@ -669,11 +695,6 @@ async function clearMessages() {
       const msg = e.querySelector('.user-comment').innerText;
       if (/has confirmed|declined your|has removed/g.test(msg)) deleteMsg(id);
     });
-  };
-
-  const deleteMsg = (id) => {
-    const url = `https://thisvid.com/my_messages/inbox/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages&delete[]=${id}`;
-    fetch(url).then((res) => console.log(url, res?.status));
   };
 
   await Promise.all(
@@ -755,7 +776,6 @@ function route() {
 //====================================================================================================
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacyAndHD);
-console.log(store);
 const { state, localState } = store;
 const { applyFilters, parseData } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
