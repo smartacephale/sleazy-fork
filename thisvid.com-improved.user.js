@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      6.0.2
+// @version      6.0.3
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -44,7 +44,7 @@ const {
   JabroniOutfitStore,
   defaultStateWithDurationAndPrivacyAndHD,
   JabroniOutfitUI,
-    DefaultScheme,
+  DefaultScheme,
   defaultSchemeWithPrivacyFilterWithHDwithSort,
 } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
@@ -77,25 +77,25 @@ GM_addStyle(`
 class THISVID_RULES {
   delay = 350;
 
+  PAGINATION_ALLOWED = [
+    /\.com\/$/,
+    /\/(categories|tags?)\//,
+    /\/?q=.*/,
+    /\/(\w+-)?(rated|popular|private|newest|winners|updates)\/(\d+\/)?$/,
+    /\/members\/\d+\/\w+_videos\//,
+    /\/playlist\/\d+\//,
+    /\/my_(\w+)_videos\//,
+    /\/my_wall\/#\w+/,
+  ].some((r) => r.test(location.href));
+
+  IS_MEMBER_PAGE = /^\/members\/\d+\/$/.test(location.pathname);
+  IS_WATCHLATER_KIND = /^\/my_(\w+)_videos\//.test(location.pathname);
+  IS_MESSAGES_PAGE = /^\/my_messages\//.test(location.pathname);
+  IS_PLAYLIST = /^\/playlist\/\d+\//.test(location.pathname);
+  IS_VIDEO_PAGE = /^\/videos\//.test(location.pathname);
+
   constructor() {
-    const { href, pathname } = window.location;
-
-    this._PAGINATION_ALLOWED = [
-      /\.com\/$/,
-      /\/(categories|tags?)\//,
-      /\/?q=.*/,
-      /\/(\w+-)?(rated|popular|private|newest|winners|updates)\/(\d+\/)?$/,
-      /\/members\/\d+\/\w+_videos\//,
-      /\/playlist\/\d+\//,
-      /\/my_(\w+)_videos\//,
-      /\/my_wall\/#\w+/,
-    ].some((r) => r.test(href));
-
-    this.IS_MEMBER_PAGE = /^\/members\/\d+\/$/.test(pathname);
-    this.IS_WATCHLATER_KIND = /^\/my_(\w+)_videos\//.test(pathname);
-    this.IS_MESSAGES_PAGE = /^\/my_messages\//.test(pathname);
-    this.IS_PLAYLIST = /^\/playlist\/\d+\//.test(pathname);
-    this.IS_VIDEO_PAGE = /^\/videos\//.test(pathname);
+    const { pathname } = window.location;
 
     this.PAGE_HAS_VIDEO = this.GET_THUMBS(document).length > 0;
 
@@ -222,12 +222,12 @@ function friend(id, message = '') {
 
 function acceptFriendship(id) {
   const body = objectToFormData({
-    action:	"confirm_add_to_friends",
-    function:	"get_block",
-    block_id:	"member_profile_view_view_profile",
-    confirm:	"",
-    format:	"json",
-    mode:	"async"
+    action: "confirm_add_to_friends",
+    function: "get_block",
+    block_id: "member_profile_view_view_profile",
+    confirm: "",
+    format: "json",
+    mode: "async"
   });
   const url = `https://thisvid.com/members/${id}/`;
   return fetch(url, { body, method: "post" });
@@ -239,17 +239,17 @@ const FRIEND_REQUEST_URL = (id, message = '') =>
 const USERS_PER_PAGE = 24;
 
 async function getMemberFriends(memberId, start, end, by) {
-    const { friendsCount } = await getMemberData(memberId);
-    const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
+  const { friendsCount } = await getMemberData(memberId);
+  const offset = Math.ceil(friendsCount / USERS_PER_PAGE);
 
-    let friendsURL = `https://thisvid.com/members/${memberId}/friends/`;
-    if (by === 'activity') friendsURL = 'https://thisvid.com/my_friends_by_activity/';
-    if (by === 'popularity') friendsURL = 'https://thisvid.com/my_friends_by_popularity/';
+  let friendsURL = `https://thisvid.com/members/${memberId}/friends/`;
+  if (by === 'activity') friendsURL = 'https://thisvid.com/my_friends_by_activity/';
+  if (by === 'popularity') friendsURL = 'https://thisvid.com/my_friends_by_popularity/';
 
-    const pages = range(offset).slice(start, end).map((o) => `${friendsURL}${o}/`);
-    const pagesFetched = pages.map((p) => fetchHtml(p));
-    const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
-    return friends;
+  const pages = range(offset).slice(start, end).map((o) => `${friendsURL}${o}/`);
+  const pagesFetched = pages.map((p) => fetchHtml(p));
+  const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
+  return friends;
 }
 
 function getMembers(el) {
@@ -322,16 +322,6 @@ function initFriendship() {
 
 //====================================================================================================
 
-async function sendMessage(uid, message = 'add me pls') {
-  const url = new URL(
-    `https://thisvid.com/members/${uid}/?action=send_message_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async`,
-  );
-  url.searchParams.append('message', message);
-  await fetch(url.href);
-}
-
-//====================================================================================================
-
 async function getMemberData(id) {
   const url = id.includes('member') ? id : `/members/${id}/`;
   const doc = await fetchHtml(url);
@@ -360,6 +350,17 @@ async function getMemberData(id) {
 
 //====================================================================================================
 
+function requestAccessVideoPage() {
+  const holder = document.querySelector('.video-holder > p');
+  if (holder) {
+    const uploader = document.querySelector('a.author').href.match(/\d+/).at(-1);
+    const button = parseDom(
+      `<button onclick="requestPrivateAccess(event, ${uploader}); this.onclick=null;">Friend Request</button>`,
+    );
+    holder.parentElement.append(button);
+  }
+}
+
 unsafeWindow.requestPrivateAccess = (e, memberid) => {
   e.preventDefault();
   friend(memberid, '');
@@ -383,34 +384,30 @@ async function checkPrivateVideoAccess(url) {
   };
 }
 
+function getUncheckedPrivateThumbs(html = document) {
+  const thumbs = html.querySelectorAll('.tumbpu:has(.private):not(.haveNoAccess):not(haveAccess), .thumb-holder:has(.private):not(.haveNoAccess):not(haveAccess)');
+  return Array.from(thumbs);
+}
+
+const uploadersChecked = new Set();
+
 async function requestAccess() {
-  const uploadersChecked = new Set();
-
   const checkAccess = async (thumb) => {
-    const thumbURL = thumb.href || thumb.querySelector('a').href;
-    const { access, uploaderURL } = await checkPrivateVideoAccess(thumbURL);
+    const { access, uploaderURL } = await checkPrivateVideoAccess(RULES.THUMB_URL(thumb));
 
-    if (uploadersChecked.has(uploaderURL)) return;
-    uploadersChecked.add(uploaderURL);
-
-    await acceptFriendship(uploaderURL);
-
-    if (!access) {
-      thumb.classList.add('haveNoAccess');
-      if (state.autoRequestAccess) {
-        friend(uploaderURL);
-      }
-    } else {
+    if (access) {
       thumb.classList.add('haveAccess');
+      return;
     }
-  };
+    thumb.classList.add('haveNoAccess');
 
+    if (state.autoRequestAccess && !uploadersChecked.has(uploaderURL)) {
+      acceptFriendship(uploaderURL);
+      friend(uploaderURL);
+    }
+  }
 
-  const f_ = Array.from(
-    document.querySelectorAll('.tumbpu:has(.private):not(.haveNoAccess):not(haveAccess), .thumb-holder:has(.private):not(.haveNoAccess):not(haveAccess)'))
-    .map(thumb => (() => checkAccess(thumb)));
-
-  computeAsyncOneAtTime(f_);
+  computeAsyncOneAtTime(getUncheckedPrivateThumbs().map(t => (() => checkAccess(t))));
 }
 
 Object.assign(window, { requestAccess });
@@ -460,21 +457,6 @@ class PreviewAnimation {
       );
     }
   };
-}
-
-//====================================================================================================
-
-function highlightMessages() {
-  for (const member of document.querySelectorAll('.user-avatar > a')) {
-    getMemberData(member.href).then(({ uploadedPublic, uploadedPrivate }) => {
-      if (uploadedPrivate > 0) {
-        const success = !member.parentElement.nextElementSibling.innerText.includes('declined');
-        member.parentElement.parentElement.classList.add(success ? 'success' : 'failure');
-      }
-      member.parentElement.parentElement.querySelector('.user-comment p').innerText +=
-        `  |  videos: ${uploadedPublic} public, ${uploadedPrivate} private`;
-    });
-  }
 }
 
 //====================================================================================================
@@ -559,15 +541,15 @@ function createPrivateFeedButton() {
   const container = document.querySelectorAll('.sidebar ul')[1];
 
   const links = [
-    { hov: '#private_feed', text: 'My Private Feed'},
-    { hov: '#private_feed_popularity', text: 'My Private Feed by Popularity'},
-    { hov: '#private_feed_activity', text: 'My Private Feed by Activity'},
-    { hov: '#public_feed', text: 'My Public Feed'},
-    { hov: '#public_feed_popularity', text: 'My Public Feed by Popularity'},
-    { hov: '#public_feed_activity', text: 'My Public Feed by Activity'},
+    { hov: '#private_feed', text: 'My Private Feed' },
+    { hov: '#private_feed_popularity', text: 'My Private Feed by Popularity' },
+    { hov: '#private_feed_activity', text: 'My Private Feed by Activity' },
+    { hov: '#public_feed', text: 'My Public Feed' },
+    { hov: '#public_feed_popularity', text: 'My Public Feed by Popularity' },
+    { hov: '#public_feed_activity', text: 'My Public Feed by Activity' },
   ];
 
-  links.forEach(({hov, text}) => {
+  links.forEach(({ hov, text }) => {
     const button = parseDom(`<li><a href="https://thisvid.com/my_wall/${hov}" class="selective"><i class="ico-arrow"></i>${text}</a></li>`);
     container.append(button);
   });
@@ -683,6 +665,14 @@ async function createPrivateFeed() {
 
 //====================================================================================================
 
+async function sendMessage(uid, message = 'add me pls') {
+  const url = new URL(
+    `https://thisvid.com/members/${uid}/?action=send_message_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async`,
+  );
+  url.searchParams.append('message', message);
+  await fetch(url.href);
+}
+
 function deleteMsg(id) {
   const url = `https://thisvid.com/my_messages/inbox/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages&delete[]=${id}`;
   fetch(url).then((res) => console.log(url, res?.status));
@@ -710,17 +700,17 @@ function clearMessagesButton() {
   document.querySelector('.headline').append(btn);
 }
 
-
-function requestAccessVideoPage(){
-    const holder = document.querySelector('.video-holder > p');
-    if (holder) {
-      const uploader = document.querySelector('a.author').href.match(/\d+/).at(-1);
-      holder.parentElement.append(
-        parseDom(
-          `<button onclick="requestPrivateAccess(event, ${uploader}); this.onclick=null;">Friend Request</button>`,
-        ),
-      );
-    }
+function highlightMessages() {
+  for (const member of document.querySelectorAll('.user-avatar > a')) {
+    getMemberData(member.href).then(({ uploadedPublic, uploadedPrivate }) => {
+      if (uploadedPrivate > 0) {
+        const success = !member.parentElement.nextElementSibling.innerText.includes('declined');
+        member.parentElement.parentElement.classList.add(success ? 'success' : 'failure');
+      }
+      member.parentElement.parentElement.querySelector('.user-comment p').innerText +=
+        `  |  videos: ${uploadedPublic} public, ${uploadedPrivate} private`;
+    });
+  }
 }
 
 //====================================================================================================
@@ -767,7 +757,7 @@ function route() {
     initFriendship();
   }
 
-  if (RULES._PAGINATION_ALLOWED) {
+  if (RULES.PAGINATION_ALLOWED) {
     if (!RULES.paginationElement) return;
     createInfiniteScroller(store, parseData, RULES);
   }
