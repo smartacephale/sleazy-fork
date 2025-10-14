@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Eporner Improved
+// @name         Eporner.com Improved
 // @namespace    http://tampermonkey.net/
 // @version      1.0.2
 // @license      MIT
