@@ -454,12 +454,7 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
   };
 
   let membersIds = await getMemberFriends(id, 0, 1, by);
-  /////////
-  ////
-  ///
-  ///
-  //
-  getMemberFriends(id, 1, 3, by).then((r) => {
+  getMemberFriends(id, 1, 100000, by).then((r) => {
     membersIds = membersIds.concat(r);
   });
 
