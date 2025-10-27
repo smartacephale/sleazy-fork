@@ -1,21 +1,21 @@
 // ==UserScript==
 // @name         javhdporn.net Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      2.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
-// @match        https://*.javhdporn.*/*
 // @match        https://*.javhdporn.net/*
+// @match        https://*.javhdporn.*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=javhdporn.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // ==/UserScript==
 
-const { timeToSeconds, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
+const { timeToSeconds, sanitizeStr, DataManager, createInfiniteScroller, getPaginationStrategy } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI } = window.jabronioutfit;
 
 const LOGO = `
@@ -62,48 +62,28 @@ const LOGO = `
 ⡠⠡⡐⠄⡁⠆⠕⢌⠔⠔⠜⡞⠷⢽⠽⡜⡯⡇⡿⢝⠇⡨⢐⠠⠨⠠⢐⠠⠂⡂⠌⠄⠅⡂⠌⡐⠄⠅⠄⠪⠆⠯⠺⠝⠝⠣⠃⡓⠚⢙⠊⢃⠁⡂⠅⡂⢢⢑⢕⠁`;
 
 class JAVHDPORN_RULES {
-  delay = 350;
+  paginationStrategy = getPaginationStrategy({
+    pathnameSelector: /\/page\/(\d+)\/?$/
+  });
 
-  paginationElement = document.querySelector('.pagination');
-  paginationLast = parseInt(
-    Array.from(document.querySelectorAll('.pagination a') || [], (a) =>
-      a.href.match(/\d+/g)?.pop(),
-    )?.pop() || 1,
-  );
-  CONTAINER = this.GET_THUMBS(document.body)?.[0].parentElement;
+  container = this.getThumbs(document.body)?.[0].parentElement;
 
-  constructor() {
-    Object.assign(this, this.URL_DATA());
-  }
-
-  THUMB_URL(thumb) {
+  getThumbUrl(thumb) {
     return thumb.querySelector('a').href;
   }
 
-  GET_THUMBS(html) {
+  getThumbs(html) {
     return Array.from(html.querySelectorAll('article.thumb-block'));
   }
 
-  THUMB_IMG_DATA(thumb) {
+  getThumbImgData(thumb) {
     return {};
   }
 
-  THUMB_DATA(thumb) {
+  getThumbData(thumb) {
     const title = sanitizeStr(thumb.querySelector('header.entry-header')?.innerText);
     const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
     return { title, duration };
-  }
-
-  URL_DATA() {
-    const url = new URL(location.href);
-    const paginationOffset = parseInt(location.pathname.match(/\/page\/(\d+)/)?.pop() || 1);
-    if (paginationOffset < 2) url.pathname = `${url.pathname}/page/${paginationOffset}/`;
-
-    const paginationUrlGenerator = (n) => {
-      return url.href.replace(/\/page\/\d+/, () => `/page/${n}`);
-    };
-
-    return { paginationOffset, paginationUrlGenerator };
   }
 }
 
@@ -112,11 +92,11 @@ const RULES = new JAVHDPORN_RULES();
 //====================================================================================================
 
 function router() {
-  if (RULES.CONTAINER) {
-    parseData(RULES.CONTAINER);
+  if (RULES.container) {
+    parseData(RULES.container);
   }
 
-  if (RULES.paginationElement) {
+  if (RULES.paginationStrategy.hasPagination) {
     createInfiniteScroller(store, parseData, RULES);
   }
 
