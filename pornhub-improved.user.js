@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @exclude      https://*.pornhub.com/embed/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pornhub.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.0/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
@@ -52,7 +52,7 @@ class PORNHUB_RULES {
 
   paginationStrategy = getPaginationStrategy({
     paginationSelector: '.paginationGated',
-    fixPaginationLast: (n) => n === 9 ? 999 : n
+    fixPaginationLast: (n) => n === 10 ? 999 : n
   });
 
   container = [...document.querySelectorAll('ul.videos:not([id*=trailer]):not([class*=drop]):not([class*=premium]):not([id*=bottom])')].pop();
