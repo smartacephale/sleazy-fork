@@ -90,7 +90,7 @@ function router() {
     parseData(RULES.container);
   }
 
-  if (RULES.getPaginationStrategy.hasPagination) {
+  if (RULES.paginationStrategy.hasPagination) {
     createInfiniteScroller(store, parseData, RULES);
   }
 
