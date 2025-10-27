@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      7.0.1
+// @version      7.0.2
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -81,7 +81,7 @@ class THISVID_RULES {
   IS_VIDEO_PAGE = /^\/videos\//.test(location.pathname);
   IS_MY_WALL = /^\/my_wall\//.test(location.pathname);
 
-  HAS_VIDEOS = this.getThumbs(document).length > 0;
+  HAS_VIDEOS = this.getThumbs(document).length > 0 || this.IS_MY_WALL;
 
   MY_ID = document.querySelector('[target="_self"]')?.href.match(/\/(\d+)\//)[1] || null;
   LOGGED_IN = !!this.MY_ID;
@@ -454,7 +454,12 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
   };
 
   let membersIds = await getMemberFriends(id, 0, 1, by);
-  getMemberFriends(id, 1, 100000, by).then((r) => {
+  /////////
+  ////
+  ///
+  ///
+  //
+  getMemberFriends(id, 1, 3, by).then((r) => {
     membersIds = membersIds.concat(r);
   });
 
@@ -700,30 +705,28 @@ function route() {
     createDownloadButton();
   }
 
-  if (!RULES.HAS_VIDEOS) return;
-
-  const containers = Array.from(
-    RULES.IS_WATCHLATER_KIND
-      ? [RULES.container]
-      : document.querySelectorAll('.thumbs-items:not(.thumbs-members)'),
-  );
-
-  if (containers.length > 1 && !RULES.IS_MEMBER_PAGE) RULES.container = containers[0];
-  containers.forEach((c) => {
-    parseData(c, RULES.IS_MEMBER_PAGE ? c : RULES.container, true);
-  });
-
-  new PreviewAnimation(document.body);
-  new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilterWithHDwithSort);
-
   if (RULES.IS_OTHER_MEMBER_PAGE) {
     initFriendship();
   }
 
   if (RULES.HAS_VIDEOS) {
-    if (!RULES.paginationStrategy.hasPagination) return;
-    createInfiniteScroller(store, parseData, RULES);
+    new PreviewAnimation(document.body);
+
+    const containers = Array.from(
+      RULES.IS_WATCHLATER_KIND
+        ? [RULES.container]
+        : document.querySelectorAll('.thumbs-items:not(.thumbs-members)'),
+    );
+
+    if (containers.length > 1 && !RULES.IS_MEMBER_PAGE) RULES.container = containers[0];
+    containers.forEach((c) => {
+      parseData(c, RULES.IS_MEMBER_PAGE ? c : RULES.container, true);
+    });
+
+    if (RULES.paginationStrategy.hasPagination) createInfiniteScroller(store, parseData, RULES);
   }
+
+  new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilterWithHDwithSort);
 }
 
 //====================================================================================================
