@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.0
+// @version      3.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.spankbang.*/*
 // @match        https://*.spankbang.com/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.9/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=spankbang.com
@@ -49,14 +49,9 @@ class SPANKBANG_RULES {
   container = document.querySelectorAll('.main-container .js-media-list, .main_content_container .video-list')[0];
   HAS_VIDEOS = !!this.getThumbs(document.body).length > 0;
 
-  constructor() {
-    this.paginationStrategy = getPaginationStrategy({
-      paginationSelector: '.paginate-bar, .pagination',
-    });
-
-    const pagination = this.paginationStrategy.getPaginationElement();
-    this.HAS_PAGINATION = pagination && pagination !== document;
-  }
+  paginationStrategy = getPaginationStrategy({
+    paginationSelector: '.paginate-bar, .pagination',
+  });
 
   getThumbs(html) {
     return Array.from(html.querySelectorAll('.video-item:not(.clear-fix), .js-video-item') || []);
@@ -91,7 +86,7 @@ function route() {
     setTimeout(() => getAllUniqueParents(RULES.getThumbs(document.body)).forEach((c) => { parseData(c, c) }), 100);
   }
 
-  if (RULES.HAS_PAGINATION) {
+  if (RULES.paginationStrategy.hasPagination) {
     createInfiniteScroller(store, parseData, RULES);
   }
 }
