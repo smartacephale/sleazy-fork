@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.4.0
+// @version      3.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -10,14 +10,14 @@
 // @exclude      https://*.pornhub.com/embed/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pornhub.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.0/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/494001/PornHub%20Improved.meta.js
 // ==/UserScript==
 
-const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr, findNextSibling, DataManager, createInfiniteScroller } = window.bhutils;
+const { watchElementChildrenCount, getAllUniqueParents, timeToSeconds, sanitizeStr, findNextSibling, DataManager, createInfiniteScroller, getPaginationStrategy } = window.bhutils;
 const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI } = window.jabronioutfit;
 
 const LOGO = `
@@ -46,51 +46,40 @@ const LOGO = `
 ⡮⡪⡪⡳⡵⣕⢗⣝⣞⣞⢮⣻⡺⡮⡯⡯⡯⣯⢯⣟⡾⣽⢽⡽⣽⡺⣽⣳⡳⡕⡈⡢⢑⠌⡄⢔⠸⡘⡜⡜⡜⡜⡜⣎⢯⢮⢯⢯⢯⡳⡽⣝⣗⢕⠇⠁⠀⠂⡂⠂`;
 
 class PORNHUB_RULES {
-    delay = 350;
+  IS_MODEL_PAGE = location.pathname.startsWith('/model/');
+  IS_VIDEO_PAGE = location.pathname.startsWith('/view_video.php');
+  IS_PLAYLIST_PAGE = location.pathname.startsWith('/playlist/');
 
-    IS_MODEL_PAGE = location.pathname.startsWith('/model/');
-    IS_VIDEO_PAGE = location.pathname.startsWith('/view_video.php');
-    IS_PLAYLIST_PAGE = location.pathname.startsWith('/playlist/');
+  paginationStrategy = getPaginationStrategy({
+    paginationSelector: '.paginationGated',
+    fixPaginationLast: (n) => n === 9 ? 999 : n
+  });
 
-    paginationElement = document.querySelector('.paginationGated');
-    paginationOffset = parseInt(new URLSearchParams(location.search).get('page')) || 1;
-    paginationLast = parseInt(document.querySelector('.page_next')?.previousElementSibling.innerText) || 1;
+  container = [...document.querySelectorAll('ul.videos:not([id*=trailer]):not([class*=drop]):not([class*=premium]):not([id*=bottom])')].pop();
+  intersectionObservable = this.container && findNextSibling(this.container);
 
-    CONTAINER = [...document.querySelectorAll('ul.videos:not([id*=trailer]):not([class*=drop]):not([class*=premium]):not([id*=bottom])')].pop();
-    intersectionObservable = this.CONTAINER && findNextSibling(this.CONTAINER);
+  getThumbUrl(thumb) {
+    return thumb.querySelector('.linkVideoThumb').href;
+  }
 
-    constructor() {
-      if (this.paginationLast === 10) this.paginationLast = 999;
-    }
+  getThumbs(html) {
+    const parent = [...html.querySelectorAll('ul.videos:not([id*=trailer]):not([class*=drop]):not([class*=premium]):not([id*=bottom])')].pop() || html;
+    return [...parent.querySelectorAll('li.videoBox.videoblock, li.videoblock')];
+  }
 
-    THUMB_URL(thumb) {
-      return thumb.querySelector('.linkVideoThumb').href;
-    }
+  getThumbImgData(thumb) {
+    const img = thumb.querySelector('.js-videoThumb.thumb.js-videoPreview');
+    const imgSrc = img?.getAttribute('data-mediumthumb') || img?.getAttribute('data-path').replace('{index}', '1');
+    if (!img?.complete || img.naturalWidth === 0) { return ({}); }
+    return { img, imgSrc };
+  }
 
-    GET_THUMBS(html) {
-      const parent = [...html.querySelectorAll('ul.videos:not([id*=trailer]):not([class*=drop]):not([class*=premium]):not([id*=bottom])')].pop() || html;
-      return [...parent.querySelectorAll('li.videoBox.videoblock, li.videoblock')];
-    }
-
-    THUMB_IMG_DATA(thumb) {
-      const img = thumb.querySelector('.js-videoThumb.thumb.js-videoPreview');
-      const imgSrc = img?.getAttribute('data-mediumthumb') || img?.getAttribute('data-path').replace('{index}', '1');
-      if (!img?.complete || img.naturalWidth === 0) { return ({}); }
-      return { img, imgSrc };
-    }
-
-    THUMB_DATA(thumb) {
-        const name = sanitizeStr(thumb.querySelector('.usernameWrap')?.innerText);
-        const title = sanitizeStr(thumb.querySelector('span.title')?.innerText).concat(` user:${name}`);
-        const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
-        return { title, duration };
-    }
-
-    paginationUrlGenerator = (n) => {
-      const url = new URL(location.href);
-      url.searchParams.set('page', n);
-      return url.href;
-    }
+  getThumbData(thumb) {
+    const name = sanitizeStr(thumb.querySelector('.usernameWrap')?.innerText);
+    const title = sanitizeStr(thumb.querySelector('span.title')?.innerText).concat(` user:${name}`);
+    const duration = timeToSeconds(thumb.querySelector('.duration')?.innerText);
+    return { title, duration };
+  }
 }
 
 const RULES = new PORNHUB_RULES();
@@ -99,20 +88,20 @@ const RULES = new PORNHUB_RULES();
 
 function route() {
   if (RULES.IS_VIDEO_PAGE) {
-      const containers = getAllUniqueParents(document.querySelectorAll('li.js-pop.videoBox, li.js-pop.videoblock')).slice(2);
-      containers.forEach(c => parseData(c, c));
+    const containers = getAllUniqueParents(document.querySelectorAll('li.js-pop.videoBox, li.js-pop.videoblock')).slice(2);
+    containers.forEach(c => { parseData(c, c) });
   }
 
-  if (RULES.CONTAINER) {
-      parseData(RULES.CONTAINER);
+  if (RULES.container) {
+    parseData(RULES.container);
   }
 
   if (RULES.IS_PLAYLIST_PAGE) {
-      parseData(RULES.CONTAINER);
-      watchElementChildrenCount(RULES.CONTAINER, () => parseData(RULES.CONTAINER));
+    parseData(RULES.container);
+    watchElementChildrenCount(RULES.container, () => parseData(RULES.container));
   }
 
-  if (RULES.paginationElement) {
+  if (RULES.paginationStrategy.hasPagination) {
     createInfiniteScroller(store, parseData, RULES);
   }
 
