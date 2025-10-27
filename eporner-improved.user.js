@@ -1,21 +1,23 @@
 // ==UserScript==
 // @name         Eporner.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      1.0.2
+// @version      2.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, include/exclude phrases
 // @author       smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork
+// @match        https://*.eporner.com/*
 // @match        https://*.eporner.*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=eporner.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.3/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.5/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // ==/UserScript==
+/* globals show_video_prev */
 
-const { timeToSeconds, sanitizeStr, DataManager, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
+const { timeToSeconds, sanitizeStr, DataManager, createInfiniteScroller, getPaginationStrategy } = window.bhutils;
+const { JabroniOutfitStore, defaultStateWithDuration, JabroniOutfitUI } = window.jabronioutfit;
 
 const LOGO = `
 ⡿⣕⢕⢵⡱⣝⢪⡪⣎⢧⢳⡱⡝⡮⡳⡽⣕⢯⢯⢯⢯⢯⣗⡕⡕⡕⡕⡕⡕⡕⡕⡕⡇⡗⣝⢎⡗⡯⣟⣿⣽⣟⢿⢽⣫⢮⢳⡱⣣⢳
@@ -54,23 +56,21 @@ const LOGO = `
 ⢇⡷⣝⡕⣗⢵⡣⡯⢮⡳⣝⢮⡳⣝⢮⣳⢽⡺⡮⣯⢿⣽⡿⣟⡯⣗⢷⢝⡽⣕⢯⡺⣝⢯⡳⣿⣿⣯⣽⣵⣾⣾⣽⣷⣽⣿⣷⣾⣮⣿`;
 
 class EPORNER_RULES {
-  delay = 350;
+  paginationStrategy = getPaginationStrategy({
+    paginationSelector: '.numlist2',
+  });
 
-  paginationElement = document.querySelector('.numlist2');
-  paginationOffset = 1;
-  paginationLast = 999;
+  container = [...document.querySelectorAll('#vidresults')].pop();
 
-  CONTAINER = [...document.querySelectorAll('#vidresults')].pop();
-
-  THUMB_URL(thumb) {
+  getThumbUrl(thumb) {
     return thumb.querySelector('a').href;
   }
 
-  GET_THUMBS(html) {
+  getThumbs(html) {
     return [...html.querySelectorAll('div[id^=vf][data-id]')];
   }
 
-  THUMB_IMG_DATA(thumb) {
+  getThumbImgData(thumb) {
     const img = thumb.querySelector('img');
     const imgSrc = img?.getAttribute('data-src');
     img.classList.remove('lazyimg');
@@ -82,28 +82,12 @@ class EPORNER_RULES {
     return { img, imgSrc };
   }
 
-  THUMB_DATA(thumb) {
+  getThumbData(thumb) {
     const uploader = sanitizeStr(thumb.querySelector('[title="Uploader"]')?.innerText);
     const title = sanitizeStr(thumb.querySelector('a')?.innerText).concat(` user:${uploader}`);
     const duration = timeToSeconds(thumb.querySelector('[title="Duration"]')?.innerText);
     return { title, duration };
   }
-
-  paginationUrlGenerator = (n) => {
-    const url = new URL(location.href);
-    const [tag, search, offsetOrOrder, order] = url.pathname.split('/').filter(x => x);
-
-    let newPathname = `/${tag}/${search}/${n}/`;
-
-    if (offsetOrOrder || order) {
-      const ord_ = /^\d+$/.test(offsetOrOrder) ? order : offsetOrOrder;
-      newPathname = `${newPathname}${ord_}/`;
-    }
-
-    url.pathname = newPathname;
-    return url.href;
-  }
-
 }
 
 const RULES = new EPORNER_RULES();
@@ -118,18 +102,18 @@ function videoPreview() {
     show_video_prev(id);
   }
 
-  RULES.CONTAINER.addEventListener('mouseover', handleThumbHover);
+  RULES.container.addEventListener('mouseover', handleThumbHover);
 }
 
 //====================================================================================================
 
 function route() {
-  if (RULES.CONTAINER) {
-    parseData(RULES.CONTAINER);
+  if (RULES.container) {
+    parseData(RULES.container);
     videoPreview();
   }
 
-  if (RULES.paginationElement) {
+  if (RULES.paginationStrategy.hasPagination) {
     createInfiniteScroller(store, parseData, RULES);
   }
 
