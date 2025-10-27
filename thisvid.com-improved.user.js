@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      7.0.0
+// @version      7.0.1
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.6/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.5/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
@@ -74,28 +74,18 @@ GM_addStyle(`
   `);
 
 class THISVID_RULES {
-  PAGINATION_ALLOWED = [
-    /\.com\/$/,
-    /\/(categories|tags?)\//,
-    /\/?q=.*/,
-    /\/(\w+-)?(rated|popular|private|newest|winners|updates)\/(\d+\/)?$/,
-    /\/members\/\d+\/\w+_videos\//,
-    /\/playlist\/\d+\//,
-    /\/my_(\w+)_videos\//,
-    /\/my_wall\/#\w+/,
-  ].some((r) => r.test(location.href));
-
   IS_MEMBER_PAGE = /^\/members\/\d+\/$/.test(location.pathname);
   IS_WATCHLATER_KIND = /^\/my_(\w+)_videos\//.test(location.pathname);
   IS_MESSAGES_PAGE = /^\/my_messages\//.test(location.pathname);
   IS_PLAYLIST = /^\/playlist\/\d+\//.test(location.pathname);
   IS_VIDEO_PAGE = /^\/videos\//.test(location.pathname);
+  IS_MY_WALL = /^\/my_wall\//.test(location.pathname);
 
-  PAGE_HAS_VIDEO = this.getThumbs(document).length > 0;
+  HAS_VIDEOS = this.getThumbs(document).length > 0;
 
   MY_ID = document.querySelector('[target="_self"]')?.href.match(/\/(\d+)\//)[1] || null;
   LOGGED_IN = !!this.MY_ID;
-  IS_MY_MEMBER_PAGE = this.LOGGED_IN && !!document.querySelector('.my-avatar');
+  IS_MY_MEMBER_PAGE = this.LOGGED_IN && !!document.querySelector('.my-avatar') && this.IS_MEMBER_PAGE;
   IS_OTHER_MEMBER_PAGE = !this.IS_MY_MEMBER_PAGE && this.IS_MEMBER_PAGE;
   IS_MEMBER_FRIEND =
     this.IS_OTHER_MEMBER_PAGE &&
@@ -527,7 +517,7 @@ function createPrivateFeedButton() {
 
 async function createPrivateFeed() {
   createPrivateFeedButton();
-  if (!window.location.hash.includes('feed')) return;
+  if (!location.hash.includes('feed')) return;
   const isPubKey = window.location.hash.includes('public_feed') ? 'public' : 'private';
   const sortByFeed = window.location.hash.includes('activity')
     ? 'activity'
@@ -696,9 +686,8 @@ function route() {
     delete defaultSchemeWithPrivacyFilterWithHDwithSort.privacyAccess;
   }
 
-  if (RULES.IS_MY_MEMBER_PAGE) {
+  if (RULES.IS_MY_MEMBER_PAGE || RULES.IS_MY_WALL) {
     createPrivateFeed();
-    RULES.PAGE_HAS_VIDEO = true;
   }
 
   if (RULES.IS_MESSAGES_PAGE) {
@@ -711,7 +700,7 @@ function route() {
     createDownloadButton();
   }
 
-  if (!RULES.PAGE_HAS_VIDEO) return;
+  if (!RULES.HAS_VIDEOS) return;
 
   const containers = Array.from(
     RULES.IS_WATCHLATER_KIND
@@ -731,8 +720,8 @@ function route() {
     initFriendship();
   }
 
-  if (RULES.PAGINATION_ALLOWED) {
-    if (!RULES.paginationStrategy?.hasPagination) return;
+  if (RULES.HAS_VIDEOS) {
+    if (!RULES.paginationStrategy.hasPagination) return;
     createInfiniteScroller(store, parseData, RULES);
   }
 }
