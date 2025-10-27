@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ebalka improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.0.1
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -11,7 +11,7 @@
 // @match        https://*.ebalk*.*/*
 // @match        https://*.fuckingbear*.*/*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.9/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=wwwa.ebalka.link
@@ -64,14 +64,9 @@ class EBALKA_RULES {
   container = [...document.querySelectorAll('.content__video')].pop();
   HAS_VIDEOS = !!document.querySelector('.card_video');
 
-  constructor() {
-    this.paginationStrategy = getPaginationStrategy({
-      paginationSelector: '.pagination:not([id *= member])'
-    });
-
-    const pagination = this.paginationStrategy.getPaginationElement();
-    this.HAS_PAGINATION = pagination && pagination !== document;
-  }
+  paginationStrategy = getPaginationStrategy({
+    paginationSelector: '.pagination:not([id *= member])'
+  });
 
   getThumbs(html) {
     return html.querySelectorAll('.card_video');
@@ -129,7 +124,7 @@ function animate() {
 //====================================================================================================
 
 function route() {
-  if (RULES.HAS_PAGINATION) {
+  if (RULES.paginationStrategy.hasPagination) {
     createInfiniteScroller(store, parseData, RULES);
   }
 
