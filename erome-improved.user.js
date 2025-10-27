@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.0.0
+// @version      4.0.1
 // @license      MIT
 // @description  Infinite scroll. Filter photo/video albums. Toggle photos in albums. Skips 18+ dialog
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @run-at       document-idle
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.0/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @downloadURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/492883/Erome%20Improved.meta.js
@@ -64,9 +64,7 @@ GM_addStyle(`
 class EromeRules {
   container = document.querySelector('#albums');
 
-  paginationStrategy = getPaginationStrategy({
-    paginationSelector: '.pagination',
-  });
+  paginationStrategy = getPaginationStrategy({});
 
   isPrivate(thumb) {
     return !!thumb.querySelector('.album-videos');
