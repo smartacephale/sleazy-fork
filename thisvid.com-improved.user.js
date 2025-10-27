@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    http://tampermonkey.net/
-// @version      6.0.3
+// @version      7.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Preview for private videos. Filter: duration, public/private, include/exclude terms. Check access to private vids.  Mass friend request button. Sorts messages. Download button 📼
 // @author       smartacephale
@@ -9,7 +9,7 @@
 // @match        https://*.thisvid.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.6/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.5/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
@@ -30,21 +30,20 @@ const {
   listenEvents,
   replaceElementTag,
   sanitizeStr,
-  chunks,
+  getPaginationStrategy,
   downloader,
   AsyncPool,
   computeAsyncOneAtTime,
   InfiniteScroller,
   createInfiniteScroller,
   DataManager,
-  objectToFormData
+  objectToFormData,
 } = window.bhutils;
 Object.assign(unsafeWindow, { bhutils: window.bhutils });
 const {
   JabroniOutfitStore,
   defaultStateWithDurationAndPrivacyAndHD,
   JabroniOutfitUI,
-  DefaultScheme,
   defaultSchemeWithPrivacyFilterWithHDwithSort,
 } = window.jabronioutfit;
 const { LSKDB } = window.lskdb;
@@ -75,8 +74,6 @@ GM_addStyle(`
   `);
 
 class THISVID_RULES {
-  delay = 350;
-
   PAGINATION_ALLOWED = [
     /\.com\/$/,
     /\/(categories|tags?)\//,
@@ -94,50 +91,37 @@ class THISVID_RULES {
   IS_PLAYLIST = /^\/playlist\/\d+\//.test(location.pathname);
   IS_VIDEO_PAGE = /^\/videos\//.test(location.pathname);
 
+  PAGE_HAS_VIDEO = this.getThumbs(document).length > 0;
+
+  MY_ID = document.querySelector('[target="_self"]')?.href.match(/\/(\d+)\//)[1] || null;
+  LOGGED_IN = !!this.MY_ID;
+  IS_MY_MEMBER_PAGE = this.LOGGED_IN && !!document.querySelector('.my-avatar');
+  IS_OTHER_MEMBER_PAGE = !this.IS_MY_MEMBER_PAGE && this.IS_MEMBER_PAGE;
+  IS_MEMBER_FRIEND =
+    this.IS_OTHER_MEMBER_PAGE &&
+    document.querySelector('.case-left')?.innerText.includes('is in your friends');
+
+  paginationStrategy = getPaginationStrategy({});
+  container = Array.from(document.querySelectorAll('.thumbs-items')).pop();
+
   constructor() {
-    const { pathname } = window.location;
-
-    this.PAGE_HAS_VIDEO = this.GET_THUMBS(document).length > 0;
-
-    this.paginationElement = document.querySelector('.pagination');
-    this.paginationLast = this.getPaginationLast();
-    this.paginationOffset = this.getPaginationOffset();
-    this.paginationUrlGenerator = this.getPaginationGenerator();
-
-    this.CONTAINER = Array.from(document.querySelectorAll('.thumbs-items')).pop();
-
-    this.MY_ID = document.querySelector('[target="_self"]')?.href.match(/\/(\d+)\//)[1] || null;
-    this.LOGGED_IN = !!this.MY_ID;
-    this.IS_MY_MEMBER_PAGE = this.LOGGED_IN && !!document.querySelector('.my-avatar');
-    this.IS_OTHER_MEMBER_PAGE = !this.IS_MY_MEMBER_PAGE && this.IS_MEMBER_PAGE;
-    this.IS_MEMBER_FRIEND =
-      this.IS_OTHER_MEMBER_PAGE &&
-      document.querySelector('.case-left')?.innerText.includes('is in your friends');
-
     if (this.IS_MEMBER_FRIEND) {
       document.querySelector('.profile').classList.add('friendProfile');
     }
 
     if (this.IS_PLAYLIST) {
-      const videoUrl = this.PLAYLIST_THUMB_URL(pathname);
+      const videoUrl = this.PLAYLIST_getThumbUrl(location.pathname);
       const desc = document.querySelector('.tools-left > li:nth-child(4) > .title-description');
       const link = replaceElementTag(desc, 'a');
       link.href = videoUrl;
     }
   }
 
-  getPaginationOffset() {
-    return this.IS_PLAYLIST ? 1 : parseInt(location.pathname.match(/\/(\d+)\/?$/)?.[1]) || 1;
+  isHD(e) {
+    return !e.querySelector('.quality');
   }
 
-  getPaginationLast(doc) {
-    const e = doc || document;
-    return parseInt(e.querySelector('.pagination-next')?.previousElementSibling?.innerText) || 1;
-  }
-
-  IS_HD(e) { return !!!e.querySelector('.quality'); }
-
-  GET_THUMBS(html) {
+  getThumbs(html) {
     if (this.IS_WATCHLATER_KIND) {
       return Array.from(html.querySelectorAll('.thumb-holder'));
     }
@@ -146,39 +130,20 @@ class THISVID_RULES {
     return thumbs.filter((thumb) => !thumb?.parentElement.classList.contains('thumbs-photo'));
   }
 
-  PLAYLIST_THUMB_URL(src) {
+  PLAYLIST_getThumbUrl(src) {
     return src.replace(/playlist\/\d+\/video/, () => 'videos');
   }
 
-  THUMB_URL(thumb) {
+  getThumbUrl(thumb) {
     if (this.IS_WATCHLATER_KIND) {
       return thumb.firstElementChild.href;
     }
     let url = thumb.getAttribute('href');
-    if (this.IS_PLAYLIST) url = this.PLAYLIST_THUMB_URL(url);
+    if (this.IS_PLAYLIST) url = this.PLAYLIST_getThumbUrl(url);
     return url;
   }
 
-  getPaginationGenerator(proxyLocation) {
-    const url = new URL(proxyLocation || window.location);
-
-    if (url.pathname === '/') url.pathname = '/latest-updates/';
-    if (!/\/(\d+)\/?$/.test(url.pathname))
-      url.pathname = `${url.pathname}${this.paginationOffset}/`;
-
-    const paginationUrlGenerator = (n) => {
-      if (this.IS_PLAYLIST) {
-        url.search = `mode=async&function=get_block&block_id=playlist_view_playlist_view&sort_by=added2fav_date&from=${n}&_=${Date.now()}`;
-      } else {
-        url.pathname = url.pathname.replace(/\/\d+\/$/, `/${n}/`);
-      }
-      return url.href;
-    };
-
-    return paginationUrlGenerator;
-  }
-
-  THUMB_IMG_DATA(thumb) {
+  getThumbImgData(thumb) {
     const img = thumb.querySelector('img');
     const privateThumb = thumb.querySelector('.private');
     let imgSrc = img?.getAttribute('data-original');
@@ -200,14 +165,14 @@ class THISVID_RULES {
     return { img, imgSrc };
   }
 
-  THUMB_DATA(thumb) {
+  getThumbData(thumb) {
     const title = sanitizeStr(thumb.querySelector('.title').innerText);
     const duration = timeToSeconds(thumb.querySelector('.thumb > .duration').textContent);
     const view = Number(thumb.querySelector('.view').textContent);
     return { title, duration, view };
   }
 
-  IS_PRIVATE(thumb) {
+  isPrivate(thumb) {
     return !thumb.querySelector('.private');
   }
 }
@@ -222,15 +187,15 @@ function friend(id, message = '') {
 
 function acceptFriendship(id) {
   const body = objectToFormData({
-    action: "confirm_add_to_friends",
-    function: "get_block",
-    block_id: "member_profile_view_view_profile",
-    confirm: "",
-    format: "json",
-    mode: "async"
+    action: 'confirm_add_to_friends',
+    function: 'get_block',
+    block_id: 'member_profile_view_view_profile',
+    confirm: '',
+    format: 'json',
+    mode: 'async',
   });
   const url = `https://thisvid.com/members/${id}/`;
-  return fetch(url, { body, method: "post" });
+  return fetch(url, { body, method: 'post' });
 }
 
 const FRIEND_REQUEST_URL = (id, message = '') =>
@@ -246,7 +211,9 @@ async function getMemberFriends(memberId, start, end, by) {
   if (by === 'activity') friendsURL = 'https://thisvid.com/my_friends_by_activity/';
   if (by === 'popularity') friendsURL = 'https://thisvid.com/my_friends_by_popularity/';
 
-  const pages = range(offset).slice(start, end).map((o) => `${friendsURL}${o}/`);
+  const pages = range(offset)
+    .slice(start, end)
+    .map((o) => `${friendsURL}${o}/`);
   const pagesFetched = pages.map((p) => fetchHtml(p));
   const friends = (await Promise.all(pagesFetched)).flatMap(getMembers);
   return friends;
@@ -254,7 +221,7 @@ async function getMemberFriends(memberId, start, end, by) {
 
 function getMembers(el) {
   const friendsList = el.querySelector('#list_members_friends_items') || el;
-  return Array.from(el?.querySelectorAll('.tumbpu') || [])
+  return Array.from(friendsList.querySelectorAll('.tumbpu') || [])
     .map((e) => e.href.match(/\d+/)?.[0])
     .filter((_) => _);
 }
@@ -278,7 +245,7 @@ async function friendMemberFriends(orientationFilter) {
           }
         });
     })
-    .forEach((f) => spool.push(f));
+    .forEach((f) => { spool.push(f) });
   await spool.run();
 }
 
@@ -385,7 +352,9 @@ async function checkPrivateVideoAccess(url) {
 }
 
 function getUncheckedPrivateThumbs(html = document) {
-  const thumbs = html.querySelectorAll('.tumbpu:has(.private):not(.haveNoAccess):not(haveAccess), .thumb-holder:has(.private):not(.haveNoAccess):not(haveAccess)');
+  const thumbs = html.querySelectorAll(
+    '.tumbpu:has(.private):not(.haveNoAccess):not(haveAccess), .thumb-holder:has(.private):not(.haveNoAccess):not(haveAccess)',
+  );
   return Array.from(thumbs);
 }
 
@@ -393,7 +362,7 @@ const uploadersChecked = new Set();
 
 async function requestAccess() {
   const checkAccess = async (thumb) => {
-    const { access, uploaderURL } = await checkPrivateVideoAccess(RULES.THUMB_URL(thumb));
+    const { access, uploaderURL } = await checkPrivateVideoAccess(RULES.getThumbUrl(thumb));
 
     if (access) {
       thumb.classList.add('haveAccess');
@@ -405,9 +374,9 @@ async function requestAccess() {
       acceptFriendship(uploaderURL);
       friend(uploaderURL);
     }
-  }
+  };
 
-  computeAsyncOneAtTime(getUncheckedPrivateThumbs().map(t => (() => checkAccess(t))));
+  computeAsyncOneAtTime(getUncheckedPrivateThumbs().map((t) => () => checkAccess(t)));
 }
 
 Object.assign(window, { requestAccess });
@@ -466,16 +435,18 @@ const lskdb = new LSKDB();
 async function getMemberVideos(id, type = 'private') {
   const { uploadedPrivate, uploadedPublic, name } = await getMemberData(id);
   const videosCount = type === 'private' ? uploadedPrivate : uploadedPublic;
-  const paginationLast = Math.ceil(videosCount / 48);
 
-  const iteratable_url = RULES.getPaginationGenerator(
-    new URL(`https://thisvid.com/members/${id}/${type}_videos/`),
-  );
+  const url = `https://thisvid.com/members/${id}/${type}_videos/`;
+  const doc = await fetchHtml(url);
+
+  const paginationStrategy = getPaginationStrategy({ doc, url });
+
   const memberVideosGenerator = InfiniteScroller.createPaginationGenerator(
     0,
-    paginationLast,
-    iteratable_url,
+    paginationStrategy.getPaginationLast(),
+    paginationStrategy.getPaginationUrlGenerator(),
   );
+
   return { name, videosCount, memberVideosGenerator };
 }
 
@@ -514,10 +485,7 @@ async function getMembersVideos(id, friendsCount, memberGeneratorCallback, type 
         } else continue;
       }
 
-      const {
-        value: { url } = {},
-        done,
-      } = await currentGenerator.next();
+      const { value: { url } = {}, done } = await currentGenerator.next();
 
       if (done || skipFlag) {
         c += skipCount - 1;
@@ -550,7 +518,9 @@ function createPrivateFeedButton() {
   ];
 
   links.forEach(({ hov, text }) => {
-    const button = parseDom(`<li><a href="https://thisvid.com/my_wall/${hov}" class="selective"><i class="ico-arrow"></i>${text}</a></li>`);
+    const button = parseDom(
+      `<li><a href="https://thisvid.com/my_wall/${hov}" class="selective"><i class="ico-arrow"></i>${text}</a></li>`,
+    );
     container.append(button);
   });
 }
@@ -559,7 +529,11 @@ async function createPrivateFeed() {
   createPrivateFeedButton();
   if (!window.location.hash.includes('feed')) return;
   const isPubKey = window.location.hash.includes('public_feed') ? 'public' : 'private';
-  const sortByFeed = window.location.hash.includes('activity') ? 'activity' : (window.location.hash.includes('popularity') ? 'popularity' : undefined);
+  const sortByFeed = window.location.hash.includes('activity')
+    ? 'activity'
+    : window.location.hash.includes('popularity')
+      ? 'popularity'
+      : undefined;
 
   const container = parseDom('<div class="thumbs-items"></div>');
   const ignored = parseDom('<div class="ignored"><h2>IGNORED:</h2></div>');
@@ -592,12 +566,7 @@ async function createPrivateFeed() {
    .ignored * {  padding: 4px; margin: 5px; }
    .thumbs-items { display: flex; flex-wrap: wrap; }`);
 
-  RULES.intersectionObservable = document.querySelector('.footer');
-  RULES.CONTAINER = container;
-
   const { friendsCount } = await getMemberData(RULES.MY_ID);
-
-  RULES.paginationLast = friendsCount;
 
   const { pageGenerator, skipCurrentMember, filterVideosCount } = await getMembersVideos(
     RULES.MY_ID,
@@ -613,10 +582,15 @@ async function createPrivateFeed() {
       );
     },
     isPubKey,
-    sortByFeed
+    sortByFeed,
   );
 
-  RULES.alternativeGenerator = pageGenerator;
+  Object.assign(RULES, {
+    container,
+    intersectionObservable: document.querySelector('.footer'),
+    alternativeGenerator: pageGenerator
+  });
+  RULES.paginationStrategy.getPaginationLast = () => friendsCount;
 
   const ignoredMembers = lskdb.getAllKeys();
   ignoredMembers.forEach((im) => {
@@ -642,7 +616,7 @@ async function createPrivateFeed() {
       toDelete.push(curr);
       curr = curr.nextElementSibling;
     }
-    toDelete.forEach((e) => e.remove());
+    toDelete.forEach((e) => { e.remove() });
     id = id.slice(4);
     if (ignore) {
       document
@@ -665,13 +639,13 @@ async function createPrivateFeed() {
 
 //====================================================================================================
 
-async function sendMessage(uid, message = 'add me pls') {
-  const url = new URL(
-    `https://thisvid.com/members/${uid}/?action=send_message_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async`,
-  );
-  url.searchParams.append('message', message);
-  await fetch(url.href);
-}
+// async function sendMessage(uid, message = 'add me pls') {
+//   const url = new URL(
+//     `https://thisvid.com/members/${uid}/?action=send_message_complete&function=get_block&block_id=member_profile_view_view_profile&format=json&mode=async`,
+//   );
+//   url.searchParams.append('message', message);
+//   await fetch(url.href);
+// }
 
 function deleteMsg(id) {
   const url = `https://thisvid.com/my_messages/inbox/?mode=async&format=json&action=delete&function=get_block&block_id=list_messages_my_conversation_messages&delete[]=${id}`;
@@ -688,7 +662,7 @@ async function clearMessages() {
   };
 
   await Promise.all(
-    Array.from({ length: RULES.paginationLast }, (_, i) =>
+    Array.from({ length: RULES.paginationStrategy.getPaginationLast() }, (_, i) =>
       fetchHtml(`https://thisvid.com/my_messages/inbox/${i + 1}/`).then((html) => sortMsgs(html)),
     ),
   );
@@ -719,7 +693,7 @@ function route() {
   console.log(SponsaaLogo);
 
   if (!RULES.LOGGED_IN) {
-    delete defaultSchemeWithPrivacyFilterWithHDwithSort.privacyAccess
+    delete defaultSchemeWithPrivacyFilterWithHDwithSort.privacyAccess;
   }
 
   if (RULES.IS_MY_MEMBER_PAGE) {
@@ -741,13 +715,13 @@ function route() {
 
   const containers = Array.from(
     RULES.IS_WATCHLATER_KIND
-      ? [RULES.CONTAINER]
+      ? [RULES.container]
       : document.querySelectorAll('.thumbs-items:not(.thumbs-members)'),
   );
 
-  if (containers.length > 1 && !RULES.IS_MEMBER_PAGE) RULES.CONTAINER = containers[0];
+  if (containers.length > 1 && !RULES.IS_MEMBER_PAGE) RULES.container = containers[0];
   containers.forEach((c) => {
-    parseData(c, RULES.IS_MEMBER_PAGE ? c : RULES.CONTAINER, true);
+    parseData(c, RULES.IS_MEMBER_PAGE ? c : RULES.container, true);
   });
 
   new PreviewAnimation(document.body);
@@ -758,7 +732,7 @@ function route() {
   }
 
   if (RULES.PAGINATION_ALLOWED) {
-    if (!RULES.paginationElement) return;
+    if (!RULES.paginationStrategy?.hasPagination) return;
     createInfiniteScroller(store, parseData, RULES);
   }
 }
@@ -766,7 +740,7 @@ function route() {
 //====================================================================================================
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacyAndHD);
-const { state, localState } = store;
+const { state } = store;
 const { applyFilters, parseData } = new DataManager(RULES, state);
 store.subscribe(applyFilters);
 
