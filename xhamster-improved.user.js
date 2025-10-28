@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XHamster Improved
 // @namespace    http://tampermonkey.net/
-// @version      4.0.0
+// @version      4.0.1
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases. Automatically expand more videos on video page.
 // @author       smartacephale
@@ -75,10 +75,29 @@ const LOGO = `
 
 class XHAMSTER_RULES {
   IS_VIDEO_PAGE = /^\/videos|moments\//.test(location.pathname);
+  IS_PLAYLIST = /^\/my\/favorites\/videos\/\w+/.test(location.pathname);
 
   paginationStrategy = getPaginationStrategy({
     paginationSelector: '.prev-next-list, .test-pager'
   });
+
+  handlePlaylistPagination = () => {
+    // const { collectionId } = unsafeWindow.initials.favoritesContentComponent;
+    this.paginationStrategy = getPaginationStrategy({ paginationSelector: 'nav[class *= "pagination"]' });
+    Object.assign(this.paginationStrategy, {
+      getPaginationLast: () => unsafeWindow.initials.favoritesVideoPaging.maxPages,
+      getPaginationOffset: () => unsafeWindow.initials.favoritesVideoPaging.active,
+      getPaginationUrlGenerator: () => (offset) => {
+        this.container = document.querySelector('.thumb-list');
+        const c2 = this.container.cloneNode(true)
+        unsafeWindow.DM_.parseData(c2);
+        // const url = `https://xhamster.com/api/front/favorite/get-playlist?id=${collectionId}&perPage=60&page=${offset}`;
+        document.querySelector('.prev-next-list-button:last-child > button').click();
+        //console.log(unsafeWindow.DM_);
+        return location.href;
+      }
+    });
+  }
 
   container = [...document.querySelectorAll('.thumb-list')].pop();
 
@@ -174,6 +193,13 @@ function route() {
     createInfiniteScroller(store, parseData, RULES);
   }
 
+  if (RULES.IS_PLAYLIST) {
+    waitForElementExists(document.body, 'nav[class *= "pagination"]', () => {
+      RULES.handlePlaylistPagination();
+      createInfiniteScroller(store, parseData, RULES);
+    });
+  }
+
   parseInPLace();
   setTimeout(parseInPLace, 500);
 
@@ -190,6 +216,8 @@ defaultSchemeWithPrivacyFilter.privacyFilter = [
 console.log(LOGO);
 
 const store = new JabroniOutfitStore(defaultStateWithDurationAndPrivacy);
-const { applyFilters, parseData } = new DataManager(RULES, store.state);
+const DM_ = new DataManager(RULES, store.state);
+const { applyFilters, parseData } = DM_;
+Object.assign(unsafeWindow, { DM_ });
 store.subscribe(applyFilters);
 route();
