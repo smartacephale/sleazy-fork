@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.1
+// @version      2.0.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -10,7 +10,7 @@
 // @match        https://*.cambro.tv/*
 // @exclude      https://*.cambro.tv/*mode=async*
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.9/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.5/dist/jabroni-outfit.umd.js
 // @require      https://cdn.jsdelivr.net/npm/lskdb@1.0.2/dist/lskdb.umd.js
 // @run-at       document-idle
@@ -100,29 +100,27 @@ class CAMWHORES_RULES {
   IS_VIDEO_PAGE = /^\/\d+\//.test(location.pathname);
   IS_LOGGED_IN = document.cookie.includes('kt_member');
 
-  constructor() {
-    this.paginationStrategy = getPaginationStrategy({
-      paginationSelector: '.pagination:not([id *= member])',
-      fixPaginationLast: (x) =>
-        x === 9 ? 999 : x,
-    });
+  paginationStrategy = getPaginationStrategy({
+    paginationSelector: '.pagination:not([id *= member])',
+    fixPaginationLast: (x) => x === 9 ? 999 : x,
+  });
 
-    this.container = this.getContainer();
-    this.HAS_VIDEOS = !!this.container;
+
+    container = this.getContainer();
+    HAS_VIDEOS = !!this.container;
+
+  constructor() {
 
     if (this.IS_FAVOURITES || this.IS_MEMBER_VIDEOS) {
+      const resetContainer = () => {
+        this.container = this.getContainer();
+      };
       this.INTERSECTION_OBSERVABLE = document.querySelector('.footer');
-      watchDomChangesWithThrottle(
-        document.querySelector('.content'),
-        () => {
-          this.container = this.getContainer();
-        },
-        10,
-      );
+      watchDomChangesWithThrottle(document.querySelector('.content'), resetContainer, 10);
     }
   }
 
-  getContainer = (document_ = document) => {
+  getContainer(document_ = document) {
     const pag = this.paginationStrategy.getPaginationElement();
     return (
       pag?.parentElement.querySelector('.list-videos>div>form') ||
@@ -247,9 +245,7 @@ async function getMemberFriends(id) {
   const paginationStrategy = getPaginationStrategy({
     doc,
     url,
-    paginationSelector: '.pagination',
-    fixPaginationLast: (x) =>
-      x === 9 ? 999 : x,
+    fixPaginationLast: (x) => x === 9 ? 999 : x
   });
 
   const paginationLast = paginationStrategy.getPaginationLast();
@@ -456,7 +452,7 @@ function handleLoadedThumbs() {
 
 function shoudIScroll() {
   if (
-    RULES.paginationStrategy.getPaginationElement() &&
+    RULES.paginationStrategy.hasPagination &&
     !RULES.IS_MEMBER_PAGE &&
     !RULES.IS_MINE_MEMBER_PAGE
   ) {
