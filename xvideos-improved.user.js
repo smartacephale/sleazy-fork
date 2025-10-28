@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.1
+// @version      3.0.2
 // @license      MIT
 // @description  Infinite scroll. Filter by duration, include/exclude phrases
 // @author       smartacephale
@@ -62,7 +62,7 @@ class XVIDEOS_RULES {
 
   getThumbImgData() { return ({}); };
 
-  getThumbUrl(thumb) { return thumb.querySelector('.title a').innerText; }
+  getThumbUrl(thumb) { return thumb.querySelector('a').href; }
 
   getThumbData(thumb) {
     const uploader = sanitizeStr(thumb.querySelector('[class*=name]')?.innerText);
