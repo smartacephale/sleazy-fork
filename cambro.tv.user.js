@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Cambro.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.0.2
+// @version      2.0.3
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button
 // @author       smartacephale
@@ -105,12 +105,10 @@ class CAMWHORES_RULES {
     fixPaginationLast: (x) => x === 9 ? 999 : x,
   });
 
-
-    container = this.getContainer();
-    HAS_VIDEOS = !!this.container;
+  container = this.getContainer();
+  HAS_VIDEOS = !!this.container;
 
   constructor() {
-
     if (this.IS_FAVOURITES || this.IS_MEMBER_VIDEOS) {
       const resetContainer = () => {
         this.container = this.getContainer();
@@ -203,15 +201,6 @@ const createDownloadButton = () =>
 
 //====================================================================================================
 
-// since script cannot be reloaded and scroll params need to be reset according to site options
-function shouldReload() {
-  const sortContainer = document.querySelector('.sort');
-  if (!sortContainer) return;
-  watchDomChangesWithThrottle(sortContainer, () => window.location.reload(), 1000);
-}
-
-//====================================================================================================
-
 const DEFAULT_FRIEND_REQUEST_FORMDATA = objectToFormData({
   message: '',
   action: 'add_to_friends_complete',
@@ -273,7 +262,7 @@ async function processFriendship(batchSize = 1) {
       console.log('processFriendshipStarted');
     }
     lskdb.lock(true);
-    const urls = friendlist.map((id) => `${window.location.origin}/members/${id}/`);
+    const urls = friendlist.map((id) => `${location.origin}/members/${id}/`);
     await computeAsyncOneAtTime(
       urls.map((url) => async () => {
         await wait(FRIEND_REQUEST_INTERVAL);
@@ -357,14 +346,8 @@ async function checkPrivateVidsAccess() {
 //====================================================================================================
 
 function getUserInfo(document) {
-  const uploadedCount =
-    parseInt(
-      document.querySelector('#list_videos_uploaded_videos strong')?.innerText.match(/\d+/)[0],
-    ) || 0;
-  const friendsCount =
-    parseInt(
-      document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/).pop(),
-    ) || 0;
+  const uploadedCount = parseInt(document.querySelector('#list_videos_uploaded_videos strong')?.innerText.match(/\d+/)[0]) || 0;
+  const friendsCount = parseInt(document.querySelector('#list_members_friends .headline')?.innerText.match(/\d+/).pop()) || 0;
   return {
     uploadedCount,
     friendsCount,
@@ -372,7 +355,7 @@ function getUserInfo(document) {
 }
 
 async function acceptFriendRequest(id) {
-  const url = `https://www.cambro.tv/my/messages/${id}/`;
+  const url = `${location.origin}/my/messages/${id}/`;
   await fetch(url, {
     headers: {
       Accept: '*/*',
@@ -381,14 +364,14 @@ async function acceptFriendRequest(id) {
     body: `action=confirm_add_to_friends&message_from_user_id=${id}&function=get_block&block_id=list_messages_my_conversation_messages&confirm=Confirm&format=json&mode=async`,
     method: 'POST',
   });
-  await fetchHtml(`https://www.cambro.tv/members/${id}/`).then((doc) =>
+  await fetchHtml(`${location.origin}/members/${id}/`).then((doc) =>
     console.log('userInfo', getUserInfo(doc), url),
   );
 }
 
 function clearMessages() {
   const messagesURL = (id) =>
-    `https://www.cambro.tv/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
+    `${location.origin}/my/messages/?mode=async&function=get_block&block_id=list_members_my_conversations&sort_by=added_date&from_my_conversations=${id}&_=${Date.now()}`;
   const last = Math.ceil(
     parseInt(document.body.innerText.match(/my messages .\d+./gi)[0].match(/\d+/)[0]) / 10,
   );
@@ -401,46 +384,57 @@ function clearMessages() {
           const messages = Array.from(
             html_?.querySelectorAll('#list_members_my_conversations_items .item > a') || [],
           ).map((a) => a.href);
-          messages.forEach((m, j) => { spool.push({ v: () => checkMessageHistory(m), p: 1 }) });
+          messages.forEach((m) => { spool.push({ v: () => checkMessageHistory(m), p: 1 }) });
         }),
       p: 2,
     });
   }
   spool.run();
 
-  let c = 0;
-  function checkMessageHistory(url) {
-    fetchHtml(url).then((html) => {
-      const hasFriendRequest = html.querySelector('input[value=confirm_add_to_friends]');
-      const hasOriginalText = html.querySelector('.original-text')?.innerText;
-      const id = url.match(/\d+/)[0];
-      if (!(hasOriginalText || hasFriendRequest)) {
-        const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
-        spool.push({
-          v: () =>
-            fetch(deleteURL).then((r) => {
-              console.log(
-                r.status === 200 ? ++c : '',
-                r.status,
-                'delete',
-                id,
-                html
-                  .querySelector('.list-messages')
-                  .innerText.replace(/\n|\t/g, ' ')
-                  .replace(/ {2,}/g, ' ')
-                  .trim(),
-              );
-            }),
-          p: 0,
-        });
-      } else {
-        console.log(hasOriginalText, url);
-        if (hasFriendRequest) {
-          spool.push({ v: () => acceptFriendRequest(id), p: 0 });
-        }
-      }
+  let deleteCount = 0;
+
+  function deleteMessage(url, id, message) {
+    const deleteURL = `${url}?mode=async&format=json&function=get_block&block_id=list_messages_my_conversation_messages&action=delete_conversation&conversation_user_id=${id}`;
+    return fetch(deleteURL).then((r) => {
+      console.log(++deleteCount, r.status, 'delete', id, message);
     });
   }
+
+  async function getConversation(url) {
+    const doc = await fetchHtml(url);
+    const hasFriendRequest = !!doc.querySelector('input[value=confirm_add_to_friends]');
+    const hasOriginalText = doc.querySelector('.original-text')?.innerText;
+    const id = url.match(/\d+/)[0];
+    const messages = sanitizeStr(doc.querySelector('.list-messages').innerText);
+    return {
+      id,
+      hasFriendRequest,
+      hasOriginalText,
+      messages
+    }
+  }
+
+  async function checkMessageHistory(url) {
+    const { hasOriginalText, hasFriendRequest, id, messages } = await getConversation(url);
+    if (!(hasOriginalText || hasFriendRequest)) {
+      spool.push({ v: () => deleteMessage(url, id, messages), p: 0 });
+    } else {
+      console.log({ hasOriginalText, url, messages });
+      if (hasFriendRequest) {
+        spool.push({ v: () => acceptFriendRequest(id), p: 0 });
+      }
+    }
+  }
+}
+
+//====================================================================================================
+
+// since script cannot be reloaded and scroll params need to be reset according to site options
+function shouldReload() {
+  const sortContainer = document.querySelector('.sort');
+  if (!sortContainer) return;
+  const reload = () => window.location.reload();
+  watchDomChangesWithThrottle(sortContainer, reload, 1000);
 }
 
 //====================================================================================================
@@ -474,15 +468,14 @@ function route() {
   }
 
   if (RULES.HAS_VIDEOS) {
-    watchDomChangesWithThrottle(
-      document.querySelector('.content'),
-      () => {
-        handleLoadedThumbs();
-        shoudIScroll();
-      },
-      1000,
-      1,
-    );
+    const cb = () => {
+      handleLoadedThumbs();
+      shoudIScroll();
+    };
+    cb();
+    if (RULES.IS_FAVOURITES) {
+      watchDomChangesWithThrottle(document.querySelector('.content'), cb, 1000, 1);
+    }
     new JabroniOutfitUI(store, defaultSchemeWithPrivacyFilter);
     animate();
   }
