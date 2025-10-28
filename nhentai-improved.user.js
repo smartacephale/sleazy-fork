@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai Improved
 // @namespace    http://tampermonkey.net/
-// @version      2.3.0
+// @version      3.0.0
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by include/exclude phrases and languages. Search similar button
 // @author       smartacephale
@@ -12,15 +12,23 @@
 // @match        https://*.e-hentai.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nhentai.net
 // @grant        GM_addStyle
-// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.4.2/dist/billy-herrington-utils.umd.js
+// @require      https://cdn.jsdelivr.net/npm/billy-herrington-utils@1.5.7/dist/billy-herrington-utils.umd.js
 // @require      https://cdn.jsdelivr.net/npm/jabroni-outfit@1.6.4/dist/jabroni-outfit.umd.js
 // @run-at       document-idle
 // @downloadURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.user.js
 // @updateURL https://update.sleazyfork.org/scripts/499435/NHentai%20Improved.meta.js
 // ==/UserScript==
 
-const { parseDom, sanitizeStr, DataManager, InfiniteScroller, createInfiniteScroller } = window.bhutils;
-const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } = window.jabronioutfit;
+const {
+  parseDom,
+  fetchHtml,
+  sanitizeStr,
+  DataManager,
+  createInfiniteScroller,
+  getPaginationStrategy,
+} = window.bhutils;
+const { JabroniOutfitStore, defaultStateInclExclMiscPagination, JabroniOutfitUI, DefaultScheme } =
+  window.jabronioutfit;
 
 const LOGO = `⠡⠡⠡⠡⠡⠅⠅⢥⢡⢡⢠⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⡥⠨⡨⠈⠌⠌⠌⠌⠌⠌⡐
 ⠡⢡⡃⡅⠅⠅⢅⢦⣂⡂⡒⡜⡈⡚⡂⡥⠡⠡⠡⠡⠡⠡⠡⠡⡡⠡⠡⠑⠅⠣⣕⠡⠡⡡⠡⠡⠡⠡⠡⠡⣡⣡⡡⠡⠡⡑⢑⠡⠡⠡⠡⠩⠩⠨⠩⢹⠨⠨⢐⢐
@@ -67,26 +75,22 @@ const LOGO = `⠡⠡⠡⠡⠡⠅⠅⢥⢡⢡⢠⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡
 ⠡⢁⢂⢂⢂⠂⠌⡐⠨⢐⢈⠢⢑⠄⢍⠘⠌⢅⢂⢂⢂⠢⠡⠡⡁⡂⡂⠢⠨⠨⠨⣰⢣⡣⡋⠌⠌⠌⢌⠢⠨⠨⡐⡐⡐⠌⢌⠐⠌⠌⢌⢂⠢⢂⢂⢂⢐⢐⢐⢐`;
 
 class NHENTAI_RULES {
-  delay = 250;
-
   IS_VIDEO_PAGE = /^\/g\/\d+/.test(location.pathname);
   IS_SEARCH_PAGE = /^\/search\//.test(location.pathname);
 
-  paginationOffset = parseInt(new URLSearchParams(location.search).searchParams.get('page')) || 1;
-  paginationElement = document.querySelector('.pagination');
+  paginationStrategy = getPaginationStrategy({});
 
-  paginationLast = parseInt(document.querySelector('.pagination .last')?.href.match(/\d+/)[0]) || 1;
-  CONTAINER = Array.from(document.querySelectorAll('.index-container, .container')).pop();
+  container = Array.from(document.querySelectorAll('.index-container, .container')).pop();
 
-  THUMB_URL(thumb) {
+  getThumbUrl(thumb) {
     return thumb.querySelector('.cover').href;
   }
 
-  GET_THUMBS(html) {
+  getThumbs(html) {
     return html.querySelectorAll('.gallery');
   }
 
-  THUMB_IMG_DATA(thumb) {
+  getThumbImgData(thumb) {
     const img = thumb.querySelector('.cover img');
     let imgSrc = img.getAttribute('data-src') || img.getAttribute('src');
     if (!this.IS_VIDEO_PAGE) imgSrc = imgSrc?.replace('t5', 't3');
@@ -97,46 +101,30 @@ class NHENTAI_RULES {
     return { img, imgSrc };
   }
 
-  THUMB_DATA(thumb) {
+  getThumbData(thumb) {
     const title = sanitizeStr(thumb.querySelector('.caption').innerText);
     const duration = 0;
     return { title, duration };
   }
-
-  paginationUrlGenerator = (offset) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('page', offset);
-    return url.href;
-  };
 }
 
 class _3HENTAI_RULES {
-  delay = 250;
-
   IS_VIDEO_PAGE = /^\/d\/\d+/.test(location.pathname);
   IS_SEARCH_PAGE = /^\/search/.test(location.pathname);
 
-  paginationElement = document.querySelector('.pagination');
-  paginationLast = Math.max(
-    ...Array.from(document.querySelectorAll('.pagination .page-link') || [], (e) =>
-      parseInt(e.innerText),
-    ).filter(Number), 1);
+  paginationStrategy = getPaginationStrategy({});
 
-  CONTAINER = [...document.querySelectorAll('.listing-container')].pop();
+  container = [...document.querySelectorAll('.listing-container')].pop();
 
-  constructor() {
-    Object.assign(this, this.URL_DATA());
-  }
-
-  THUMB_URL(thumb) {
+  getThumbUrl(thumb) {
     return thumb.querySelector('a').href;
   }
 
-  GET_THUMBS(html) {
+  getThumbs(html) {
     return html.querySelectorAll('.doujin-col');
   }
 
-  THUMB_IMG_DATA(thumb) {
+  getThumbImgData(thumb) {
     const img = thumb.querySelector('img');
     let imgSrc = img.getAttribute('data-src') || img.getAttribute('src');
     if (!this.IS_VIDEO_PAGE) imgSrc = imgSrc?.replace('t5', 't3');
@@ -147,60 +135,48 @@ class _3HENTAI_RULES {
     return { img, imgSrc };
   }
 
-  THUMB_DATA(thumb) {
+  getThumbData(thumb) {
     const title = sanitizeStr(thumb.querySelector('.title').innerText);
     const duration = 0;
     return { title, duration };
   }
-
-  URL_DATA() {
-    const url = new URL(window.location.href);
-
-    let paginationOffset = parseInt(url.searchParams.get('page')) || 1;
-    let paginationUrlGenerator = (n) => {
-      url.searchParams.set('page', n);
-      return url.href;
-    };
-
-    if (!this.IS_SEARCH_PAGE) {
-      if (url.pathname === '/') url.pathname = '/1';
-      paginationOffset = parseInt(url.pathname.match(/\d+$/)) || 1;
-      paginationUrlGenerator = (n) => {
-        if (/\d+$/.test(url.pathname)) {
-          url.pathname = url.pathname.replace(/\d+$/, n);
-        } else {
-          url.pathname = `${url.pathname}/${n}`;
-        }
-        return url.href;
-      };
-    }
-
-    return { paginationOffset, paginationUrlGenerator };
-  }
 }
 
 class EHENTAI_RULES {
-  delay = 250;
-
   IS_VIDEO_PAGE = /^\/g\/\d+/.test(location.pathname);
   IS_SEARCH_PAGE = /f_search/.test(location.search) || /^\/tag\//.test(location.pathname);
 
-  paginationElement = [...document.querySelectorAll('.searchnav')].pop();
-  paginationLast = 9999;
-  paginationOffset = 1;
-  CONTAINER = [...document.querySelectorAll('.itg.gld')].pop();
+  container = [...document.querySelectorAll('.itg.gld')].pop();
 
   constructor() {
     if (this.IS_SEARCH_PAGE) {
       this.setThumbnailMode();
     }
-    this.eHentaiNext();
-  }
 
-  paginationUrlGenerator = () => {
-    this.eHentaiNext();
-    return unsafeWindow.PAGINATION_NEXT_;
-  };
+    const eHentaiNext = async () => {
+      if (!unsafeWindow.PAGINATION_NEXT_) {
+        unsafeWindow.PAGINATION_NEXT_ = [...document.querySelectorAll('a#dnext[href]')].pop().href;
+      }
+      const doc = await fetchHtml(unsafeWindow.PAGINATION_NEXT_);
+      unsafeWindow.PAGINATION_NEXT_ = [...doc.querySelectorAll('a#dnext[href]')].pop().href;
+    };
+
+    const paginationUrlGenerator = () => {
+      eHentaiNext();
+      return unsafeWindow.PAGINATION_NEXT_;
+    };
+
+    this.paginationStrategy = getPaginationStrategy({});
+
+    Object.assign(this.paginationStrategy, {
+      getPaginationElement: () => document.querySelector('.searchnav + div + .searchnav'),
+      getPaginationLast: () => 99999999,
+      getPaginationOffset: () => 1,
+      getPaginationUrlGenerator: () => paginationUrlGenerator
+    });
+
+    eHentaiNext();
+  }
 
   setThumbnailMode() {
     const selectInputT = document.querySelector('option[value=t]');
@@ -212,15 +188,15 @@ class EHENTAI_RULES {
     }
   }
 
-  THUMB_URL(thumb) {
+  getThumbUrl(thumb) {
     return thumb.querySelector('a').href;
   }
 
-  GET_THUMBS(html) {
+  getThumbs(html) {
     return html.querySelectorAll('.gl1t');
   }
 
-  THUMB_IMG_DATA(thumb) {
+  getThumbImgData(thumb) {
     const img = thumb.querySelector('img');
     const imgSrc = img.getAttribute('data-lazy-load') || img.getAttribute('src');
     if (!img.getAttribute('data-lazy-load')) return {};
@@ -230,19 +206,11 @@ class EHENTAI_RULES {
     return { img, imgSrc };
   }
 
-  THUMB_DATA(thumb) {
+  getThumbData(thumb) {
     const title = sanitizeStr(thumb.querySelector('.glname').innerText);
     const duration = 0;
     return { title, duration };
   }
-
-  eHentaiNext = async () => {
-    if (!unsafeWindow.PAGINATION_NEXT_) {
-      unsafeWindow.PAGINATION_NEXT_ = [...document.querySelectorAll('a#dnext[href]')].pop().href;
-    }
-    const doc = await bhutils.fetchHtml(unsafeWindow.PAGINATION_NEXT_);
-    unsafeWindow.PAGINATION_NEXT_ = [...doc.querySelectorAll('a#dnext[href]')].pop().href;
-  };
 }
 
 const isNHENTAI = window.location.href.includes('nhentai');
@@ -350,15 +318,15 @@ function route() {
     if (isNHENTAI) findSimilar(state);
   }
 
-  if (RULES.CONTAINER) {
-    parseData(RULES.CONTAINER);
+  if (RULES.container) {
+    parseData(RULES.container);
   }
 
   if (RULES.IS_SEARCH_PAGE && isNHENTAI) {
     filtersUI(state);
   }
 
-  if (RULES.paginationElement) {
+  if (RULES.paginationStrategy.hasPagination) {
     createInfiniteScroller(store, parseData, RULES);
   }
 
