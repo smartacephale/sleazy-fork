@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores.tv Improved
 // @namespace    http://tampermonkey.net/
-// @version      3.0.1
+// @version      3.0.2
 // @license      MIT
 // @description  Infinite scroll (optional). Filter by duration, private/public, include/exclude phrases. Mass friend request button. Download button
 // @author       smartacephale
@@ -90,7 +90,7 @@ class CAMWHORES_RULES {
   IS_MESSAGES = /^\/my\/messages\//.test(location.pathname);
   IS_MEMBER_VIDEOS = /\/members\/\d+\/(favourites\/)?videos/.test(location.pathname);
   IS_COMMUNITY_LIST = /\/members\/$/.test(location.pathname);
-  IS_VIDEO_PAGE = /^\/\d+\//.test(location.pathname);
+  IS_VIDEO_PAGE = /^(\/videos)?\/\d+\//.test(location.pathname);
   IS_LOGGED_IN = document.cookie.includes('kt_member');
 
   paginationStrategy = getPaginationStrategy({
