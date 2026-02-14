@@ -1,34 +1,32 @@
 {
-  "name": "billy-herrington-utils",
-  "description": "daddy told us not to be ashamed of our utils",
-  "version": "2.0.7",
+  "name": "pervert-monkey",
+  "description": "daddy told us not to be ashamed of our userscripts",
+  "version": "1.0.0",
   "license": "MIT",
   "keywords": [
-    "utils",
-    "observer",
-    "dom",
-    "fetch",
-    "arrays",
-    "typescript"
+    "userscript",
+    "tampermonkey",
+    "violentmonkey",
+    "sleazy-fork"
   ],
-  "author": "smartacephale atm.mormon@protonmail.com (https://github.com/smartacephale)",
-  "homepage": "https://github.com/smartacephale/billy-herrington-utils#readme",
+  "author": "ViolentOrangutan atm.mormon@protonmail.com (https://github.com/smartacephale)",
+  "homepage": "https://github.com/smartacephale/sleazy-fork#readme",
   "type": "module",
-  "main": "dist/billy-herrington-utils.umd.js",
-  "module": "dist/billy-herrington-utils.es.js",
-  "types": "dist/index.d.ts",
-  "repository": "github:smartacephale/billy-herrington-utils",
+  "main": "dist/perverpervertmonkey.core.umd.js",
+  "module": "dist/perverpervertmonkey.core.es.js",
+  "types": "dist/perverpervertmonkey.core.es.d.ts",
+  "repository": "github:smartacephale/sleazy-fork",
   "bugs": {
-    "url": "https://github.com/smartacephale/billy-herrington-utils/issues",
+    "url": "https://github.com/smartacephale/sleazy-fork/issues",
     "email": "atm.mormon@protonmail.com"
   },
-  "browser": "dist/billy-herrington-utils.es.js",
-  "unpkg": "dist/billy-herrington-utils.es.js",
+  "browser": "dist/perverpervertmonkey.core.es.js",
+  "unpkg": "dist/perverpervertmonkey.core.es.js",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/billy-herrington-utils.es.js",
-      "require": "./dist/billy-herrington-utils.umd.js"
+      "types": "./dist/perverpervertmonkey.core.es.d.ts",
+      "import": "./dist/perverpervertmonkey.core.es.js",
+      "require": "./dist/perverpervertmonkey.core.umd.js"
     }
   },
   "files": [
@@ -38,8 +36,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:uscripts": "tsc && vite build --mode uscripts",
-    "build:u": "node vite.build.ts"
+    "build:userscripts": "node vite.build.ts"
   },
   "devDependencies": {
     "@types/node": "^25.2.3",

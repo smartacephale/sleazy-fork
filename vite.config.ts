@@ -10,10 +10,19 @@ const buildCoreConfig: UserConfig = {
   build: {
     sourcemap: true,
     minify: false,
+    outDir: 'dist/core',
     lib: {
       entry: path.resolve(__dirname, './src/index.ts'),
       name: 'pervertmonkey.core',
       fileName: (format) => `pervertmonkey.core.${format}.js`,
+    },
+    rollupOptions: {
+      external: ['$'],
+      output: {
+        globals: {
+          $: '$',
+        },
+      },
     },
   },
   plugins: [dts({ rollupTypes: true })],

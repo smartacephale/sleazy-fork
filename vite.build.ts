@@ -60,7 +60,7 @@ const runBuild = async () => {
           target: 'esnext',
           minify: false,
           emptyOutDir: false,
-          outDir: 'dist',
+          outDir: 'dist/userscripts',
           cssCodeSplit: false,
           rollupOptions: {
             output: {

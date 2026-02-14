@@ -1,12 +1,6 @@
 export { DataManager } from './core/data-control';
 export { InfiniteScroller } from './core/infinite-scroll';
 export { getPaginationStrategy } from './core/pagination-parsing';
-export {
-  PaginationStrategy,
-  PaginationStrategyDataParams,
-  PaginationStrategyPathnameParams,
-  PaginationStrategySearchParams,
-} from './core/pagination-parsing/pagination-strategies';
 export { RulesGlobal } from './core/rules';
 export { chunks, range } from './utils/arrays';
 export { wait } from './utils/async';
