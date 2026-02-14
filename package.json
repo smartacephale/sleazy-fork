@@ -1,0 +1,57 @@
+{
+  "name": "billy-herrington-utils",
+  "description": "daddy told us not to be ashamed of our utils",
+  "version": "2.0.7",
+  "license": "MIT",
+  "keywords": [
+    "utils",
+    "observer",
+    "dom",
+    "fetch",
+    "arrays",
+    "typescript"
+  ],
+  "author": "smartacephale atm.mormon@protonmail.com (https://github.com/smartacephale)",
+  "homepage": "https://github.com/smartacephale/billy-herrington-utils#readme",
+  "type": "module",
+  "main": "dist/billy-herrington-utils.umd.js",
+  "module": "dist/billy-herrington-utils.es.js",
+  "types": "dist/index.d.ts",
+  "repository": "github:smartacephale/billy-herrington-utils",
+  "bugs": {
+    "url": "https://github.com/smartacephale/billy-herrington-utils/issues",
+    "email": "atm.mormon@protonmail.com"
+  },
+  "browser": "dist/billy-herrington-utils.es.js",
+  "unpkg": "dist/billy-herrington-utils.es.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/billy-herrington-utils.es.js",
+      "require": "./dist/billy-herrington-utils.umd.js"
+    }
+  },
+  "files": [
+    "src/**/*",
+    "dist/**/*"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build:uscripts": "tsc && vite build --mode uscripts",
+    "build:u": "node vite.build.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "jabroni-outfit": "^2.1.1",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.1",
+    "vite-plugin-dts": "^4.0.3"
+  },
+  "dependencies": {
+    "ix": "^7.0.0",
+    "lskdb": "^1.0.2",
+    "urlpattern-polyfill": "^10.1.0",
+    "vite-plugin-monkey": "^7.1.9"
+  }
+}

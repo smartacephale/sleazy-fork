@@ -1,35 +1,46 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
-	"organizeImports": {
-		"enabled": true
-	},
-	"formatter": {
-		"enabled": true,
-		"indentWidth": 2,
-		"indentStyle": "space",
-		"lineWidth": 100,
-		"lineEnding": "lf"
-	},
-	"javascript": {
-		"formatter": {
-			"quoteStyle": "single",
-			"semicolons": "always"
-		}
-	},
-	"linter": {
-		"enabled": true,
-		"rules": {
-			"recommended": true,
-			"style": {
-				"useNumberNamespace": "off"
-			},
-			"complexity": {
-				"noStaticOnlyClass": "off",
-				"noForEach": "off"
-			},
-			"suspicious": {
-				"noRedundantUseStrict": "off"
-			}
-		}
-	}
+  "$schema": "https://biomejs.dev/schemas/2.2.6/schema.json",
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on",
+        "useSortedKeys": "off"
+      }
+    },
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 92
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always"
+    },
+    "jsxRuntime": "reactClassic"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "complexity": {
+        "noForEach": "off",
+        "noStaticOnlyClass": "off"
+      },
+      "correctness": {
+        "useParseIntRadix": "off"
+      },
+      "recommended": true,
+      "style": {
+        "useNumberNamespace": "off"
+      },
+      "suspicious": {
+        "noRedundantUseStrict": "off"
+      }
+    }
+  }
 }
+

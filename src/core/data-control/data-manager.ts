@@ -1,0 +1,144 @@
+import type { StoreState } from 'jabroni-outfit';
+import { checkHomogenity } from '../../utils/dom';
+import { LazyImgLoader } from '../../utils/observers';
+import type { RulesGlobal } from '../rules';
+import { DataFilter } from './data-filter';
+
+export type DataElement = Record<string, string | number | boolean | HTMLElement>;
+
+export class DataManager {
+  public data = new Map<string, DataElement>();
+  private lazyImgLoader = new LazyImgLoader(
+    (target: Element) => !DataFilter.isFiltered(target as HTMLElement),
+  );
+  public dataFilter: DataFilter;
+
+  constructor(private rules: RulesGlobal) {
+    this.dataFilter = new DataFilter(this.rules);
+  }
+
+  public applyFilters = async (
+    filters: Record<string, boolean> = {},
+    offset = 0,
+  ): Promise<void> => {
+    const filtersToApply = this.dataFilter.selectFilters(filters);
+    if (filtersToApply.length === 0) return;
+
+    const iterator = this.data.values().drop(offset);
+    let finished = false;
+
+    await new Promise((resolve) => {
+      function runBatch(deadline: IdleDeadline) {
+        const updates: { e: HTMLElement; tag: string; condition: boolean }[] = [];
+
+        while (deadline.timeRemaining() > 0) {
+          const { value, done } = iterator.next();
+          finished = !!done;
+          if (done) break;
+
+          for (const f of filtersToApply) {
+            const { tag, condition } = f()(value);
+            updates.push({ e: value.element as HTMLElement, tag, condition });
+          }
+        }
+
+        if (updates.length > 0) {
+          requestAnimationFrame(() => {
+            updates.forEach((u) => {
+              u.e.classList.toggle(u.tag, u.condition);
+            });
+          });
+        }
+
+        if (!finished) {
+          requestIdleCallback(runBatch);
+        } else {
+          resolve(true);
+        }
+      }
+
+      requestIdleCallback(runBatch);
+    });
+  };
+
+  public filterAll = async (offset?: number): Promise<void> => {
+    const keys = Array.from(this.dataFilter.filters.keys());
+    const filters = Object.fromEntries(
+      keys.map((k) => [k, this.rules.store.state[k as keyof StoreState]]),
+    ) as Record<string, boolean>;
+
+    await this.applyFilters(filters, offset);
+  };
+
+  public parseDataParentHomogenity?: Parameters<typeof checkHomogenity>[2];
+
+  public parseData = (
+    html: HTMLElement,
+    container?: HTMLElement,
+    removeDuplicates = false,
+    shouldLazify = true,
+  ): void => {
+    const thumbs = this.rules.getThumbs(html);
+    const dataOffset = this.data.size;
+    const fragment = document.createDocumentFragment();
+    const parent = container || this.rules.container;
+    const homogenity = !!this.parseDataParentHomogenity;
+
+    for (const thumbElement of thumbs) {
+      const url = this.rules.getThumbUrl(thumbElement);
+      if (
+        !url ||
+        this.data.has(url) ||
+        (parent !== container && parent?.contains(thumbElement)) ||
+        (homogenity &&
+          !checkHomogenity(
+            parent,
+            thumbElement.parentElement as HTMLElement,
+            this.parseDataParentHomogenity as object,
+          ))
+      ) {
+        if (removeDuplicates) thumbElement.remove();
+        continue;
+      }
+
+      const data = this.rules.getThumbData(thumbElement);
+      this.data.set(url, { element: thumbElement, ...data });
+
+      if (shouldLazify) {
+        const { img, imgSrc } = this.rules.getThumbImgData(thumbElement);
+        this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
+      }
+
+      fragment.append(thumbElement);
+    }
+
+    this.filterAll(dataOffset).then(() => {
+      requestAnimationFrame(() => {
+        parent.appendChild(fragment);
+      });
+    });
+  };
+
+  public sortBy<K extends keyof DataElement>(key: K, direction = true): void {
+    if (this.data.size < 2) return;
+
+    let sorted: DataElement[] = this.data
+      .values()
+      .toArray()
+      .sort((a: DataElement, b: DataElement) => {
+        return (a[key] as number) - (b[key] as number);
+      });
+
+    if (!direction) sorted = sorted.reverse();
+
+    const container = (sorted[0].element as HTMLElement).parentElement as HTMLElement;
+
+    container.style.visibility = 'hidden';
+
+    sorted.forEach((s) => {
+      container.append(s.element as HTMLElement);
+    });
+
+    container.style.visibility = 'visible';
+  }
+}

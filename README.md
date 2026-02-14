@@ -1,7 +1,27 @@
-# sleazy-fork
+# PervertMonkey
+
 <img alt="Static Badge" src="https://img.shields.io/badge/Tampermonkey-OK-aliceblue?labelColor=lightblue"> <img alt="Static Badge" src="https://img.shields.io/badge/Violentmonkey-OK-slategray?labelColor=skyblue">
 
 ```install scripts:``` https://sleazyfork.org/en/scripts?set=590816
+
+## How it works
+#### So... Listen to this!
+If you are lucky, you can build your own userscript with infinite scroller and content filters with just this setup:
+
+```typescript
+// replace with selectors of your own
+const rules = new RulesGlobal({
+  containerSelector: 'div:has(> article)',
+  thumbsSelector: 'article.thumb-block',
+  titleSelector: 'header.entry-header',
+  durationSelector: '.duration',
+  paginationStrategyOptions: {
+    pathnameSelector: /\/page\/(\d+)\/?$/,
+  },
+  schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
+});
+```
+_see you space cowboy 😘_
 
 ```
 ⠅⠅⠅⠅⠅⠅⠅⠅⠅⠅⠅⠅⠅⠅⠅⢅⢑⠡⠡⠡⠡⠡⠡⠡⠡⠡⢡⢡⢡⠡⡡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⠡⢁
