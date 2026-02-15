@@ -15,9 +15,6 @@ const rules = new RulesGlobal({
   thumbsSelector: 'article.thumb-block',
   titleSelector: 'header.entry-header',
   durationSelector: '.duration',
-  paginationStrategyOptions: {
-    pathnameSelector: /\/page\/(\d+)\/?$/,
-  },
   schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
 });
 ```
