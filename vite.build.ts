@@ -46,13 +46,12 @@ const runBuild = async () => {
 
     try {
       const meta = await getScriptMetaData(filePath);
-      console.log({meta})
       const userscript = {
         ...(defaultMeta as MonkeyUserScript),
         ...meta,
       };
 
-      console.log(userscript)
+      // console.lswog(userscript)
 
       await build({
         configFile: false,
@@ -64,7 +63,7 @@ const runBuild = async () => {
           cssCodeSplit: false,
           rollupOptions: {
             output: {
-              format: 'iife',
+              format: 'esm',
               globals: {
                 'jabroni-outfit': 'jabronioutfit',
               },

@@ -1,20 +1,19 @@
 import { LSKDB } from 'lskdb';
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { GM_addStyle, unsafeWindow } from '$';
-import { InfiniteScroller } from '../../core/infinite-scroll';
-import { getPaginationStrategy } from '../../core/pagination-parsing';
-import { RulesGlobal } from '../../core/rules';
-import { wait } from '../../utils/async';
+import { getPaginationStrategy, InfiniteScroller, RulesGlobal } from '../../core';
 import {
+  circularShift,
   downloader,
+  fetchHtml,
+  objectToFormData,
+  onPointerOverAndLeave,
   parseHtml,
   querySelectorLastNumber,
   querySelectorText,
-} from '../../utils/dom';
-import { onPointerOverAndLeave, Tick } from '../../utils/events';
-import { fetchHtml } from '../../utils/fetch';
-import { circularShift } from '../../utils/math';
-import { objectToFormData } from '../../utils/objects';
+  Tick,
+  wait,
+} from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'CamWhores PervertMonkey',

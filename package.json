@@ -1,7 +1,7 @@
 {
   "name": "pervert-monkey",
   "description": "daddy told us not to be ashamed of our userscripts",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
   "keywords": [
     "userscript",
@@ -12,21 +12,21 @@
   "author": "ViolentOrangutan atm.mormon@protonmail.com (https://github.com/smartacephale)",
   "homepage": "https://github.com/smartacephale/sleazy-fork#readme",
   "type": "module",
-  "main": "dist/perverpervertmonkey.core.umd.js",
-  "module": "dist/perverpervertmonkey.core.es.js",
-  "types": "dist/perverpervertmonkey.core.es.d.ts",
   "repository": "github:smartacephale/sleazy-fork",
   "bugs": {
     "url": "https://github.com/smartacephale/sleazy-fork/issues",
     "email": "atm.mormon@protonmail.com"
   },
-  "browser": "dist/perverpervertmonkey.core.es.js",
-  "unpkg": "dist/perverpervertmonkey.core.es.js",
+  "main": "dist/core/perverpervertmonkey.core.umd.js",
+  "module": "dist/core/perverpervertmonkey.core.es.js",
+  "browser": "dist/core/perverpervertmonkey.core.es.js",
+  "unpkg": "dist/core/perverpervertmonkey.core.es.js",
+  "types": "dist/core/pervertmonkey.core.es.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/perverpervertmonkey.core.es.d.ts",
-      "import": "./dist/perverpervertmonkey.core.es.js",
-      "require": "./dist/perverpervertmonkey.core.umd.js"
+      "types": "./dist/core/pervertmonkey.core.es.d.ts",
+      "import": "./dist/core/perverpervertmonkey.core.es.js",
+      "require": "./dist/core/perverpervertmonkey.core.umd.js"
     }
   },
   "files": [

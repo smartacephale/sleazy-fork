@@ -1,9 +1,7 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { GM_addStyle, unsafeWindow } from '$';
-import { RulesGlobal } from '../../core/rules';
-import { replaceElementTag } from '../../utils/dom';
-import { onPointerOverAndLeave, Tick } from '../../utils/events';
-import { fetchWith } from '../../utils/fetch';
+import { RulesGlobal } from '../../core';
+import { fetchWith, onPointerOverAndLeave, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',

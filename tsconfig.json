@@ -13,12 +13,15 @@
     "moduleDetection": "force",
     "noEmit": true,
     "declaration": true,
-    "typeRoots": ["./dist/index.d.ts", "./src/types", "./node_modules/@types"],
-
+    "typeRoots": [
+      "./dist/core/pervertmonkey.core.es.d.ts",
+      "./src/types",
+      "./node_modules/@types"
+    ],
     "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
   },
-  "include": ["src", "temp"]
+  "include": ["src"]
 }

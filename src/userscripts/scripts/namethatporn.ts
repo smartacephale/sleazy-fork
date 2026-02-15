@@ -1,6 +1,6 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { RulesGlobal } from '../../core/rules';
+import { RulesGlobal } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'NameThatPorn PervertMonkey',

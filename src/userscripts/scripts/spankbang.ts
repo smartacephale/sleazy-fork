@@ -1,16 +1,15 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core/rules';
-import { exterminateVideo, parseHtml } from '../../utils/dom';
-import { onPointerOverAndLeave } from '../../utils/events';
+import { RulesGlobal } from '../../core';
+import { exterminateVideo, onPointerOverAndLeave, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'SpankBang.com PervertMonkey',
   version: '4.0.0',
   description: 'Infinite scroll [optional]. Filter by Title and Duration',
-  match: ["https://*.spankbang.*/*", "https://*.spankbang.com/*"],
+  match: ['https://*.spankbang.*/*', 'https://*.spankbang.com/*'],
   icon: 'https://www.google.com/s2/favicons?sz=64&domain=spankbang.com',
 };
-      
+
 const rules = new RulesGlobal({
   containerSelector: '.main-container .js-media-list, .main_content_container .video-list',
   paginationStrategyOptions: {

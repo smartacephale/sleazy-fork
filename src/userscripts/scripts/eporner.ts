@@ -1,7 +1,7 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { RulesGlobal } from '../../core/rules';
-import { onPointerOverAndLeave } from '../../utils/events';
+import { RulesGlobal } from '../../core';
+import { onPointerOverAndLeave } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',

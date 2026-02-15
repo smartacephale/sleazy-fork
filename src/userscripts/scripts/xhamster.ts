@@ -1,17 +1,17 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { RulesGlobal } from '../../core/rules';
+import { RulesGlobal } from '../../core';
 import {
   exterminateVideo,
+  fetchJson,
   getCommonParents,
   instantiateTemplate,
+  Observer,
+  onPointerOverAndLeave,
   parseHtml,
   waitForElementToAppear,
   watchElementChildrenCount,
-} from '../../utils/dom';
-import { onPointerOverAndLeave } from '../../utils/events';
-import { fetchJson } from '../../utils/fetch';
-import { Observer } from '../../utils/observers';
+} from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster Improved',

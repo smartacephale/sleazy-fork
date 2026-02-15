@@ -1,7 +1,6 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core/rules';
-import { exterminateVideo, parseHtml } from '../../utils/dom';
-import { onPointerOverAndLeave } from '../../utils/events';
+import { RulesGlobal } from '../../core';
+import { exterminateVideo, onPointerOverAndLeave, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Ebalka PervertMonkey',

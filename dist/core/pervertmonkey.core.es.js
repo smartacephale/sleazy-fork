@@ -224,6 +224,11 @@ function querySelectorLast(root = document, selector) {
   const nodes = root.querySelectorAll(selector);
   return nodes.length > 0 ? nodes[nodes.length - 1] : void 0;
 }
+function querySelectorLastNumber(selector, e = document) {
+  var _a3;
+  const text = querySelectorText(e, selector);
+  return Number(((_a3 = text.match(/\d+/g)) == null ? void 0 : _a3.pop()) || 0);
+}
 function querySelectorText(e, selector) {
   var _a3;
   if (typeof selector !== "string") return "";
@@ -284,6 +289,23 @@ function checkHomogenity(a2, b2, options) {
     }
   }
   return true;
+}
+function instantiateTemplate(sourceSelector, attributeUpdates, contentUpdates) {
+  const source = document.querySelector(sourceSelector);
+  const wrapper = document.createElement("div");
+  const clone = source.cloneNode(true);
+  wrapper.append(clone);
+  Object.entries(attributeUpdates).forEach(([attrName, attrValue]) => {
+    wrapper.querySelectorAll(`[${attrName}]`).forEach((element) => {
+      element.setAttribute(attrName, attrValue);
+    });
+  });
+  Object.entries(contentUpdates).forEach(([childSelector, textValue]) => {
+    wrapper.querySelectorAll(childSelector).forEach((element) => {
+      element.innerText = textValue;
+    });
+  });
+  return wrapper.innerHTML;
 }
 function exterminateVideo(video) {
   video.removeAttribute("src");
@@ -8455,7 +8477,6 @@ export {
   DataManager,
   InfiniteScroller,
   LazyImgLoader,
-  MOBILE_UA,
   Observer,
   RegexFilter,
   RulesGlobal,
@@ -8473,6 +8494,7 @@ export {
   findNextSibling,
   getCommonParents,
   getPaginationStrategy,
+  instantiateTemplate,
   memoize,
   objectToFormData,
   onPointerOverAndLeave,
@@ -8481,6 +8503,7 @@ export {
   parseHtml,
   parseIntegerOr,
   querySelectorLast,
+  querySelectorLastNumber,
   querySelectorText,
   range,
   removeClassesAndDataAttributes,

@@ -1,6 +1,6 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core/rules';
-import { parseHtml } from '../../utils/dom';
+import { RulesGlobal } from '../../core';
+import { parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'NHentai PervertMonkey',

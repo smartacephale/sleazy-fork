@@ -208,6 +208,8 @@ export declare class InfiniteScroller {
 
 declare type InfiniteScrollerOptions = Pick<InfiniteScroller, 'rules'> & Partial<InfiniteScroller>;
 
+export declare function instantiateTemplate(sourceSelector: string, attributeUpdates: Record<string, string>, contentUpdates: Record<string, string>): string;
+
 export declare class LazyImgLoader {
     lazyImgObserver: Observer;
     private attributeName;
@@ -222,10 +224,6 @@ declare interface MemoizedFunction<T extends AnyFunction> extends CallableFuncti
     (...args: Parameters<T>): ReturnType<T>;
     clear: () => void;
 }
-
-export declare const MOBILE_UA: {
-    readonly 'User-Agent': string;
-};
 
 export declare function objectToFormData<T extends {}>(obj: T): FormData;
 
@@ -275,6 +273,8 @@ export declare function parseHtml(html: string): HTMLElement;
 export declare function parseIntegerOr(n: string | number, or: number): number;
 
 export declare function querySelectorLast<T extends Element = HTMLElement>(root: ParentNode | undefined, selector: string): T | undefined;
+
+export declare function querySelectorLastNumber(selector: string, e?: ParentNode): number;
 
 export declare function querySelectorText(e: ParentNode, selector?: string): string;
 

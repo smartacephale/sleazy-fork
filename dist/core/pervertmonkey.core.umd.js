@@ -227,6 +227,11 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     const nodes = root.querySelectorAll(selector);
     return nodes.length > 0 ? nodes[nodes.length - 1] : void 0;
   }
+  function querySelectorLastNumber(selector, e = document) {
+    var _a3;
+    const text = querySelectorText(e, selector);
+    return Number(((_a3 = text.match(/\d+/g)) == null ? void 0 : _a3.pop()) || 0);
+  }
   function querySelectorText(e, selector) {
     var _a3;
     if (typeof selector !== "string") return "";
@@ -287,6 +292,23 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       }
     }
     return true;
+  }
+  function instantiateTemplate(sourceSelector, attributeUpdates, contentUpdates) {
+    const source = document.querySelector(sourceSelector);
+    const wrapper = document.createElement("div");
+    const clone = source.cloneNode(true);
+    wrapper.append(clone);
+    Object.entries(attributeUpdates).forEach(([attrName, attrValue]) => {
+      wrapper.querySelectorAll(`[${attrName}]`).forEach((element) => {
+        element.setAttribute(attrName, attrValue);
+      });
+    });
+    Object.entries(contentUpdates).forEach(([childSelector, textValue]) => {
+      wrapper.querySelectorAll(childSelector).forEach((element) => {
+        element.innerText = textValue;
+      });
+    });
+    return wrapper.innerHTML;
   }
   function exterminateVideo(video) {
     video.removeAttribute("src");
@@ -8457,7 +8479,6 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.DataManager = DataManager;
   exports2.InfiniteScroller = InfiniteScroller;
   exports2.LazyImgLoader = LazyImgLoader;
-  exports2.MOBILE_UA = MOBILE_UA;
   exports2.Observer = Observer;
   exports2.RegexFilter = RegexFilter;
   exports2.RulesGlobal = RulesGlobal;
@@ -8475,6 +8496,7 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.findNextSibling = findNextSibling;
   exports2.getCommonParents = getCommonParents;
   exports2.getPaginationStrategy = getPaginationStrategy;
+  exports2.instantiateTemplate = instantiateTemplate;
   exports2.memoize = memoize;
   exports2.objectToFormData = objectToFormData;
   exports2.onPointerOverAndLeave = onPointerOverAndLeave;
@@ -8483,6 +8505,7 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.parseHtml = parseHtml;
   exports2.parseIntegerOr = parseIntegerOr;
   exports2.querySelectorLast = querySelectorLast;
+  exports2.querySelectorLastNumber = querySelectorLastNumber;
   exports2.querySelectorText = querySelectorText;
   exports2.range = range;
   exports2.removeClassesAndDataAttributes = removeClassesAndDataAttributes;
