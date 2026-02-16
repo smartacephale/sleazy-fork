@@ -28,7 +28,8 @@
     "rules": {
       "complexity": {
         "noForEach": "off",
-        "noStaticOnlyClass": "off"
+        "noStaticOnlyClass": "off",
+        "useArrowFunction": "off"
       },
       "correctness": {
         "useParseIntRadix": "off"

@@ -1,6 +1,6 @@
 import type { StoreState } from 'jabroni-outfit';
-import { GM_addStyle } from '$';
-import { RegexFilter } from '../../utils/strings/regexes';
+import { GM_addStyle } from 'vite-plugin-monkey/dist/client';
+import { RegexFilter } from '../../utils';
 import type { RulesGlobal } from '../rules';
 import type { DataElement } from './data-manager';
 

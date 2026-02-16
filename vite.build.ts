@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build, transformWithEsbuild } from 'vite';
-import monkey, { cdn, type MonkeyUserScript } from 'vite-plugin-monkey';
+import monkey, { type MonkeyUserScript } from 'vite-plugin-monkey';
 import defaultMeta from './src/userscripts/meta.json' with { type: 'json' };
 
 async function getScriptMetaData(filePath: string) {
@@ -51,7 +51,7 @@ const runBuild = async () => {
         ...meta,
       };
 
-      // console.lswog(userscript)
+      // console.log(userscript)
 
       await build({
         configFile: false,
@@ -64,9 +64,6 @@ const runBuild = async () => {
           rollupOptions: {
             output: {
               format: 'esm',
-              globals: {
-                'jabroni-outfit': 'jabronioutfit',
-              },
             },
           },
         },
@@ -77,11 +74,8 @@ const runBuild = async () => {
             build: {
               fileName: `${fileName}.user.js`,
               externalGlobals: {
-                // 'urlpattern-polyfill': cdn.jsdelivr('urlpattern-polyfill', 'dist/urlpattern.js'),
-                'jabroni-outfit': cdn.jsdelivr(
-                  'jabronioutfit',
-                  'dist/jabroni-outfit.umd.js',
-                ),
+                '../../utils': ['', ''],
+                '../../core': ['', ''],
               },
             },
           }),

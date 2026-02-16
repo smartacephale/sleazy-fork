@@ -17,10 +17,10 @@ const buildCoreConfig: UserConfig = {
       fileName: (format) => `pervertmonkey.core.${format}.js`,
     },
     rollupOptions: {
-      external: ['$'],
+      external: ['vite-plugin-monkey/dist/client'],
       output: {
         globals: {
-          $: '$',
+          'vite-plugin-monkey/dist/client': 'window', 
         },
       },
     },

@@ -1,6 +1,6 @@
 (function(global2, factory) {
-  typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require("$")) : typeof define === "function" && define.amd ? define(["exports", "$"], factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, factory((global2.pervertmonkey = global2.pervertmonkey || {}, global2.pervertmonkey.core = {}), global2.$));
-})(this, (function(exports2, $$1) {
+  typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require("vite-plugin-monkey/dist/client")) : typeof define === "function" && define.amd ? define(["exports", "vite-plugin-monkey/dist/client"], factory) : (global2 = typeof globalThis !== "undefined" ? globalThis : global2 || self, factory((global2.pervertmonkey = global2.pervertmonkey || {}, global2.pervertmonkey.core = {}), global2.window));
+})(this, (function(exports2, client) {
   "use strict";var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -14,25 +14,22 @@ var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 
   var _i2, _n, _t, _e2, _s2, _l2, _o2, _d, _p2, _g, _C_instances, r_fn, R_fn, b_fn, u_fn, m_fn, a_fn, P_fn, E_fn, S_fn, O_fn, k_fn, x_fn, h_fn, f_fn, T_fn, A_fn, y_fn, w_fn, c_fn, C_fn, _a2, _i3, _n2, _t2, _e3, _s3, _l3, _b;
-  function memoize(fn2) {
-    const cache = /* @__PURE__ */ new Map();
-    const memoizedFunction = ((...args) => {
-      const key = JSON.stringify(args);
-      if (cache.has(key)) {
-        return cache.get(key);
-      }
-      const result = fn2(...args);
-      cache.set(key, result);
-      return result;
-    });
-    return memoizedFunction;
+  function chunks(arr, size) {
+    return Array.from(
+      { length: Math.ceil(arr.length / size) },
+      (_2, i) => arr.slice(i * size, i * size + size)
+    );
   }
-  function objectToFormData(obj) {
-    const formData = new FormData();
-    Object.entries(obj).forEach(([k2, v2]) => {
-      formData.append(k2, v2);
-    });
-    return formData;
+  function* irange(start = 1, step = 1) {
+    for (let i = start; ; i += step) {
+      yield i;
+    }
+  }
+  function range(size, start = 1, step = 1) {
+    return irange(start, step).take(size).toArray();
+  }
+  function wait(milliseconds) {
+    return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
   function splitWith(s, c = ",") {
     return s.split(c).map((s2) => s2.trim()).filter(Boolean);
@@ -40,133 +37,6 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   function sanitizeStr(s) {
     return (s == null ? void 0 : s.replace(/\n|\t/g, " ").replace(/ {2,}/g, " ").trim()) || "";
   }
-  class RegexFilter {
-    constructor(str, flags = "gi") {
-      __publicField(this, "regexes");
-      this.regexes = memoize(this.compileSearchRegex)(str, flags);
-    }
-    // 'dog,bog,f:girl' or r:dog|bog... => [r/dog/i, r/bog/i, r/(^|\ )girl($|\ )/i]
-    compileSearchRegex(str, flags) {
-      try {
-        if (str.startsWith("r:")) return [new RegExp(str.slice(2), flags)];
-        const regexes = splitWith(str).map(
-          (s) => s.replace(/f:(\w+)/g, (_2, w2) => `(^|\\ |,)${w2}($|\\ |,)`)
-          // full word
-        ).map((_2) => new RegExp(_2, flags));
-        return regexes;
-      } catch (_2) {
-        return [];
-      }
-    }
-    hasEvery(str) {
-      return this.regexes.every((r) => r.test(str));
-    }
-    hasNone(str) {
-      return this.regexes.every((r) => !r.test(str));
-    }
-  }
-  const _DataFilter = class _DataFilter {
-    constructor(rules) {
-      __publicField(this, "filters", /* @__PURE__ */ new Map());
-      __publicField(this, "customDataSelectorFns", {});
-      __publicField(this, "filterMapping", {});
-      this.rules = rules;
-      this.registerFilters(rules.customDataSelectorFns);
-      this.applyCSSFilters();
-    }
-    static isFiltered(el2) {
-      return el2.className.includes("filter-");
-    }
-    applyCSSFilters(wrapper) {
-      this.filters.forEach((_2, name) => {
-        const cssRule = `.filter-${name} { display: none !important; }`;
-        if (wrapper) {
-          $$1.GM_addStyle(wrapper(cssRule));
-        } else {
-          $$1.GM_addStyle(cssRule);
-        }
-      });
-    }
-    registerFilters(customFilters) {
-      customFilters.forEach((o) => {
-        if (typeof o === "string") {
-          this.customDataSelectorFns[o] = _DataFilter.customDataSelectorFnsDefault[o];
-          this.registerFilter(o);
-        } else {
-          const k2 = Object.keys(o)[0];
-          this.customDataSelectorFns[k2] = o[k2];
-          this.registerFilter(k2);
-        }
-      });
-    }
-    customSelectorParser(name, selector) {
-      if ("handle" in selector) {
-        return selector;
-      } else {
-        return { handle: selector, deps: [name] };
-      }
-    }
-    registerFilter(customSelectorName) {
-      var _a3;
-      const handler = this.customSelectorParser(
-        customSelectorName,
-        this.customDataSelectorFns[customSelectorName]
-      );
-      const tag = `filter-${customSelectorName}`;
-      (_a3 = [customSelectorName, ...handler.deps || []]) == null ? void 0 : _a3.forEach((name) => {
-        Object.assign(this.filterMapping, { [name]: customSelectorName });
-      });
-      const fn2 = () => {
-        var _a4;
-        const preDefined = (_a4 = handler.$preDefine) == null ? void 0 : _a4.call(handler, this.rules.store.state);
-        return (v2) => {
-          const condition = handler.handle(v2, this.rules.store.state, preDefined);
-          return {
-            condition,
-            tag
-          };
-        };
-      };
-      this.filters.set(customSelectorName, fn2);
-    }
-    selectFilters(filters) {
-      const selectedFilters = Object.keys(filters).filter((k2) => k2 in this.filterMapping).map((k2) => this.filterMapping[k2]).map((k2) => this.filters.get(k2));
-      return selectedFilters;
-    }
-  };
-  __publicField(_DataFilter, "customDataSelectorFnsDefault", {
-    filterDuration: {
-      handle(el2, state, notInRange) {
-        return state.filterDuration && notInRange(el2.duration);
-      },
-      $preDefine: (state) => {
-        const from = state.filterDurationFrom;
-        const to2 = state.filterDurationTo;
-        function notInRange(d2) {
-          return d2 < from || d2 > to2;
-        }
-        return notInRange;
-      },
-      deps: ["filterDurationFrom", "filterDurationTo"]
-    },
-    filterExclude: {
-      handle(el2, state, searchFilter) {
-        if (!state.filterExclude) return false;
-        return !searchFilter.hasNone(el2.title);
-      },
-      $preDefine: (state) => new RegexFilter(state.filterExcludeWords),
-      deps: ["filterExcludeWords"]
-    },
-    filterInclude: {
-      handle(el2, state, searchFilter) {
-        if (!state.filterInclude) return false;
-        return !searchFilter.hasEvery(el2.title);
-      },
-      $preDefine: (state) => new RegexFilter(state.filterIncludeWords),
-      deps: ["filterIncludeWords"]
-    }
-  });
-  let DataFilter = _DataFilter;
   function waitForElementToAppear(parent, selector, callback) {
     const observer = new MutationObserver((_mutations) => {
       const el2 = parent.querySelector(selector);
@@ -329,6 +199,94 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       });
     });
   }
+  function onPointerOverAndLeave(container, subjectSelector, onOver, onLeave) {
+    let target;
+    let onOverFinally;
+    function handleLeaveEvent() {
+      onLeave == null ? void 0 : onLeave(target);
+      onOverFinally == null ? void 0 : onOverFinally();
+      target = void 0;
+    }
+    function handleEvent(e) {
+      const currentTarget = e.target;
+      if (!subjectSelector(currentTarget) || target === currentTarget) return;
+      target = currentTarget;
+      const result = onOver(target);
+      onOverFinally = result == null ? void 0 : result.onOverCallback;
+      const leaveSubject = (result == null ? void 0 : result.leaveTarget) || target;
+      leaveSubject.addEventListener("pointerleave", handleLeaveEvent, {
+        once: true
+      });
+    }
+    container.addEventListener("pointerover", handleEvent);
+  }
+  class Tick {
+    constructor(delay, startImmediate = true) {
+      __publicField(this, "tick");
+      __publicField(this, "callbackFinal");
+      this.delay = delay;
+      this.startImmediate = startImmediate;
+    }
+    start(callback, callbackFinal) {
+      this.stop();
+      this.callbackFinal = callbackFinal;
+      if (this.startImmediate) callback();
+      this.tick = window.setInterval(callback, this.delay);
+    }
+    stop() {
+      if (this.tick !== void 0) {
+        clearInterval(this.tick);
+        this.tick = void 0;
+      }
+      if (this.callbackFinal) {
+        this.callbackFinal();
+        this.callbackFinal = void 0;
+      }
+    }
+  }
+  const MOBILE_UA = {
+    "User-Agent": [
+      "Mozilla/5.0 (Linux; Android 10; K)",
+      "AppleWebKit/537.36 (KHTML, like Gecko)",
+      "Chrome/114.0.0.0 Mobile Safari/537.36"
+    ].join(" ")
+  };
+  async function fetchWith(input, options) {
+    const requestInit = options.init || {};
+    if (options.mobile) {
+      Object.assign(requestInit, { headers: new Headers(MOBILE_UA) });
+    }
+    const r = await fetch(input, requestInit).then((r2) => r2);
+    if (options.type === "json") return await r.json();
+    if (options.type === "html") return parseHtml(await r.text());
+    return await r.text();
+  }
+  const fetchJson = (input) => fetchWith(input, { type: "json" });
+  const fetchHtml = (input) => fetchWith(input, { type: "html" });
+  const fetchText = (input) => fetchWith(input, { type: "text" });
+  function circularShift(n, c = 6, s = 1) {
+    return (n + s) % c || c;
+  }
+  function memoize(fn2) {
+    const cache = /* @__PURE__ */ new Map();
+    const memoizedFunction = ((...args) => {
+      const key = JSON.stringify(args);
+      if (cache.has(key)) {
+        return cache.get(key);
+      }
+      const result = fn2(...args);
+      cache.set(key, result);
+      return result;
+    });
+    return memoizedFunction;
+  }
+  function objectToFormData(obj) {
+    const formData = new FormData();
+    Object.entries(obj).forEach(([k2, v2]) => {
+      formData.append(k2, v2);
+    });
+    return formData;
+  }
   class LazyImgLoader {
     constructor(shouldDelazify) {
       __publicField(this, "lazyImgObserver");
@@ -385,6 +343,170 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       return observer_;
     }
   }
+  function formatTimeToHHMMSS(timeStr) {
+    var _a3, _b2, _c2;
+    const pad = (num) => num.toString().padStart(2, "0");
+    const h = ((_a3 = timeStr.match(/(\d+)\s*h/)) == null ? void 0 : _a3[1]) || "0";
+    const m = ((_b2 = timeStr.match(/(\d+)\s*mi?n/)) == null ? void 0 : _b2[1]) || "0";
+    const s = ((_c2 = timeStr.match(/(\d+)\s*sec/)) == null ? void 0 : _c2[1]) || "0";
+    return `${pad(+h)}:${pad(+m)}:${pad(+s)}`;
+  }
+  function timeToSeconds(timeStr) {
+    const normalized = /[a-zA-Z]/.test(timeStr) ? formatTimeToHHMMSS(timeStr) : timeStr;
+    return normalized.split(":").reverse().reduce((total, unit, index) => total + parseInt(unit, 10) * 60 ** index, 0);
+  }
+  function parseIntegerOr(n, or2) {
+    const num = Number(n);
+    return Number.isSafeInteger(num) ? num : or2;
+  }
+  function parseDataParams(str) {
+    const paramsStr = decodeURI(str.trim()).split(";");
+    return paramsStr.reduce(
+      (acc, s) => {
+        const parsed = s.match(/([+\w]+):([\w\- ]+)?/);
+        if (parsed) {
+          const [, key, value] = parsed;
+          if (value) {
+            key.split("+").forEach((p) => {
+              acc[p] = value;
+            });
+          }
+        }
+        return acc;
+      },
+      {}
+    );
+  }
+  function parseCssUrl(s) {
+    return s.replace(/url\("|"\).*/g, "");
+  }
+  class RegexFilter {
+    constructor(str, flags = "gi") {
+      __publicField(this, "regexes");
+      this.regexes = memoize(this.compileSearchRegex)(str, flags);
+    }
+    // 'dog,bog,f:girl' or r:dog|bog... => [r/dog/i, r/bog/i, r/(^|\ )girl($|\ )/i]
+    compileSearchRegex(str, flags) {
+      try {
+        if (str.startsWith("r:")) return [new RegExp(str.slice(2), flags)];
+        const regexes = splitWith(str).map(
+          (s) => s.replace(/f:(\w+)/g, (_2, w2) => `(^|\\ |,)${w2}($|\\ |,)`)
+          // full word
+        ).map((_2) => new RegExp(_2, flags));
+        return regexes;
+      } catch (_2) {
+        return [];
+      }
+    }
+    hasEvery(str) {
+      return this.regexes.every((r) => r.test(str));
+    }
+    hasNone(str) {
+      return this.regexes.every((r) => !r.test(str));
+    }
+  }
+  const _DataFilter = class _DataFilter {
+    constructor(rules) {
+      __publicField(this, "filters", /* @__PURE__ */ new Map());
+      __publicField(this, "customDataSelectorFns", {});
+      __publicField(this, "filterMapping", {});
+      this.rules = rules;
+      this.registerFilters(rules.customDataSelectorFns);
+      this.applyCSSFilters();
+    }
+    static isFiltered(el2) {
+      return el2.className.includes("filter-");
+    }
+    applyCSSFilters(wrapper) {
+      this.filters.forEach((_2, name) => {
+        const cssRule = `.filter-${name} { display: none !important; }`;
+        if (wrapper) {
+          client.GM_addStyle(wrapper(cssRule));
+        } else {
+          client.GM_addStyle(cssRule);
+        }
+      });
+    }
+    registerFilters(customFilters) {
+      customFilters.forEach((o) => {
+        if (typeof o === "string") {
+          this.customDataSelectorFns[o] = _DataFilter.customDataSelectorFnsDefault[o];
+          this.registerFilter(o);
+        } else {
+          const k2 = Object.keys(o)[0];
+          this.customDataSelectorFns[k2] = o[k2];
+          this.registerFilter(k2);
+        }
+      });
+    }
+    customSelectorParser(name, selector) {
+      if ("handle" in selector) {
+        return selector;
+      } else {
+        return { handle: selector, deps: [name] };
+      }
+    }
+    registerFilter(customSelectorName) {
+      var _a3;
+      const handler = this.customSelectorParser(
+        customSelectorName,
+        this.customDataSelectorFns[customSelectorName]
+      );
+      const tag = `filter-${customSelectorName}`;
+      (_a3 = [customSelectorName, ...handler.deps || []]) == null ? void 0 : _a3.forEach((name) => {
+        Object.assign(this.filterMapping, { [name]: customSelectorName });
+      });
+      const fn2 = () => {
+        var _a4;
+        const preDefined = (_a4 = handler.$preDefine) == null ? void 0 : _a4.call(handler, this.rules.store.state);
+        return (v2) => {
+          const condition = handler.handle(v2, this.rules.store.state, preDefined);
+          return {
+            condition,
+            tag
+          };
+        };
+      };
+      this.filters.set(customSelectorName, fn2);
+    }
+    selectFilters(filters) {
+      const selectedFilters = Object.keys(filters).filter((k2) => k2 in this.filterMapping).map((k2) => this.filterMapping[k2]).map((k2) => this.filters.get(k2));
+      return selectedFilters;
+    }
+  };
+  __publicField(_DataFilter, "customDataSelectorFnsDefault", {
+    filterDuration: {
+      handle(el2, state, notInRange) {
+        return state.filterDuration && notInRange(el2.duration);
+      },
+      $preDefine: (state) => {
+        const from = state.filterDurationFrom;
+        const to2 = state.filterDurationTo;
+        function notInRange(d2) {
+          return d2 < from || d2 > to2;
+        }
+        return notInRange;
+      },
+      deps: ["filterDurationFrom", "filterDurationTo"]
+    },
+    filterExclude: {
+      handle(el2, state, searchFilter) {
+        if (!state.filterExclude) return false;
+        return !searchFilter.hasNone(el2.title);
+      },
+      $preDefine: (state) => new RegexFilter(state.filterExcludeWords),
+      deps: ["filterExcludeWords"]
+    },
+    filterInclude: {
+      handle(el2, state, searchFilter) {
+        if (!state.filterInclude) return false;
+        return !searchFilter.hasEvery(el2.title);
+      },
+      $preDefine: (state) => new RegexFilter(state.filterIncludeWords),
+      deps: ["filterIncludeWords"]
+    }
+  });
+  let DataFilter = _DataFilter;
   class DataManager {
     constructor(rules) {
       __publicField(this, "data", /* @__PURE__ */ new Map());
@@ -480,29 +602,6 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       container.style.visibility = "visible";
     }
   }
-  function wait(milliseconds) {
-    return new Promise((resolve) => setTimeout(resolve, milliseconds));
-  }
-  const MOBILE_UA = {
-    "User-Agent": [
-      "Mozilla/5.0 (Linux; Android 10; K)",
-      "AppleWebKit/537.36 (KHTML, like Gecko)",
-      "Chrome/114.0.0.0 Mobile Safari/537.36"
-    ].join(" ")
-  };
-  async function fetchWith(input, options) {
-    const requestInit = options.init || {};
-    if (options.mobile) {
-      Object.assign(requestInit, { headers: new Headers(MOBILE_UA) });
-    }
-    const r = await fetch(input, requestInit).then((r2) => r2);
-    if (options.type === "json") return await r.json();
-    if (options.type === "html") return parseHtml(await r.text());
-    return await r.text();
-  }
-  const fetchJson = (input) => fetchWith(input, { type: "json" });
-  const fetchHtml = (input) => fetchWith(input, { type: "html" });
-  const fetchText = (input) => fetchWith(input, { type: "text" });
   class InfiniteScroller {
     constructor(options) {
       __publicField(this, "enabled", true);
@@ -1423,43 +1522,6 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     }
   }
   __publicField(PaginationStrategy, "_pathnameSelector", /\/(page\/)?\d+\/?$/);
-  function formatTimeToHHMMSS(timeStr) {
-    var _a3, _b2, _c2;
-    const pad = (num) => num.toString().padStart(2, "0");
-    const h = ((_a3 = timeStr.match(/(\d+)\s*h/)) == null ? void 0 : _a3[1]) || "0";
-    const m = ((_b2 = timeStr.match(/(\d+)\s*mi?n/)) == null ? void 0 : _b2[1]) || "0";
-    const s = ((_c2 = timeStr.match(/(\d+)\s*sec/)) == null ? void 0 : _c2[1]) || "0";
-    return `${pad(+h)}:${pad(+m)}:${pad(+s)}`;
-  }
-  function timeToSeconds(timeStr) {
-    const normalized = /[a-zA-Z]/.test(timeStr) ? formatTimeToHHMMSS(timeStr) : timeStr;
-    return normalized.split(":").reverse().reduce((total, unit, index) => total + parseInt(unit, 10) * 60 ** index, 0);
-  }
-  function parseIntegerOr(n, or2) {
-    const num = Number(n);
-    return Number.isSafeInteger(num) ? num : or2;
-  }
-  function parseDataParams(str) {
-    const paramsStr = decodeURI(str.trim()).split(";");
-    return paramsStr.reduce(
-      (acc, s) => {
-        const parsed = s.match(/([+\w]+):([\w\- ]+)?/);
-        if (parsed) {
-          const [, key, value] = parsed;
-          if (value) {
-            key.split("+").forEach((p) => {
-              acc[p] = value;
-            });
-          }
-        }
-        return acc;
-      },
-      {}
-    );
-  }
-  function parseCssUrl(s) {
-    return s.replace(/url\("|"\).*/g, "");
-  }
   class PaginationStrategyDataParams extends PaginationStrategy {
     getPaginationLast() {
       var _a3;
@@ -8413,68 +8475,6 @@ Expected function or array of functions, received type ${typeof t}.`
       (_b2 = this.onResetCallback) == null ? void 0 : _b2.call(this);
       this.resetOn();
     }
-  }
-  function chunks(arr, size) {
-    return Array.from(
-      { length: Math.ceil(arr.length / size) },
-      (_2, i) => arr.slice(i * size, i * size + size)
-    );
-  }
-  function* irange(start = 1, step = 1) {
-    for (let i = start; ; i += step) {
-      yield i;
-    }
-  }
-  function range(size, start = 1, step = 1) {
-    return irange(start, step).take(size).toArray();
-  }
-  function onPointerOverAndLeave(container, subjectSelector, onOver, onLeave) {
-    let target;
-    let onOverFinally;
-    function handleLeaveEvent() {
-      onLeave == null ? void 0 : onLeave(target);
-      onOverFinally == null ? void 0 : onOverFinally();
-      target = void 0;
-    }
-    function handleEvent(e) {
-      const currentTarget = e.target;
-      if (!subjectSelector(currentTarget) || target === currentTarget) return;
-      target = currentTarget;
-      const result = onOver(target);
-      onOverFinally = result == null ? void 0 : result.onOverCallback;
-      const leaveSubject = (result == null ? void 0 : result.leaveTarget) || target;
-      leaveSubject.addEventListener("pointerleave", handleLeaveEvent, {
-        once: true
-      });
-    }
-    container.addEventListener("pointerover", handleEvent);
-  }
-  class Tick {
-    constructor(delay, startImmediate = true) {
-      __publicField(this, "tick");
-      __publicField(this, "callbackFinal");
-      this.delay = delay;
-      this.startImmediate = startImmediate;
-    }
-    start(callback, callbackFinal) {
-      this.stop();
-      this.callbackFinal = callbackFinal;
-      if (this.startImmediate) callback();
-      this.tick = window.setInterval(callback, this.delay);
-    }
-    stop() {
-      if (this.tick !== void 0) {
-        clearInterval(this.tick);
-        this.tick = void 0;
-      }
-      if (this.callbackFinal) {
-        this.callbackFinal();
-        this.callbackFinal = void 0;
-      }
-    }
-  }
-  function circularShift(n, c = 6, s = 1) {
-    return (n + s) % c || c;
   }
   exports2.DataManager = DataManager;
   exports2.InfiniteScroller = InfiniteScroller;
