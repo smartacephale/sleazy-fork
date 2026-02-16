@@ -48,7 +48,6 @@
   "dependencies": {
     "ix": "^7.0.0",
     "lskdb": "^1.0.2",
-    "pervert-monkey": "^1.0.1",
     "urlpattern-polyfill": "^10.1.0",
     "vite-plugin-monkey": "^7.1.9"
   }
