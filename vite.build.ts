@@ -3,8 +3,10 @@ import { basename, dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build, transformWithEsbuild } from 'vite';
 import monkey, { type MonkeyUserScript } from 'vite-plugin-monkey';
+import pkg from './package.json' with { type: 'json' };
 import defaultMeta from './src/userscripts/meta.json' with { type: 'json' };
 
+const { version } = pkg;
 async function getScriptMetaData(filePath: string) {
   const code = readFileSync(filePath, 'utf-8');
 
@@ -50,6 +52,13 @@ const runBuild = async () => {
         ...(defaultMeta as MonkeyUserScript),
         ...meta,
       };
+
+      Object.assign(userscript, {
+        require: [
+          `https://cdn.jsdelivr.net/npm/pervert-monkey@${version}/dist/core/pervertmonkey.core.umd.js`,
+          'data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;',
+        ],
+      });
 
       // console.log(userscript)
 

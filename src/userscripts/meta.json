@@ -7,9 +7,5 @@
   "homepage": "https://github.com/smartacephale/sleazy-fork",
   "homepageURL": "https://github.com/smartacephale/sleazy-fork",
   "source": "github:smartacephale/sleazy-fork",
-  "supportURL": "https://github.com/smartacephale/sleazy-fork/issues",
-  "require": [
-    "https://cdn.jsdelivr.net/npm/pervert-monkey@latest/dist/core/pervertmonkey.core.umd.js",
-    "data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;"
-  ]
+  "supportURL": "https://github.com/smartacephale/sleazy-fork/issues"
 }
