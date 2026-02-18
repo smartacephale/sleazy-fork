@@ -7,7 +7,6 @@ export const meta: MonkeyUserScript = {
     'Adds model links for CamWhores, webcamrecordings, recu.me, camvideos, privat-zapisi',
   match: ['https://camgirlfinder.net/*'],
   grant: 'none',
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=camgirlfinder.net',
 };
 
 interface Website {

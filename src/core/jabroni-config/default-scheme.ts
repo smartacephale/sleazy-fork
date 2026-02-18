@@ -61,6 +61,7 @@ export const DefaultScheme = [
   },
   {
     title: 'Advanced',
+    collapsed: true,
     content: [
       {
         infiniteScrollEnabled: true,

@@ -10,7 +10,7 @@ import {
   fetchHtml,
   getCommonParents,
   objectToFormData,
-  onPointerOverAndLeave,
+  OnHover,
   parseCssUrl,
   parseHtml,
   querySelectorLastNumber,
@@ -21,11 +21,10 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'ThisVid.com Improved',
-  version: '8.0.0',
+  version: '8.0.1',
   description:
     'Infinite scroll [optional]. Preview for private videos. Filter: title, duration, public/private. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
   match: ['https://*.thisvid.com/*'],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=thisvid.com',
 };
 
 const $ = (unsafeWindow as any).$;
@@ -386,7 +385,7 @@ function animatePreview(_: HTMLElement) {
   }
 
   function animate(container: HTMLElement) {
-    onPointerOverAndLeave(
+    OnHover.create(
       container,
       (target) => !!target.getAttribute('src'),
       (target) => {

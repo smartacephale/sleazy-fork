@@ -1,18 +1,17 @@
 // ==UserScript==
 // @name         SpankBang.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.0
+// @version      4.0.1
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title and Duration
 // @license      MIT
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=spankbang.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
 // @homepageURL  https://github.com/smartacephale/sleazy-fork
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
-// @match        https://*.spankbang.*/*
 // @match        https://*.spankbang.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.6/dist/core/pervertmonkey.core.umd.js
+// @match        https://*.spankbang.*/*
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.7/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -56,7 +55,7 @@
         vid.remove();
       };
     }
-    utils.onPointerOverAndLeave(
+    utils.OnHover.create(
       container,
       (e) => e.tagName === "IMG",
       (e) => {

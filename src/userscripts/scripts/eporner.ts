@@ -1,14 +1,13 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
 import { RulesGlobal } from '../../core';
-import { onPointerOverAndLeave } from '../../utils';
+import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.1',
+  version: '2.0.2',
   description: 'Infinite scroll [optional], Filter by Title, Duration and HD',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=eporner.com',
 };
 
 const show_video_prev = (unsafeWindow as any).show_video_prev;
@@ -77,7 +76,7 @@ const rules = new RulesGlobal({
 });
 
 function animatePreview(doc: HTMLElement) {
-  onPointerOverAndLeave(
+  OnHover.create(
     doc,
     (e) => e instanceof HTMLImageElement,
     (e) => {

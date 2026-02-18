@@ -1,14 +1,13 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
 import { RulesGlobal } from '../../core';
-import { exterminateVideo, onPointerOverAndLeave, parseHtml } from '../../utils';
+import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'XVideos Improved',
-  version: '4.0.0',
+  version: '4.0.1',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: 'https://*.xvideos.com/*',
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=xvideos.com',
 };
 
 const xv = (unsafeWindow as any).xv;
@@ -63,13 +62,10 @@ function animatePreview(container: HTMLElement) {
   }
 
   function getVideoURL(src: string) {
-    return src
-      .replace(/thumbs169l{1,}/, 'videopreview')
-      .replace(/\/\w+\.\d+\.\w+/, '_169.mp4')
-      .replace(/(-\d+)_169\.mp4/, (_, b) => `_169${b}.mp4`);
+    return src.replace(/\w+\.\w+$/, () => 'preview.mp4');
   }
 
-  onPointerOverAndLeave(
+  OnHover.create(
     container,
     (target) => target.tagName === 'IMG' && target.id.includes('pic_'),
     (target) => {

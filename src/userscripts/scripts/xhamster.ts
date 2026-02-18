@@ -7,7 +7,7 @@ import {
   getCommonParents,
   instantiateTemplate,
   Observer,
-  onPointerOverAndLeave,
+  OnHover,
   parseHtml,
   waitForElementToAppear,
   watchElementChildrenCount,
@@ -15,11 +15,10 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster Improved',
-  version: '5.0.0',
+  version: '5.0.1',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
-  match: ['https://*.xhamster.*/*', 'https://*.xhamster.com/*'],
+  match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
   exclude: 'https://*.xhamster.com/embed*',
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=xhamster.com',
 };
 
 const IS_VIDEO_PAGE = /^\/videos|moments\//.test(location.pathname);
@@ -145,7 +144,7 @@ function animatePreview() {
     return () => exterminateVideo(video);
   }
 
-  onPointerOverAndLeave(
+  OnHover.create(
     document.body,
     (e) => e.classList.contains('thumb-image-container__image'),
     (e) => {

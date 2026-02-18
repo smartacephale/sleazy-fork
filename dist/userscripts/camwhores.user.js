@@ -1,19 +1,18 @@
 // ==UserScript==
 // @name         CamWhores PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.3
+// @version      3.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button
 // @license      MIT
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=3hentai.net
 // @homepage     https://github.com/smartacephale/sleazy-fork
 // @homepageURL  https://github.com/smartacephale/sleazy-fork
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
-// @match        https://*.camwhores.*/*
 // @match        https://*.camwhores.tv
+// @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.6/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.7/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -146,7 +145,7 @@
     function rotateImg(src, count) {
       return src.replace(/(\d)(?=\.jpg$)/, (_, n) => `${utils.circularShift(parseInt(n), count)}`);
     }
-    utils.onPointerOverAndLeave(
+    utils.OnHover.create(
       container,
       (target) => target.tagName === "IMG" && target.classList.contains("thumb") && !!target.getAttribute("src") && !/data:image|avatar/.test(target.getAttribute("src")),
       (_target) => {

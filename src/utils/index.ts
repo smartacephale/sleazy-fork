@@ -19,7 +19,9 @@ export {
   watchDomChangesWithThrottle,
   watchElementChildrenCount,
 } from './dom';
-export { onPointerOverAndLeave, Tick } from './events';
+
+export { OnHover, Tick } from './events';
+
 export {
   fetchHtml,
   fetchJson,

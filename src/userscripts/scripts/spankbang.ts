@@ -1,13 +1,12 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { RulesGlobal } from '../../core';
-import { exterminateVideo, onPointerOverAndLeave, parseHtml } from '../../utils';
+import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'SpankBang.com PervertMonkey',
-  version: '4.0.0',
+  version: '4.0.1',
   description: 'Infinite scroll [optional]. Filter by Title and Duration',
-  match: ['https://*.spankbang.*/*', 'https://*.spankbang.com/*'],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=spankbang.com',
+  match: ['https://*.spankbang.com/*', 'https://*.spankbang.*/*'],
 };
 
 const rules = new RulesGlobal({
@@ -47,7 +46,7 @@ function animatePreview(container: HTMLElement) {
     };
   }
 
-  onPointerOverAndLeave(
+  OnHover.create(
     container,
     (e) => e.tagName === 'IMG',
     (e) => {

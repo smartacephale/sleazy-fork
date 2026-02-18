@@ -4,6 +4,23 @@
 
 ```install scripts:``` https://sleazyfork.org/en/scripts?set=590816
 
+## Userscripts
+```shell
+src/userscripts/scripts
+```
+
+## Build
+```shell
+npm run build             # build core
+npm run build:userscripts # build userscripts
+```
+
+## Dev
+```shell
+# go to ./src/index.ts and import any userscript then run:
+npm run dev
+```
+
 ## How it works
 #### So... Listen to this!
 If you are lucky, you can build your own userscript with infinite scroller and content filters with just this setup:
@@ -18,6 +35,9 @@ const rules = new RulesGlobal({
   schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
 });
 ```
+
+Use `RulesGlobal` from `src/core/rules` as documentation.
+
 _see you space cowboy 😘_
 
 ```

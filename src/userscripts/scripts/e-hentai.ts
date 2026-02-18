@@ -7,7 +7,6 @@ export const meta: MonkeyUserScript = {
   version: '1.0.0',
   description: 'Infinite scroll [optional], Filter by Title',
   match: ['https://*.e-hentai.org/*'],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=e-hentai.org',
 };
 
 const rules = new RulesGlobal({

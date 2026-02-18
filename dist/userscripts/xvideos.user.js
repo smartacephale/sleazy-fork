@@ -1,17 +1,16 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    pervertmonkey
-// @version      4.0.0
+// @version      4.0.1
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
 // @homepageURL  https://github.com/smartacephale/sleazy-fork
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xvideos.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.6/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.7/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -70,9 +69,9 @@
       };
     }
     function getVideoURL(src) {
-      return src.replace(/thumbs169l{1,}/, "videopreview").replace(/\/\w+\.\d+\.\w+/, "_169.mp4").replace(/(-\d+)_169\.mp4/, (_, b) => `_169${b}.mp4`);
+      return src.replace(/\w+\.\w+$/, () => "preview.mp4");
     }
-    utils.onPointerOverAndLeave(
+    utils.OnHover.create(
       container,
       (target) => target.tagName === "IMG" && target.id.includes("pic_"),
       (target) => {

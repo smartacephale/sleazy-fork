@@ -1,14 +1,13 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { GM_addStyle, unsafeWindow } from '$';
 import { RulesGlobal } from '../../core';
-import { fetchWith, onPointerOverAndLeave, replaceElementTag, Tick } from '../../utils';
+import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.0',
+  version: '5.0.1',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://motherless.com/*'],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=motherless.com',
 };
 
 (unsafeWindow as any).__is_premium = true;
@@ -92,7 +91,7 @@ function animatePreview(_: HTMLElement) {
     return { onOverCallback, leaveTarget: container };
   }
 
-  onPointerOverAndLeave(
+  OnHover.create(
     document.body,
     (e) => {
       const container = e.closest('.desktop-thumb.video') as HTMLElement;

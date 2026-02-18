@@ -1,6 +1,4 @@
-import { wait } from '../../utils/async';
-import { fetchHtml } from '../../utils/fetch';
-import { Observer } from '../../utils/observers';
+import { fetchHtml, Observer, wait } from '../../utils';
 import type { PaginationStrategy } from '../pagination-parsing/pagination-strategies';
 import type { RulesGlobal } from '../rules';
 

@@ -3,12 +3,11 @@ import { RulesGlobal } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'PornHub PervertMonkey',
-  version: '4.0.0',
+  version: '4.0.1',
   description:
     'Infinite scroll [optional]. Filter by Title and Duration',
   match: ['https://*.pornhub.com/*'],
   exclude: 'https://*.pornhub.com/embed/*',
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=pornhub.com',
 };
 
 const rules = new RulesGlobal({

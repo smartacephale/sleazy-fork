@@ -1,6 +1,5 @@
 import type { StoreState } from 'jabroni-outfit';
-import { checkHomogenity } from '../../utils/dom';
-import { LazyImgLoader } from '../../utils/observers';
+import { checkHomogenity, LazyImgLoader } from '../../utils';
 import type { RulesGlobal } from '../rules';
 import { DataFilter } from './data-filter';
 

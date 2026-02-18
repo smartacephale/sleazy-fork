@@ -1,1 +1,1 @@
-import './scripts/3hentai';
+import './scripts/pornhub';

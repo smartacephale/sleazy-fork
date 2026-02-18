@@ -132,6 +132,7 @@ declare const DefaultScheme: [{
     }];
 }, {
     readonly title: "Advanced";
+    readonly collapsed: true;
     readonly content: [{
         readonly infiniteScrollEnabled: true;
         readonly label: "infinite scroll";
@@ -241,10 +242,22 @@ export declare class Observer {
 
 declare type OffsetGenerator<T = GeneratorResult> = Generator<T> | AsyncGenerator<T>;
 
-export declare function onPointerOverAndLeave(container: HTMLElement, subjectSelector: (target: HTMLElement) => boolean, onOver: (target: HTMLElement) => {
-    onOverCallback?: () => void;
-    leaveTarget?: HTMLElement;
-} | void, onLeave?: (target: HTMLElement) => void): void;
+export declare class OnHover {
+    private container;
+    private subjectSelector;
+    private onOver;
+    private onLeave?;
+    private handleLeaveEvent;
+    private handleEvent;
+    private target;
+    private leaveSubject;
+    private onOverFinally;
+    constructor(container: HTMLElement, subjectSelector: (target: HTMLElement) => boolean, onOver: (target: HTMLElement) => void | {
+        onOverCallback?: () => void;
+        leaveTarget?: HTMLElement;
+    }, onLeave?: ((target: HTMLElement) => void) | undefined);
+    static create(...args: ConstructorParameters<typeof OnHover>): OnHover;
+}
 
 declare class PaginationStrategy {
     doc: Document;

@@ -1,17 +1,16 @@
 // ==UserScript==
 // @name         Erome PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.0
+// @version      5.0.1
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Video/Photo albums
 // @license      MIT
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
 // @homepageURL  https://github.com/smartacephale/sleazy-fork
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        *://*.erome.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.6/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.7/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -54,11 +53,11 @@
         title: "Filter Albums",
         content: [
           {
-            filterVideoAlbums: true,
+            filterVideoAlbums: false,
             label: "video albums"
           },
           {
-            filterPhotoAlbums: true,
+            filterPhotoAlbums: false,
             label: "photo albums"
           }
         ]

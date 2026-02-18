@@ -7,7 +7,7 @@ import {
   downloader,
   fetchHtml,
   objectToFormData,
-  onPointerOverAndLeave,
+  OnHover,
   parseHtml,
   querySelectorLastNumber,
   querySelectorText,
@@ -17,12 +17,11 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'CamWhores PervertMonkey',
-  version: '3.0.3',
+  version: '3.0.4',
   description:
     'Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button',
-  match: ['https://*.camwhores.*/*', 'https://*.camwhores.tv'],
+  match: ['https://*.camwhores.tv', 'https://*.camwhores.*/*'],
   exclude: 'https://*.camwhores.tv/*mode=async*',
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=3hentai.net',
 };
 
 const $ = (unsafeWindow as any).$;
@@ -102,7 +101,7 @@ function animatePreview(container: HTMLElement) {
     return src.replace(/(\d)(?=\.jpg$)/, (_, n) => `${circularShift(parseInt(n), count)}`);
   }
 
-  onPointerOverAndLeave(
+  OnHover.create(
     container,
     (target) =>
       target.tagName === 'IMG' &&

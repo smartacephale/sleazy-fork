@@ -4,15 +4,14 @@ import {
   querySelectorLast,
   querySelectorText,
   removeClassesAndDataAttributes,
+  sanitizeStr,
+  timeToSeconds,
   waitForElementToDisappear,
-} from '../../utils/dom';
-import { timeToSeconds } from '../../utils/parsers';
-import { sanitizeStr } from '../../utils/strings';
+} from '../../utils';
 import { DataManager } from '../data-control';
 import type { DataSelectorFn } from '../data-control/data-filter';
 import { InfiniteScroller, type OffsetGenerator } from '../infinite-scroll/';
-import { DefaultScheme, type SchemeOptions } from '../jabroni-config/default-scheme';
-import { StoreStateDefault } from '../jabroni-config/default-store';
+import { DefaultScheme, type SchemeOptions, StoreStateDefault } from '../jabroni-config';
 import { getPaginationStrategy } from '../pagination-parsing';
 import type { PaginationStrategy } from '../pagination-parsing/pagination-strategies';
 
@@ -244,7 +243,7 @@ export class RulesGlobal {
       this.schemeOptions as Parameters<typeof setupScheme>[0],
       DefaultScheme,
     );
-    this.gui = new JabronioGUI(scheme, this.store);
+    this.gui = new JabronioGUI(scheme, this.store, 'PervertMonkey');
     return this.gui;
   }
 

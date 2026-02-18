@@ -1,2 +1,2 @@
-export { onPointerOverAndLeave } from './on-pointer-over-and-leave';
+export { OnHover } from './on-hover';
 export { Tick } from './tick';

@@ -1,19 +1,18 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { RulesGlobal } from '../../core';
-import { exterminateVideo, onPointerOverAndLeave, parseHtml } from '../../utils';
+import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Ebalka PervertMonkey',
-  version: '3.0.0',
+  version: '3.0.1',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: [
-    'https://a.ebalka.love/*',
     'https://b.ebalka.zip/*',
+    'https://a.ebalka.love/*',
     'https://*ebalka.*.*/*',
     'https://*.ebalk*.*/*',
     'https://*.fuckingbear*.*/*',
   ],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=ebalka.nl',
 };
 
 const rules = new RulesGlobal({
@@ -45,7 +44,7 @@ function animatePreview(container: HTMLElement) {
     };
   }
 
-  onPointerOverAndLeave(
+  OnHover.create(
     container,
     (target) => target.tagName === 'IMG',
     (target) => {

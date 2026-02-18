@@ -6,7 +6,6 @@ export const meta: MonkeyUserScript = {
   version: '1.0.0',
   description: 'Infinite scroll [optional], Filter by Title',
   match: 'https://*.3hentai.net/*',
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=3hentai.net',
 };
 
 const rules = new RulesGlobal({

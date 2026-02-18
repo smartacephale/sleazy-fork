@@ -4,10 +4,9 @@ import { parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'NHentai PervertMonkey',
-  version: '4.0.0',
+  version: '4.0.1',
   description: 'Infinite scroll [optional], Filter by Title',
-  match: ['https://*.nhentai.*/*', 'https://*.nhentai.net/*'],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=nhentai.net',
+  match: ['https://*.nhentai.net/*', 'https://*.nhentai.*/*'],
 };
 
 const IS_TITLE_PAGE = /^\/g\/\d+/.test(location.pathname);

@@ -4,10 +4,9 @@ import { RulesGlobal } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Erome PervertMonkey',
-  version: '5.0.0',
+  version: '5.0.1',
   description: 'Infinite scroll [optional], Filter by Title and Video/Photo albums',
   match: ['*://*.erome.com/*'],
-  icon: 'https://www.google.com/s2/favicons?sz=64&domain=erome.com',
 };
 
 const $ = (unsafeWindow as any).$;
@@ -44,11 +43,11 @@ const rules = new RulesGlobal({
       title: 'Filter Albums',
       content: [
         {
-          filterVideoAlbums: true,
+          filterVideoAlbums: false,
           label: 'video albums',
         },
         {
-          filterPhotoAlbums: true,
+          filterPhotoAlbums: false,
           label: 'photo albums',
         },
       ],

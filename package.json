@@ -1,7 +1,7 @@
 {
   "name": "pervert-monkey",
   "description": "daddy told us not to be ashamed of our userscripts",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "license": "MIT",
   "keywords": [
     "userscript",
@@ -36,11 +36,11 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:userscripts": "node vite.build.ts"
+    "build:userscripts": "node vite.build.userscripts.ts"
   },
   "devDependencies": {
     "@types/node": "^25.2.3",
-    "jabroni-outfit": "^2.1.1",
+    "jabroni-outfit": "^2.1.2",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
     "vite-plugin-dts": "^4.0.3"
