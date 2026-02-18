@@ -22,9 +22,8 @@ function setIcon(meta: MonkeyUserScript) {
   const res = url.match(/([^./?#]+\.[a-z0-9]+)(?:[/?#]|$)/i);
 
   if (res?.[1]) {
-    console.log('parsed', res[1]);
     const icon = `https://www.google.com/s2/favicons?sz=64&domain=${res[1]}`;
-    Object.assign(meta, icon);
+    Object.assign(meta, { icon });
   }
 }
 
@@ -74,7 +73,7 @@ const runBuild = async () => {
         ...meta,
       };
 
-      setIcon(meta);
+      setIcon(userscript);
 
       Object.assign(userscript, {
         require: [

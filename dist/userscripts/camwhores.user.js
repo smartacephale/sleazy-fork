@@ -5,6 +5,7 @@
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button
 // @license      MIT
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
 // @homepage     https://github.com/smartacephale/sleazy-fork
 // @homepageURL  https://github.com/smartacephale/sleazy-fork
 // @source       github:smartacephale/sleazy-fork
@@ -12,7 +13,7 @@
 // @match        https://*.camwhores.tv
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.7/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
