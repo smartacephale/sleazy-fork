@@ -28,10 +28,16 @@ If you are lucky, you can build your own userscript with infinite scroller and c
 ```typescript
 // replace with selectors of your own
 const rules = new RulesGlobal({
-  containerSelector: 'div:has(> article)',
-  thumbsSelector: 'article.thumb-block',
-  titleSelector: 'header.entry-header',
-  durationSelector: '.duration',
+  containerSelector: '.content',
+  thumbs: {
+    selector: '.thumb',
+  },
+  thumb: {
+    selectors: {
+      title: '.title',
+      duration: '.duration'
+    },
+  },
   schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
 });
 ```
