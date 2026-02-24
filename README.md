@@ -24,8 +24,10 @@ npm run dev
 ```
 
 ## How it works
+<p align="center"><img src="https://i.makeagif.com/media/5-30-2015/-SdGmN.gif"></p>
+
 #### So... Listen to this!
-If you are lucky, you can build your own userscript with infinite scroller and content filters with just this setup:
+If you are lucky monkey, you can build your own userscript with infinite scroller and content filters with just this setup:
 
 ```typescript
 // replace with selectors of your own
