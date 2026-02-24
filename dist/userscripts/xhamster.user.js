@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xhamster Improved
 // @namespace    pervertmonkey
-// @version      5.0.1
+// @version      5.0.2
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -13,8 +13,9 @@
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.*/*
 // @exclude      https://*.xhamster.com/embed*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
+// @grant        GM_addElement
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -23,6 +24,7 @@
 (function (core, utils) {
   'use strict';
 
+  var _GM_addElement = (() => typeof GM_addElement != "undefined" ? GM_addElement : undefined)();
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
   const IS_VIDEO_PAGE = /^\/videos|moments\//.test(location.pathname);
@@ -69,22 +71,26 @@
     paginationSelector: ".prev-next-list, .test-pager"
   };
   const paginationStrategyOptions = IS_PLAYLIST ? createPlaylistPaginationStrategy() : paginationStrategyOptionsDefault;
-  const rules = new core.RulesGlobal({
+  const rules = new core.Rules({
     paginationStrategyOptions,
     getPaginationData,
     containerSelectorLast: ".thumb-list",
-    thumbsSelector: ".video-thumb",
-    titleSelector: ".video-thumb-info__name,.video-thumb-info>a",
-    durationSelector: ".thumb-image-container__duration",
-    gropeStrategy: "all-in-all",
-    getThumbImgDataStrategy: "auto",
-    getThumbImgDataAttrDelete: "[loading]",
-    customThumbDataSelectors: {
-      watched: {
-        type: "boolean",
-        selector: '[data-role="video-watched'
+    thumbs: { selector: ".video-thumb" },
+    thumb: {
+      selectors: {
+        title: ".video-thumb-info__name,.video-thumb-info>a",
+        duration: ".thumb-image-container__duration",
+        watched: {
+          type: "boolean",
+          selector: '[data-role="video-watched'
+        }
       }
     },
+    thumbImg: {
+      strategy: "auto",
+      remove: "[loading]"
+    },
+    gropeStrategy: "all-in-all",
     customDataSelectorFns: [
       "filterInclude",
       "filterExclude",
@@ -113,12 +119,13 @@
   });
   function animatePreview() {
     function createPreviewVideoElement(src, mount) {
-      const video = document.createElement("video");
-      video.playsInline = true;
-      video.autoplay = true;
-      video.loop = true;
-      video.classList.add("thumb-image-container__video");
-      video.src = src;
+      const video = _GM_addElement("video", {
+        playsInline: true,
+        autoplay: true,
+        loop: true,
+        class: "thumb-image-container__video",
+        src
+      });
       video.addEventListener(
         "loadeddata",
         () => {
@@ -140,18 +147,12 @@
     );
   }
   function expandMoreVideoPage() {
-    utils.watchElementChildrenCount(rules.container, () => setTimeout(parseThumbs, 1800));
+    utils.watchElementChildrenCount(rules.container, () => setTimeout(rules.gropeInit, 1800));
     utils.waitForElementToAppear(document.body, 'button[data-role="show-more-next"]', (el) => {
       const observer = new utils.Observer((target) => {
         target.click();
       });
       observer.observe(el);
-    });
-  }
-  function parseThumbs() {
-    const containers = utils.getCommonParents(rules.getThumbs(document.body));
-    containers.forEach((c) => {
-      rules.dataManager.parseData(c, c);
     });
   }
   if (IS_VIDEO_PAGE) {

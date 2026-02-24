@@ -1,1 +1,1 @@
-import './scripts/pornhub';
+import './scripts/eporner'

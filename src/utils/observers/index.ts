@@ -34,11 +34,15 @@ export class Observer {
     callback: () => Promise<boolean> | boolean,
     throttleTime: number,
   ) {
-    const observer_ = new Observer(async (target: Element) => {
+    const observer = new Observer(async (target: Element) => {
       const condition = await callback();
-      if (condition) observer_.throttle(target, throttleTime);
+      if (condition) {
+        observer.throttle(target, throttleTime);
+      } else {
+        observer.dispose();
+      }
     });
-    observer_.observe(target);
-    return observer_;
+    observer.observe(target);
+    return observer;
   }
 }

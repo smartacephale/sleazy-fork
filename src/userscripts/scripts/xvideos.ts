@@ -1,37 +1,39 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'XVideos Improved',
-  version: '4.0.1',
+  version: '4.0.2',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: 'https://*.xvideos.com/*',
 };
 
 const xv = (unsafeWindow as any).xv;
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: '#main .pagination:last-child',
     searchParamSelector: 'p',
   },
-  containerSelector: '#content > div',
-  thumbsSelector: 'div.thumb-block[id^=video_]:not(.thumb-ad)',
-  titleSelector: '[class*=title]',
-  uploaderSelector: '[class*=name]',
-  durationSelector: '[class*=duration]',
-  gropeStrategy: 'all-in-one',
-  customDataSelectorFns: ['filterInclude', 'filterExclude'],
+  containerSelector: '*:has(>div.thumb-block[id^=video_]:not(.thumb-ad))',
+  thumbs: { selector: 'div.thumb-block[id^=video_]:not(.thumb-ad)' },
+  thumb: {
+    selectors: {
+      title: '[class*=title]',
+      uploader: '[class*=name]',
+      duration: '[class*=duration]',
+    },
+    callback: (thumb) => {
+      setTimeout(() => {
+        const id = parseInt(thumb.getAttribute('data-id') as string);
+        xv.thumbs.prepareVideo(id);
+      }, 200);
+    },
+  },
   schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
   animatePreview,
-  getThumbDataCallback(thumb) {
-    setTimeout(() => {
-      const id = parseInt(thumb.getAttribute('data-id') as string);
-      xv.thumbs.prepareVideo(id);
-    }, 200);
-  },
 });
 
 function animatePreview(container: HTMLElement) {

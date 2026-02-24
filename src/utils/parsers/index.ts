@@ -1,5 +1,9 @@
 export { formatTimeToHHMMSS, timeToSeconds } from './time-parser';
 
+export function parseUrl(s: HTMLAnchorElement | Location | URL | string): URL {
+  return new URL(typeof s === 'string' ? s : s.href);
+}
+
 export function parseIntegerOr(n: string | number, or: number): number {
   const num = Number(n);
   return Number.isSafeInteger(num) ? num : or;

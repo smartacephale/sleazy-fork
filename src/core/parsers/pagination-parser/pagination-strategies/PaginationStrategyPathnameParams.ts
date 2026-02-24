@@ -1,4 +1,5 @@
-import { getPaginationLinks, parseUrl, upgradePathname } from '../pagination-utils';
+import { parseUrl } from '../../../../utils';
+import { getPaginationLinks, upgradePathname } from '../pagination-utils';
 import { PaginationStrategy } from './PaginationStrategy';
 
 export class PaginationStrategyPathnameParams extends PaginationStrategy {

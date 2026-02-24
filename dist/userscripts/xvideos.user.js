@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    pervertmonkey
-// @version      4.0.1
+// @version      4.0.2
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xvideos.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -24,26 +24,28 @@
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
   const xv = _unsafeWindow.xv;
-  new core.RulesGlobal({
+  new core.Rules({
     paginationStrategyOptions: {
       paginationSelector: "#main .pagination:last-child",
       searchParamSelector: "p"
     },
-    containerSelector: "#content > div",
-    thumbsSelector: "div.thumb-block[id^=video_]:not(.thumb-ad)",
-    titleSelector: "[class*=title]",
-    uploaderSelector: "[class*=name]",
-    durationSelector: "[class*=duration]",
-    gropeStrategy: "all-in-one",
-    customDataSelectorFns: ["filterInclude", "filterExclude"],
+    containerSelector: "*:has(>div.thumb-block[id^=video_]:not(.thumb-ad))",
+    thumbs: { selector: "div.thumb-block[id^=video_]:not(.thumb-ad)" },
+    thumb: {
+      selectors: {
+        title: "[class*=title]",
+        uploader: "[class*=name]",
+        duration: "[class*=duration]"
+      },
+      callback: (thumb) => {
+        setTimeout(() => {
+          const id = parseInt(thumb.getAttribute("data-id"));
+          xv.thumbs.prepareVideo(id);
+        }, 200);
+      }
+    },
     schemeOptions: ["Text Filter", "Duration Filter", "Badge", "Advanced"],
-    animatePreview,
-    getThumbDataCallback(thumb) {
-      setTimeout(() => {
-        const id = parseInt(thumb.getAttribute("data-id"));
-        xv.thumbs.prepareVideo(id);
-      }, 200);
-    }
+    animatePreview
   });
   function animatePreview(container) {
     function createPreviewElement(src, mount) {

@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.eporner.com/*
 // @match        https://*.eporner.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -25,20 +25,26 @@
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
   const show_video_prev = _unsafeWindow.show_video_prev;
-  new core.RulesGlobal({
+  new core.Rules({
     paginationStrategyOptions: {
       paginationSelector: ".numlist2"
     },
-    customThumbDataSelectors: {
-      quality: { type: "number", selector: '[title="Quality"]' }
+    thumb: {
+      selectors: {
+        quality: { type: "number", selector: '[title="Quality"]' },
+        title: "a",
+        uploader: '[title="Uploader"]',
+        duration: '[title="Duration"]'
+      }
+    },
+    thumbImg: {
+      strategy: "auto",
+      remove: "auto"
+    },
+    thumbs: {
+      selector: "div[id^=vf][data-id]"
     },
     containerSelectorLast: "#vidresults",
-    thumbsSelector: "div[id^=vf][data-id]",
-    uploaderSelector: '[title="Uploader"]',
-    titleSelector: "a",
-    durationSelector: '[title="Duration"]',
-    getThumbImgDataStrategy: "auto",
-    getThumbImgDataAttrDelete: "auto",
     customDataSelectorFns: [
       "filterInclude",
       "filterExclude",

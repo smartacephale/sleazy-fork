@@ -1,5 +1,5 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 import { fetchHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
@@ -9,18 +9,23 @@ export const meta: MonkeyUserScript = {
   match: ['https://*.e-hentai.org/*'],
 };
 
-const rules = new RulesGlobal({
-  thumbsSelector: '.gl1t',
-  titleSelector: '.glname',
+const rules = new Rules({
+  thumbs: { selector: '.gl1t' },
+  thumb: {
+    selectors: {
+      title: '.glname'
+    }
+  },
+  thumbImg: {
+    selector: 'data-lazy-load',
+  },
   containerSelectorLast: '.itg.gld',
-  getThumbImgDataAttrSelector: 'data-lazy-load',
-  getThumbImgDataStrategy: 'auto',
   paginationStrategyOptions: createPaginationStrategyOptions(),
   customDataSelectorFns: ['filterInclude', 'filterExclude'],
   schemeOptions: ['Text Filter', 'Badge', 'Advanced'],
 });
 
-function createPaginationStrategyOptions(): RulesGlobal['paginationStrategyOptions'] {
+function createPaginationStrategyOptions(): Rules['paginationStrategyOptions'] {
   let nextLink: string;
 
   function getPaginationUrlGenerator() {

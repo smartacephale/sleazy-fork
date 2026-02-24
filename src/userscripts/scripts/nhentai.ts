@@ -1,5 +1,5 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 import { parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
@@ -12,12 +12,18 @@ export const meta: MonkeyUserScript = {
 const IS_TITLE_PAGE = /^\/g\/\d+/.test(location.pathname);
 const IS_SEARCH_PAGE = /^\/search\//.test(location.pathname);
 
-const nhentaiRules = new RulesGlobal({
-  getThumbImgDataAttrDelete: 'auto',
-  getThumbImgDataStrategy: 'auto',
-  thumbsSelector: '.gallery',
+const nhentaiRules = new Rules({
+  thumbs: { selector: '.gallery' },
+  thumb: {
+    selectors: {
+      title: '.caption'
+    }
+  },
+  thumbImg: {
+    strategy: 'auto',
+    remove: 'auto'
+  },
   containerSelectorLast: '.index-container, .container',
-  titleSelector: '.caption',
   customDataSelectorFns: ['filterInclude', 'filterExclude'],
   schemeOptions: ['Text Filter', 'Badge', 'Advanced'],
   gropeStrategy: 'all-in-all',
@@ -51,8 +57,7 @@ function filtersUI() {
     const btns = parseHtml(`<div class="sort-type"></div>`);
     groupOfButtons.forEach((k) => {
       const btn = parseHtml(
-        `<a href="#" ${
-          state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''
+        `<a href="#" ${state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''
         }>${filterDescriptors[k as keyof typeof filterDescriptors].name}</a>`,
       );
       btn.addEventListener('click', (e) => {

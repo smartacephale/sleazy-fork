@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.e-hentai.org/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -21,12 +21,17 @@
 (function (core, utils) {
   'use strict';
 
-  new core.RulesGlobal({
-    thumbsSelector: ".gl1t",
-    titleSelector: ".glname",
+  new core.Rules({
+    thumbs: { selector: ".gl1t" },
+    thumb: {
+      selectors: {
+        title: ".glname"
+      }
+    },
+    thumbImg: {
+      selector: "data-lazy-load"
+    },
     containerSelectorLast: ".itg.gld",
-    getThumbImgDataAttrSelector: "data-lazy-load",
-    getThumbImgDataStrategy: "auto",
     paginationStrategyOptions: createPaginationStrategyOptions(),
     customDataSelectorFns: ["filterInclude", "filterExclude"],
     schemeOptions: ["Text Filter", "Badge", "Advanced"]

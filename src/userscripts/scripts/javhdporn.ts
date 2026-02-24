@@ -1,5 +1,5 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Javhdporn PervertMonkey',
@@ -11,11 +11,15 @@ export const meta: MonkeyUserScript = {
   ],
 };
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   containerSelector: 'div:has(> article)',
-  thumbsSelector: 'article.thumb-block',
-  titleSelector: 'header.entry-header',
-  durationSelector: '.duration',
+  thumbs: { selector: 'article.thumb-block' },
+  thumb: {
+    selectors: {
+      title: 'header.entry-header',
+      duration: '.duration',
+    }
+  },
   paginationStrategyOptions: {
     pathnameSelector: /\/page\/(\d+)\/?$/,
   },

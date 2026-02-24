@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.nhentai.net/*
 // @match        https://*.nhentai.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -24,12 +24,18 @@
 
   const IS_TITLE_PAGE = /^\/g\/\d+/.test(location.pathname);
   const IS_SEARCH_PAGE = /^\/search\//.test(location.pathname);
-  const nhentaiRules = new core.RulesGlobal({
-    getThumbImgDataAttrDelete: "auto",
-    getThumbImgDataStrategy: "auto",
-    thumbsSelector: ".gallery",
+  const nhentaiRules = new core.Rules({
+    thumbs: { selector: ".gallery" },
+    thumb: {
+      selectors: {
+        title: ".caption"
+      }
+    },
+    thumbImg: {
+      strategy: "auto",
+      remove: "auto"
+    },
     containerSelectorLast: ".index-container, .container",
-    titleSelector: ".caption",
     customDataSelectorFns: ["filterInclude", "filterExclude"],
     schemeOptions: ["Text Filter", "Badge", "Advanced"],
     gropeStrategy: "all-in-all"

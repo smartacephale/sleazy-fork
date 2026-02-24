@@ -1,6 +1,6 @@
 import type { StoreState } from 'jabroni-outfit';
 import { checkHomogenity, LazyImgLoader } from '../../utils';
-import type { RulesGlobal } from '../rules';
+import type { Rules } from '../rules';
 import { DataFilter } from './data-filter';
 
 export type DataElement = Record<string, string | number | boolean | HTMLElement>;
@@ -12,7 +12,10 @@ export class DataManager {
   );
   public dataFilter: DataFilter;
 
-  constructor(private rules: RulesGlobal) {
+  constructor(
+    private rules: Rules,
+    private parseDataParentHomogenity?: Parameters<typeof checkHomogenity>[2]
+  ) {
     this.dataFilter = new DataFilter(this.rules);
   }
 
@@ -69,15 +72,13 @@ export class DataManager {
     await this.applyFilters(filters, offset);
   };
 
-  public parseDataParentHomogenity?: Parameters<typeof checkHomogenity>[2];
-
   public parseData = (
     html: HTMLElement,
     container?: HTMLElement,
     removeDuplicates = false,
     shouldLazify = true,
   ): void => {
-    const thumbs = this.rules.getThumbs(html);
+    const thumbs = this.rules.thumbsParser.getThumbs(html);
     const dataOffset = this.data.size;
     const fragment = document.createDocumentFragment();
     const parent = container || this.rules.container;
@@ -100,11 +101,11 @@ export class DataManager {
         continue;
       }
 
-      const data = this.rules.getThumbData(thumbElement);
+      const data = this.rules.thumbDataParser.getThumbData(thumbElement);
       this.data.set(url, { element: thumbElement, ...data });
 
       if (shouldLazify) {
-        const { img, imgSrc } = this.rules.getThumbImgData(thumbElement);
+        const { img, imgSrc } = this.rules.thumbImgParser.getImgData(thumbElement);
         this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
       }
 

@@ -20,7 +20,7 @@ const buildCoreConfig: UserConfig = {
       external: ['vite-plugin-monkey/dist/client'],
       output: {
         globals: {
-          'vite-plugin-monkey/dist/client': 'window', 
+          'vite-plugin-monkey/dist/client': 'window',
         },
       },
     },
@@ -36,7 +36,7 @@ const devConfig: UserConfig = {
         namespace: 'npm/vite-plugin-monkey',
         match: ['*://*/*'],
         'run-at': 'document-idle',
-        grant: ['unsafeWindow', 'GM_addStyle'],
+        grant: ['unsafeWindow', 'GM_addStyle', 'GM_addElement'],
       },
     }),
   ],

@@ -1,4 +1,4 @@
-import { parseUrl } from '../pagination-utils';
+import { parseUrl } from "../../../../utils";
 
 export class PaginationStrategy {
   public doc = document;

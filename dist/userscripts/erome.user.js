@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        *://*.erome.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -25,16 +25,17 @@
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
   const $ = _unsafeWindow.$;
-  const rules = new core.RulesGlobal({
+  const rules = new core.Rules({
     containerSelector: "#albums",
-    thumbsSelector: "div[id^=album-]",
-    titleSelector: ".album-title",
-    uploaderSelector: ".album-user",
     gropeStrategy: "all-in-one",
-    customThumbDataSelectors: {
-      videoAlbum: {
-        type: "boolean",
-        selector: ".album-videos"
+    thumbs: {
+      selector: "div[id^=album-]"
+    },
+    thumb: {
+      selectors: {
+        title: ".album-title",
+        uploader: ".album-user",
+        videoAlbum: { type: "boolean", selector: ".album-videos" }
       }
     },
     storeOptions: { showPhotos: true },
@@ -67,7 +68,7 @@
       "Advanced"
     ]
   });
-  rules.infiniteScroller?.onScroll(() => {
+  rules.infiniteScroller?.subject.subscribe(() => {
     setTimeout(() => new LazyLoad(), 100);
   });
   _GM_addStyle(`

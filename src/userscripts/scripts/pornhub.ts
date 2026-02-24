@@ -1,52 +1,52 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'PornHub PervertMonkey',
   version: '4.0.1',
-  description:
-    'Infinite scroll [optional]. Filter by Title and Duration',
+  description: 'Infinite scroll [optional]. Filter by Title and Duration',
   match: ['https://*.pornhub.com/*'],
   exclude: 'https://*.pornhub.com/embed/*',
 };
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: '.paginationGated',
-    overwritePaginationLast: (n: number) => (n === 9 ? 999 : n),
+    overwritePaginationLast: (n: number) => (n === 9 ? 9999 : n),
   },
   containerSelector: () =>
     [...document.querySelectorAll<HTMLElement>('ul:has(> li[data-video-vkey])')]
       .filter((e) => e.children.length > 0 && e.checkVisibility())
       .pop() as HTMLElement,
 
-  dataManagerOptions: {
-    parseDataParentHomogenity: { id: true, className: true },
+  dataHomogenity: { id: true, className: true },
+  thumbs: { selector: 'li[data-video-vkey]' },
+  thumb: {
+    selectors: {
+      title: 'span.title',
+      uploader: '.usernameWrap',
+      duration: '.duration',
+    },
   },
-  thumbsSelector: 'li[data-video-vkey]',
-  getThumbImgDataStrategy: 'auto',
-  getThumbImgDataAttrSelector: ['data-mediumthumb', 'data-image'],
-  uploaderSelector: '.usernameWrap',
-  titleSelector: 'span.title',
-  durationSelector: '.duration',
+  thumbImg: {
+    selector: ['data-mediumthumb', 'data-image'],
+  },
   gropeStrategy: 'all-in-all',
   schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
 });
 
 function bypassAgeVerification() {
+  cookieStore.set({
+    name: 'accessAgeDisclaimerPH',
+    value: '2',
+    expires: Date.now() + 90 * 24 * 60 * 60 * 1000,
+  });
+
   document
     .querySelectorAll<HTMLButtonElement>('[data-label="over18_enter"]')
     .forEach((b) => {
       b.click();
     });
-
-  setTimeout(() => {
-    cookieStore.set({
-      name: 'accessAgeDisclaimerPH',
-      value: '2',
-      expires: Date.now() + 90 * 24 * 60 * 60 * 1000,
-    });
-  }, 1000);
 }
 
 bypassAgeVerification();

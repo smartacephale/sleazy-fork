@@ -1,25 +1,30 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { GM_addStyle, unsafeWindow } from '$';
-import { RulesGlobal } from '../../core';
+import { GM_addElement, GM_addStyle, unsafeWindow } from '$';
+import { Rules } from '../../core';
 import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.1',
+  version: '5.0.2',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://motherless.com/*'],
+  grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],
 };
 
 (unsafeWindow as any).__is_premium = true;
 const $ = (unsafeWindow as any).$;
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   containerSelectorLast: '.content-inner',
-  thumbsSelector: '.thumb-container, .mobile-thumb',
-  uploaderSelector: '.uploader',
-  titleSelector: '.title',
-  durationSelector: '.size',
-  getThumbImgDataStrategy: 'auto',
+  thumbs: { selector: '.thumb-container, .mobile-thumb' },
+  thumb: {
+    selectors: {
+      uploader: '.uploader',
+      title: '.title',
+      duration: '.size',
+    },
+  },
+  thumbImg: { strategy: 'auto' },
   paginationStrategyOptions: {
     paginationSelector: '.pagination_link, .ml-pagination',
   },
@@ -187,6 +192,10 @@ GM_addStyle(`
 .ml-masonry-images.masonry-columns-6 .content-inner { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .ml-masonry-images.masonry-columns-8 .content-inner { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
 `);
+
+document
+  .querySelector('.ml-pagination')
+  ?.before(GM_addElement('div', { class: 'clear-left' }));
 
 //====================================================================================================
 

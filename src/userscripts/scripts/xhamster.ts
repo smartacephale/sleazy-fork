@@ -1,10 +1,9 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { unsafeWindow } from '$';
-import { RulesGlobal } from '../../core';
+import { GM_addElement, unsafeWindow } from '$';
+import { Rules } from '../../core';
 import {
   exterminateVideo,
   fetchJson,
-  getCommonParents,
   instantiateTemplate,
   Observer,
   OnHover,
@@ -15,10 +14,11 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster Improved',
-  version: '5.0.1',
+  version: '5.0.2',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
   exclude: 'https://*.xhamster.com/embed*',
+  grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],
 };
 
 const IS_VIDEO_PAGE = /^\/videos|moments\//.test(location.pathname);
@@ -45,7 +45,7 @@ function createThumb(data: Record<string, string>): string {
   return instantiateTemplate('.video-thumb', attrsToReplace, text);
 }
 
-const getPaginationData: RulesGlobal['getPaginationData'] = !IS_PLAYLIST
+const getPaginationData: Rules['getPaginationData'] = !IS_PLAYLIST
   ? undefined
   : async (url: string): Promise<HTMLElement> => {
       const data = await fetchJson(url);
@@ -63,7 +63,7 @@ function createPlaylistPaginationStrategy() {
   const paginationLast = data.favoritesVideoPaging.maxPages;
   const paginationOffset = data.favoritesVideoPaging.active;
 
-  const playlistPaginationStrategy: RulesGlobal['paginationStrategyOptions'] = {
+  const playlistPaginationStrategy: Rules['paginationStrategyOptions'] = {
     paginationSelector: 'nav[class *= "pagination"]',
     getPaginationLast: () => paginationLast,
     getPaginationOffset: () => paginationOffset,
@@ -75,7 +75,7 @@ function createPlaylistPaginationStrategy() {
   return playlistPaginationStrategy;
 }
 
-const paginationStrategyOptionsDefault: RulesGlobal['paginationStrategyOptions'] = {
+const paginationStrategyOptionsDefault: Rules['paginationStrategyOptions'] = {
   paginationSelector: '.prev-next-list, .test-pager',
 };
 
@@ -83,22 +83,26 @@ const paginationStrategyOptions = IS_PLAYLIST
   ? createPlaylistPaginationStrategy()
   : paginationStrategyOptionsDefault;
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   paginationStrategyOptions,
   getPaginationData,
   containerSelectorLast: '.thumb-list',
-  thumbsSelector: '.video-thumb',
-  titleSelector: '.video-thumb-info__name,.video-thumb-info>a',
-  durationSelector: '.thumb-image-container__duration',
-  gropeStrategy: 'all-in-all',
-  getThumbImgDataStrategy: 'auto',
-  getThumbImgDataAttrDelete: '[loading]',
-  customThumbDataSelectors: {
-    watched: {
-      type: 'boolean',
-      selector: '[data-role="video-watched',
+  thumbs: { selector: '.video-thumb' },
+  thumb: {
+    selectors: {
+      title: '.video-thumb-info__name,.video-thumb-info>a',
+      duration: '.thumb-image-container__duration',
+      watched: {
+        type: 'boolean',
+        selector: '[data-role="video-watched',
+      },
     },
   },
+  thumbImg: {
+    strategy: 'auto',
+    remove: '[loading]',
+  },
+  gropeStrategy: 'all-in-all',
   customDataSelectorFns: [
     'filterInclude',
     'filterExclude',
@@ -128,12 +132,14 @@ const rules = new RulesGlobal({
 
 function animatePreview() {
   function createPreviewVideoElement(src: string, mount: HTMLElement) {
-    const video = document.createElement('video');
-    video.playsInline = true;
-    video.autoplay = true;
-    video.loop = true;
-    video.classList.add('thumb-image-container__video');
-    video.src = src;
+    const video = GM_addElement('video', {
+      playsInline: true,
+      autoplay: true,
+      loop: true,
+      class: 'thumb-image-container__video',
+      src,
+    });
+
     video.addEventListener(
       'loadeddata',
       () => {
@@ -157,19 +163,12 @@ function animatePreview() {
 }
 
 function expandMoreVideoPage() {
-  watchElementChildrenCount(rules.container, () => setTimeout(parseThumbs, 1800));
+  watchElementChildrenCount(rules.container, () => setTimeout(rules.gropeInit, 1800));
   waitForElementToAppear(document.body, 'button[data-role="show-more-next"]', (el) => {
     const observer = new Observer((target) => {
       (target as HTMLButtonElement).click();
     });
     observer.observe(el);
-  });
-}
-
-function parseThumbs() {
-  const containers = getCommonParents(rules.getThumbs(document.body));
-  containers.forEach((c) => {
-    rules.dataManager.parseData(c, c);
   });
 }
 

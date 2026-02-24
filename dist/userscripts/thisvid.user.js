@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.thisvid.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -902,28 +902,34 @@ function takeWhile(predicate) {
     return src.replace(/playlist\/\d+\/video/, () => "videos");
   }
   const defaultRulesConfig = {
-    thumbsSelector: "div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder",
-    getThumbImgData(thumb) {
-      const img = thumb.querySelector("img");
-      const privateThumb = thumb.querySelector(".private");
-      let imgSrc = img?.getAttribute("data-original");
-      if (privateThumb) {
-        imgSrc = utils.parseCssUrl(privateThumb.style.background);
-        privateThumb.removeAttribute("style");
+    thumbs: {
+      selector: "div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder"
+    },
+    thumb: {
+      selectors: {
+        title: ".title",
+        duration: ".duration",
+        private: { selector: ".private", type: "boolean" },
+        hd: { selector: ".quality", type: "boolean" },
+        views: { selector: ".view", type: "number" }
       }
-      img.removeAttribute("data-original");
-      img.removeAttribute("data-cnt");
-      img.classList.remove("lazy-load");
-      return { img, imgSrc };
+    },
+    thumbImg: {
+      getImgData(thumb) {
+        const img = thumb.querySelector("img");
+        const privateThumb = thumb.querySelector(".private");
+        let imgSrc = img?.getAttribute("data-original");
+        if (privateThumb) {
+          imgSrc = utils.parseCssUrl(privateThumb.style.background);
+          privateThumb.removeAttribute("style");
+        }
+        img.removeAttribute("data-original");
+        img.removeAttribute("data-cnt");
+        img.classList.remove("lazy-load");
+        return { img, imgSrc };
+      }
     },
     containerSelectorLast: ".thumbs-items",
-    titleSelector: ".title",
-    durationSelector: ".duration",
-    customThumbDataSelectors: {
-      private: { selector: ".private", type: "boolean" },
-      hd: { selector: ".quality", type: "boolean" },
-      views: { selector: ".view", type: "number" }
-    },
     animatePreview,
     customDataSelectorFns: [
       "filterInclude",
@@ -966,7 +972,7 @@ function takeWhile(predicate) {
     ]).length < 2 ? "all-in-one" : "all-in-all"
   };
   const config = IS_MY_MEMBER_PAGE || IS_MY_WALL ? await( createPrivateFeed()) : defaultRulesConfig;
-  const rules = new core.RulesGlobal(config);
+  const rules = new core.Rules(config);
   _GM_addStyle(`
   .haveNoAccess { background: linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red !important; }
   .haveAccess { background: linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green !important; }

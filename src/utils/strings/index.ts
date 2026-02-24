@@ -1,3 +1,5 @@
+export * from './regexes'
+
 export function splitWith(s: string, c: string = ','): Array<string> {
   return s
     .split(c)

@@ -13,7 +13,7 @@
 // @match        https://*.camwhores.tv
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -91,20 +91,25 @@
   const IS_COMMUNITY_LIST = /\/members\/$/.test(location.pathname);
   const IS_VIDEO_PAGE = /^(\/videos)?\/\d+\//.test(location.pathname);
   const IS_LOGGED_IN = document.cookie.includes("kt_member");
-  const rules = new core.RulesGlobal({
+  const rules = new core.Rules({
     containerSelector: '[id*="playlist"]:has(> .item .title),[id*="videos"]:has(> .item .title),form:has(>.item .title)',
     paginationStrategyOptions: {
       paginationSelector: ".pagination:not([id *= member])",
       overwritePaginationLast: IS_MEMBER_PAGE ? () => 1 : (x) => x === 9 ? 9999 : x
     },
-    getThumbImgDataAttrSelector: "data-original",
-    getThumbImgDataStrategy: "auto",
-    thumbsSelector: ".list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)",
-    gropeStrategy: "all-in-all",
-    getThumbDataStrategy: "auto-select",
-    customThumbDataSelectors: {
-      private: { type: "boolean", selector: "[class*=private]" }
+    thumbs: {
+      selector: ".list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)"
     },
+    thumb: {
+      strategy: "auto-select",
+      selectors: {
+        private: { type: "boolean", selector: "[class*=private]" }
+      }
+    },
+    thumbImg: {
+      selector: "data-original"
+    },
+    gropeStrategy: "all-in-all",
     customDataSelectorFns: [
       "filterInclude",
       "filterExclude",

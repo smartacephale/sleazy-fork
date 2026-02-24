@@ -7,8 +7,8 @@ export function formatTimeToHHMMSS(timeStr: string): string {
   const pad = (num: number): string => num.toString().padStart(2, '0');
 
   const h = timeStr.match(/(\d+)\s*h/)?.[1] || '0';
-  const m = timeStr.match(/(\d+)\s*mi?n/)?.[1] || '0';
-  const s = timeStr.match(/(\d+)\s*sec/)?.[1] || '0';
+  const m = timeStr.match(/(\d+)\s*mi?n?/)?.[1] || '0';
+  const s = timeStr.match(/(\d+)\s*se?c?/)?.[1] || '0';
 
   return `${pad(+h)}:${pad(+m)}:${pad(+s)}`;
 }

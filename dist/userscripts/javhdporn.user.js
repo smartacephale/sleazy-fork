@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.javhdporn.net/*
 // @match        https://*.javhdporn.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -22,11 +22,15 @@
 (function (core) {
   'use strict';
 
-  new core.RulesGlobal({
+  new core.Rules({
     containerSelector: "div:has(> article)",
-    thumbsSelector: "article.thumb-block",
-    titleSelector: "header.entry-header",
-    durationSelector: ".duration",
+    thumbs: { selector: "article.thumb-block" },
+    thumb: {
+      selectors: {
+        title: "header.entry-header",
+        duration: ".duration"
+      }
+    },
     paginationStrategyOptions: {
       pathnameSelector: /\/page\/(\d+)\/?$/
     },

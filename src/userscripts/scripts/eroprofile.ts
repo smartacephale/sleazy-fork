@@ -1,5 +1,5 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Eroprofile PervertMonkey',
@@ -10,15 +10,19 @@ export const meta: MonkeyUserScript = {
 
 document.querySelector('.videoGrid')?.after(document.querySelector('.clB') as HTMLElement);
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: '.boxNav2',
     searchParamSelector: 'pnum',
   },
-  titleSelector: '[title]',
-  durationSelector: '.videoDur',
+  thumbs: { selector: '.video' },
+  thumb: {
+    selectors: {
+      title: '[title]',
+      duration: '.videoDur',
+    }
+  },
   containerSelector: '.videoGrid',
-  thumbsSelector: '.video',
   customDataSelectorFns: ['filterInclude', 'filterExclude', 'filterDuration'],
   schemeOptions: [
     'Text Filter',
@@ -27,7 +31,7 @@ const rules = new RulesGlobal({
       title: 'Sort By ',
       content: [
         {
-          'sort by duration': () => {},
+          'sort by duration': () => { },
         },
       ],
     },

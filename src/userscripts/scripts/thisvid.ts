@@ -3,14 +3,14 @@ import { concatMap, flatMap, map, takeWhile } from 'ix/asynciterable/operators';
 import { LSKDB } from 'lskdb';
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { GM_addStyle, unsafeWindow } from '$';
-import { getPaginationStrategy, InfiniteScroller, RulesGlobal } from '../../core';
+import { getPaginationStrategy, InfiniteScroller, Rules } from '../../core';
 import {
   circularShift,
   downloader,
   fetchHtml,
   getCommonParents,
-  objectToFormData,
   OnHover,
+  objectToFormData,
   parseCssUrl,
   parseHtml,
   querySelectorLastNumber,
@@ -29,7 +29,7 @@ export const meta: MonkeyUserScript = {
 
 const $ = (unsafeWindow as any).$;
 
-type RulesConfig = ConstructorParameters<typeof RulesGlobal>[0];
+type RulesConfig = ConstructorParameters<typeof Rules>[0];
 
 const lskdb = new LSKDB();
 
@@ -56,33 +56,39 @@ function fixPlaylistThumbUrl(src: string) {
 }
 
 const defaultRulesConfig: RulesConfig = {
-  thumbsSelector:
-    'div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder',
-  getThumbImgData(thumb: HTMLElement) {
-    const img = thumb.querySelector('img') as HTMLImageElement;
-    const privateThumb = thumb.querySelector('.private') as HTMLElement;
+  thumbs: {
+    selector:
+      'div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder',
+  },
+  thumb: {
+    selectors: {
+      title: '.title',
+      duration: '.duration',
+      private: { selector: '.private', type: 'boolean' },
+      hd: { selector: '.quality', type: 'boolean' },
+      views: { selector: '.view', type: 'number' },
+    },
+  },
+  thumbImg: {
+    getImgData(thumb: HTMLElement) {
+      const img = thumb.querySelector('img') as HTMLImageElement;
+      const privateThumb = thumb.querySelector('.private') as HTMLElement;
 
-    let imgSrc = img?.getAttribute('data-original') as string;
+      let imgSrc = img?.getAttribute('data-original') as string;
 
-    if (privateThumb) {
-      imgSrc = parseCssUrl(privateThumb.style.background);
-      privateThumb.removeAttribute('style');
-    }
+      if (privateThumb) {
+        imgSrc = parseCssUrl(privateThumb.style.background);
+        privateThumb.removeAttribute('style');
+      }
 
-    img.removeAttribute('data-original');
-    img.removeAttribute('data-cnt');
-    img.classList.remove('lazy-load');
+      img.removeAttribute('data-original');
+      img.removeAttribute('data-cnt');
+      img.classList.remove('lazy-load');
 
-    return { img, imgSrc };
+      return { img, imgSrc };
+    },
   },
   containerSelectorLast: '.thumbs-items',
-  titleSelector: '.title',
-  durationSelector: '.duration',
-  customThumbDataSelectors: {
-    private: { selector: '.private', type: 'boolean' },
-    hd: { selector: '.quality', type: 'boolean' },
-    views: { selector: '.view', type: 'number' },
-  },
   animatePreview,
   customDataSelectorFns: [
     'filterInclude',
@@ -131,7 +137,7 @@ const defaultRulesConfig: RulesConfig = {
 const config: RulesConfig =
   IS_MY_MEMBER_PAGE || IS_MY_WALL ? await createPrivateFeed() : defaultRulesConfig;
 
-const rules = new RulesGlobal(config);
+const rules = new Rules(config);
 
 GM_addStyle(`
   .haveNoAccess { background: linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red !important; }

@@ -1,5 +1,5 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
@@ -15,14 +15,20 @@ export const meta: MonkeyUserScript = {
   ],
 };
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   containerSelectorLast: '.content__video',
   paginationStrategyOptions: {
     paginationSelector: '.pagination:not([id *= member])',
   },
-  thumbsSelector: '.card_video',
-  titleSelector: '.card__title',
-  durationSelector: '.card__spot > span:last-child',
+  thumbs: {
+    selector: '.card_video'
+  },
+  thumb: {
+    selectors: {
+      title: '.card__title',
+      duration: '.card__spot > span:last-child',
+    }
+  },
   animatePreview,
   schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
 });

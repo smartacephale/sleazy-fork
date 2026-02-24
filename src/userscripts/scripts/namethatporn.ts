@@ -1,6 +1,6 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'NameThatPorn PervertMonkey',
@@ -9,24 +9,30 @@ export const meta: MonkeyUserScript = {
   match: ['https://namethatporn.com/*'],
 };
 
-const rules = new RulesGlobal({
-  thumbsSelector: '.item, .nsw_r_w',
+const rules = new Rules({
+  thumbs: { selector: '.item, .nsw_r_w' },
   containerSelector: '#items_wrapper, #nsw_r',
-  titleSelector: '.item_title, .nsw_r_tit',
-  uploaderSelector: '.item_answer b, .nsw_r_desc',
+  thumb: {
+    selectors: {
+      title: '.item_title, .nsw_r_tit',
+      uploader: '.item_answer b, .nsw_r_desc',
+      solved: {
+        type: 'boolean',
+        selector: '.item_solved, .nsw_r_slvd',
+      },
+    },
+  },
+  thumbImg: {
+    selector: (img: HTMLImageElement) => {
+      return (
+        img.getAttribute('data-dyn')?.concat('.webp') || (img.getAttribute('src') as string)
+      );
+    },
+  },
   paginationStrategyOptions: {
     paginationSelector: '#smi_wrp, #nsw_p',
   },
-  customThumbDataSelectors: {
-    solved: {
-      type: 'boolean',
-      selector: '.item_solved, .nsw_r_slvd',
-    },
-  },
   gropeStrategy: 'all-in-all',
-  getThumbImgDataStrategy: 'auto',
-  getThumbImgDataAttrSelector: (img: HTMLImageElement) =>
-    img.getAttribute('data-dyn')?.concat('.webp') || (img.getAttribute('src') as string),
   customDataSelectorFns: [
     'filterInclude',
     'filterExclude',
@@ -51,7 +57,6 @@ const rules = new RulesGlobal({
   ],
 });
 
-// some monkeypatching here...
 unsafeWindow.confirm = () => true;
 
 function handleKeys(event: KeyboardEvent) {

@@ -1,6 +1,6 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
@@ -12,20 +12,26 @@ export const meta: MonkeyUserScript = {
 
 const show_video_prev = (unsafeWindow as any).show_video_prev;
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: '.numlist2',
   },
-  customThumbDataSelectors: {
-    quality: { type: 'number', selector: '[title="Quality"]' },
+  thumb: {
+    selectors: {
+      quality: { type: 'number', selector: '[title="Quality"]' },
+      title: 'a',
+      uploader: '[title="Uploader"]',
+      duration: '[title="Duration"]',
+    },
+  },
+  thumbImg: {
+    strategy: 'auto',
+    remove: 'auto',
+  },
+  thumbs: {
+    selector: 'div[id^=vf][data-id]',
   },
   containerSelectorLast: '#vidresults',
-  thumbsSelector: 'div[id^=vf][data-id]',
-  uploaderSelector: '[title="Uploader"]',
-  titleSelector: 'a',
-  durationSelector: '[title="Duration"]',
-  getThumbImgDataStrategy: 'auto',
-  getThumbImgDataAttrDelete: 'auto',
   customDataSelectorFns: [
     'filterInclude',
     'filterExclude',

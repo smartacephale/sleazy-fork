@@ -15,7 +15,7 @@
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
 // @match        https://*.fuckingbear*.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -25,14 +25,20 @@
 (function (core, utils) {
   'use strict';
 
-  new core.RulesGlobal({
+  new core.Rules({
     containerSelectorLast: ".content__video",
     paginationStrategyOptions: {
       paginationSelector: ".pagination:not([id *= member])"
     },
-    thumbsSelector: ".card_video",
-    titleSelector: ".card__title",
-    durationSelector: ".card__spot > span:last-child",
+    thumbs: {
+      selector: ".card_video"
+    },
+    thumb: {
+      selectors: {
+        title: ".card__title",
+        duration: ".card__spot > span:last-child"
+      }
+    },
     animatePreview,
     schemeOptions: ["Text Filter", "Badge", "Duration Filter", "Advanced"]
   });

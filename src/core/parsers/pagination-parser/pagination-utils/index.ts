@@ -1,8 +1,5 @@
 import { URLPattern } from 'urlpattern-polyfill/urlpattern';
-
-export function parseUrl(s: HTMLAnchorElement | Location | URL | string): URL {
-  return new URL(typeof s === 'string' ? s : s.href);
-}
+import { parseUrl } from '../../../../utils';
 
 export function depaginatePathname(
   url: URL,

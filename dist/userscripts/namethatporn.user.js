@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://namethatporn.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -23,23 +23,28 @@
 
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
-  new core.RulesGlobal({
-    thumbsSelector: ".item, .nsw_r_w",
+  new core.Rules({
+    thumbs: { selector: ".item, .nsw_r_w" },
     containerSelector: "#items_wrapper, #nsw_r",
-    titleSelector: ".item_title, .nsw_r_tit",
-    uploaderSelector: ".item_answer b, .nsw_r_desc",
+    thumb: {
+      selectors: {
+        title: ".item_title, .nsw_r_tit",
+        uploader: ".item_answer b, .nsw_r_desc",
+        solved: {
+          type: "boolean",
+          selector: ".item_solved, .nsw_r_slvd"
+        }
+      }
+    },
+    thumbImg: {
+      selector: (img) => {
+        return img.getAttribute("data-dyn")?.concat(".webp") || img.getAttribute("src");
+      }
+    },
     paginationStrategyOptions: {
       paginationSelector: "#smi_wrp, #nsw_p"
     },
-    customThumbDataSelectors: {
-      solved: {
-        type: "boolean",
-        selector: ".item_solved, .nsw_r_slvd"
-      }
-    },
     gropeStrategy: "all-in-all",
-    getThumbImgDataStrategy: "auto",
-    getThumbImgDataAttrSelector: (img) => img.getAttribute("data-dyn")?.concat(".webp") || img.getAttribute("src"),
     customDataSelectorFns: [
       "filterInclude",
       "filterExclude",

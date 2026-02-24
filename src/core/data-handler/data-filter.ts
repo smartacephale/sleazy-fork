@@ -1,7 +1,7 @@
 import type { StoreState } from 'jabroni-outfit';
 import { GM_addStyle } from 'vite-plugin-monkey/dist/client';
 import { RegexFilter } from '../../utils';
-import type { RulesGlobal } from '../rules';
+import type { Rules } from '../rules';
 import type { DataElement } from './data-manager';
 
 export type DataSelectorFnShort = (e: DataElement, state: StoreState) => boolean;
@@ -24,7 +24,7 @@ export type DataFilterFn = (v: DataElement) => DataFilterResult;
 export class DataFilter {
   public filters = new Map<string, () => DataFilterFn>();
 
-  constructor(private rules: RulesGlobal) {
+  constructor(private rules: Rules) {
     this.registerFilters(rules.customDataSelectorFns);
     this.applyCSSFilters();
   }
@@ -36,12 +36,7 @@ export class DataFilter {
   public applyCSSFilters(wrapper?: (cssRule: string) => string) {
     this.filters.forEach((_, name) => {
       const cssRule = `.filter-${name} { display: none !important; }`;
-      // this.appliedStyle = GM_addStyle();
-      if (wrapper) {
-        GM_addStyle(wrapper(cssRule));
-      } else {
-        GM_addStyle(cssRule);
-      }
+      GM_addStyle(wrapper ? wrapper(cssRule) : cssRule);
     });
   }
 
@@ -111,12 +106,13 @@ export class DataFilter {
   static customDataSelectorFnsDefault: Record<string, DataSelectorFn<any>> = {
     filterDuration: {
       handle(el, state, notInRange) {
-        return (state.filterDuration as boolean) && notInRange(el.duration);
+        if (!state.filterDuration) return false;
+        return notInRange(el.duration);
       },
       $preDefine: (state) => {
         const from = state.filterDurationFrom as number;
         const to = state.filterDurationTo as number;
-        function notInRange(d: number) {
+        function notInRange(d: number): boolean {
           return d < from || d > to;
         }
         return notInRange;

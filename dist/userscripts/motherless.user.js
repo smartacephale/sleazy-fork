@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.1
+// @version      5.0.2
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -11,8 +11,9 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://motherless.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
+// @grant        GM_addElement
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -21,18 +22,23 @@
 (function (core, utils) {
   'use strict';
 
+  var _GM_addElement = (() => typeof GM_addElement != "undefined" ? GM_addElement : undefined)();
   var _GM_addStyle = (() => typeof GM_addStyle != "undefined" ? GM_addStyle : undefined)();
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
   _unsafeWindow.__is_premium = true;
   const $ = _unsafeWindow.$;
-  const rules = new core.RulesGlobal({
+  const rules = new core.Rules({
     containerSelectorLast: ".content-inner",
-    thumbsSelector: ".thumb-container, .mobile-thumb",
-    uploaderSelector: ".uploader",
-    titleSelector: ".title",
-    durationSelector: ".size",
-    getThumbImgDataStrategy: "auto",
+    thumbs: { selector: ".thumb-container, .mobile-thumb" },
+    thumb: {
+      selectors: {
+        uploader: ".uploader",
+        title: ".title",
+        duration: ".size"
+      }
+    },
+    thumbImg: { strategy: "auto" },
     paginationStrategyOptions: {
       paginationSelector: ".pagination_link, .ml-pagination"
     },
@@ -159,6 +165,7 @@
 .ml-masonry-images.masonry-columns-6 .content-inner { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
 .ml-masonry-images.masonry-columns-8 .content-inner { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
 `);
+  document.querySelector(".ml-pagination")?.before(_GM_addElement("div", { class: "clear-left" }));
   function applySearchFilters() {
     let pathname = window.location.pathname;
     const wordsToFilter = rules.store.state.filterExcludeWords.replace(/f:/g, "").match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];

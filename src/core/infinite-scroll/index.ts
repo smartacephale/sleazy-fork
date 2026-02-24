@@ -1,16 +1,18 @@
+import { Subject } from 'rxjs';
 import { fetchHtml, Observer, wait } from '../../utils';
-import type { PaginationStrategy } from '../pagination-parsing/pagination-strategies';
-import type { RulesGlobal } from '../rules';
+import type { PaginationStrategy } from '../parsers';
+import type { Rules } from '../rules';
 
 type InfiniteScrollerOptions = Pick<InfiniteScroller, 'rules'> & Partial<InfiniteScroller>;
 type GeneratorResult = { url: string; offset: number };
 export type OffsetGenerator<T = GeneratorResult> = Generator<T> | AsyncGenerator<T>;
 
+type IScrollerSubject = { type: 'scroll'; scroller: InfiniteScroller; page: HTMLElement };
+
 export class InfiniteScroller {
   public enabled = true;
   public paginationOffset = 1;
-  public parseData?: (document: HTMLElement) => void;
-  public rules: RulesGlobal;
+  public rules: Rules;
 
   private observer?: Observer;
   private paginationGenerator: OffsetGenerator;
@@ -45,25 +47,14 @@ export class InfiniteScroller {
     return this;
   }
 
-  private onScrollCBs: Array<(scroller: InfiniteScroller) => void> = [];
-
-  public onScroll(callback: (scroller: InfiniteScroller) => void, initCall = false) {
-    if (initCall) callback(this);
-    this.onScrollCBs.push(callback);
-    return this;
-  }
-
-  private _onScroll() {
-    this.onScrollCBs.forEach((cb) => {
-      cb(this);
-    });
-  }
+  public subject = new Subject<IScrollerSubject>();
 
   private setAutoScroll() {
     const autoScrollWrapper = async () => {
       if (this.rules.store.state.autoScroll) {
         await wait(this.rules.store.state.delay as number);
-        await this.generatorConsumer();
+        const res = await this.generatorConsumer();
+        if (!res) return;
         await autoScrollWrapper();
       }
     };
@@ -79,27 +70,24 @@ export class InfiniteScroller {
 
   generatorConsumer = async () => {
     if (!this.enabled) return false;
-    const {
-      value: { url, offset },
-      done,
-    } = await this.paginationGenerator.next();
-    if (!done && url) {
-      await this.doScroll(url, offset);
-    }
-    return !done;
+
+    const { value, done } = await this.paginationGenerator.next();
+    if (done) return false;
+    
+    const { url, offset } = value;
+    await this.doScroll(url, offset);
+    return true;
   };
 
-  // consume api strategy
   private async getPaginationData(url: string): Promise<HTMLElement> {
     return await fetchHtml(url);
   }
 
   async doScroll(url: string, offset: number) {
-    const nextPageHtml = await this.getPaginationData(url);
+    const page = await this.getPaginationData(url);
     const prevScrollPos = document.documentElement.scrollTop;
     this.paginationOffset = Math.max(this.paginationOffset, offset);
-    this.parseData?.(nextPageHtml);
-    this._onScroll();
+    this.subject.next({ type: 'scroll', scroller: this, page });
     window.scrollTo(0, prevScrollPos);
     if (this.rules.store.state.writeHistory) {
       history.replaceState({}, '', url);
@@ -119,18 +107,21 @@ export class InfiniteScroller {
     }
   }
 
-  static create(rules: RulesGlobal) {
+  static create(rules: Rules) {
     const enabled = rules.store.state.infiniteScrollEnabled as boolean;
 
     rules.store.state.$paginationLast = rules.paginationStrategy.getPaginationLast();
 
-    const infiniteScroller = new InfiniteScroller({
-      enabled,
-      parseData: rules.dataManager.parseData,
-      rules,
-    }).onScroll(({ paginationOffset }) => {
-      rules.store.state.$paginationOffset = paginationOffset;
-    }, true);
+    const infiniteScroller = new InfiniteScroller({ enabled, rules });
+
+    rules.store.state.$paginationOffset = infiniteScroller.paginationOffset;
+
+    infiniteScroller.subject.subscribe((x) => {
+      if (x.type === 'scroll') {
+        rules.store.state.$paginationOffset = x.scroller.paginationOffset;
+        rules.dataManager.parseData(x.page);
+      }
+    });
 
     rules.store.stateSubject.subscribe(() => {
       infiniteScroller.enabled = rules.store.state.infiniteScrollEnabled as boolean;

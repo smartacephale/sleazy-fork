@@ -1,6 +1,6 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { GM_addStyle, unsafeWindow } from '$';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Erome PervertMonkey',
@@ -12,16 +12,17 @@ export const meta: MonkeyUserScript = {
 const $ = (unsafeWindow as any).$;
 declare var LazyLoad: ObjectConstructor;
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   containerSelector: '#albums',
-  thumbsSelector: 'div[id^=album-]',
-  titleSelector: '.album-title',
-  uploaderSelector: '.album-user',
   gropeStrategy: 'all-in-one',
-  customThumbDataSelectors: {
-    videoAlbum: {
-      type: 'boolean',
-      selector: '.album-videos',
+  thumbs: {
+    selector: 'div[id^=album-]',
+  },
+  thumb: {
+    selectors: {
+      title: '.album-title',
+      uploader: '.album-user',
+      videoAlbum: { type: 'boolean', selector: '.album-videos' },
     },
   },
   storeOptions: { showPhotos: true },
@@ -57,7 +58,7 @@ const rules = new RulesGlobal({
   ],
 });
 
-rules.infiniteScroller?.onScroll(() => {
+rules.infiniteScroller?.subject.subscribe(() => {
   setTimeout(() => new LazyLoad(), 100);
 });
 

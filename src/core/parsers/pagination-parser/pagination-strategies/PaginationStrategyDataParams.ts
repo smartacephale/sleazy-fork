@@ -1,4 +1,4 @@
-import { parseDataParams } from '../../../utils/parsers';
+import { parseDataParams } from '../../../../utils';
 import { PaginationStrategy } from './PaginationStrategy';
 
 export class PaginationStrategyDataParams extends PaginationStrategy {

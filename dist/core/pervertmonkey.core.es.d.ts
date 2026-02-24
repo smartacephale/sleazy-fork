@@ -3,6 +3,7 @@ import { JabronioStore } from 'jabroni-outfit';
 import { JabroniTypes } from 'jabroni-outfit';
 import { setupScheme } from 'jabroni-outfit';
 import { StoreState } from 'jabroni-outfit';
+import { Subject } from 'rxjs';
 
 declare type AnyFunction = (...args: any[]) => any;
 
@@ -17,21 +18,12 @@ export declare function circularShift(n: number, c?: number, s?: number): number
 
 export declare function copyAttributes<T extends Element = HTMLElement>(target: T, source: T): void;
 
-declare type CustomThumbDataSelector = {
-    [x: string]: _CustomThumbDataSelector;
-};
+export declare type DataElement = Record<string, string | number | boolean | HTMLElement>;
 
-declare type _CustomThumbDataSelector = {
-    selector: string;
-    type: 'boolean' | 'string' | 'number';
-};
-
-declare type DataElement = Record<string, string | number | boolean | HTMLElement>;
-
-declare class DataFilter {
+export declare class DataFilter {
     private rules;
     filters: Map<string, () => DataFilterFn>;
-    constructor(rules: RulesGlobal);
+    constructor(rules: Rules);
     static isFiltered(el: HTMLElement): boolean;
     applyCSSFilters(wrapper?: (cssRule: string) => string): void;
     customDataSelectorFns: Record<string, DataSelectorFn<any>>;
@@ -45,7 +37,7 @@ declare class DataFilter {
     static customDataSelectorFnsDefault: Record<string, DataSelectorFn<any>>;
 }
 
-declare type DataFilterFn = (v: DataElement) => DataFilterResult;
+export declare type DataFilterFn = (v: DataElement) => DataFilterResult;
 
 declare interface DataFilterResult {
     tag: string;
@@ -54,26 +46,26 @@ declare interface DataFilterResult {
 
 export declare class DataManager {
     private rules;
+    private parseDataParentHomogenity?;
     data: Map<string, DataElement>;
     private lazyImgLoader;
     dataFilter: DataFilter;
-    constructor(rules: RulesGlobal);
+    constructor(rules: Rules, parseDataParentHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
     applyFilters: (filters?: Record<string, boolean>, offset?: number) => Promise<void>;
     filterAll: (offset?: number) => Promise<void>;
-    parseDataParentHomogenity?: Parameters<typeof checkHomogenity>[2];
     parseData: (html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean) => void;
     sortBy<K extends keyof DataElement>(key: K, direction?: boolean): void;
 }
 
-declare type DataSelectorFn<R> = DataSelectorFnAdvanced<R> | DataSelectorFnShort;
+export declare type DataSelectorFn<R> = DataSelectorFnAdvanced<R> | DataSelectorFnShort;
 
-declare type DataSelectorFnAdvanced<R> = {
+export declare type DataSelectorFnAdvanced<R> = {
     handle: (el: DataElement, state: StoreState, $preDefineResult?: R) => boolean;
     $preDefine?: (state: StoreState) => R;
     deps?: string[];
 };
 
-declare type DataSelectorFnShort = (e: DataElement, state: StoreState) => boolean;
+export declare type DataSelectorFnShort = (e: DataElement, state: StoreState) => boolean;
 
 declare const DefaultScheme: [{
     readonly title: "Text Filter";
@@ -177,6 +169,13 @@ export declare function fetchWith<T extends JSON | string | HTMLElement>(input: 
 
 export declare function findNextSibling<T extends Element = HTMLElement>(e: T): Element | null;
 
+/**
+ * Converts a duration string (e.g., "1h 22min 3sec") to HH:MM:SS format.
+ * @param timeStr - The duration string to format.
+ * @returns A string in the format HH:MM:SS.
+ */
+export declare function formatTimeToHHMMSS(timeStr: string): string;
+
 declare type GeneratorResult = {
     url: string;
     offset: number;
@@ -189,27 +188,30 @@ export declare function getPaginationStrategy(options: Partial<PaginationStrateg
 export declare class InfiniteScroller {
     enabled: boolean;
     paginationOffset: number;
-    parseData?: (document: HTMLElement) => void;
-    rules: RulesGlobal;
+    rules: Rules;
     private observer?;
     private paginationGenerator;
     constructor(options: InfiniteScrollerOptions);
     dispose(): void;
     setObserver(observable: HTMLElement): this;
-    private onScrollCBs;
-    onScroll(callback: (scroller: InfiniteScroller) => void, initCall?: boolean): this;
-    private _onScroll;
+    subject: Subject<IScrollerSubject>;
     private setAutoScroll;
     generatorConsumer: () => Promise<boolean>;
     private getPaginationData;
     doScroll(url: string, offset: number): Promise<void>;
     static generatorForPaginationStrategy(pstrategy: PaginationStrategy): OffsetGenerator;
-    static create(rules: RulesGlobal): InfiniteScroller;
+    static create(rules: Rules): InfiniteScroller;
 }
 
 declare type InfiniteScrollerOptions = Pick<InfiniteScroller, 'rules'> & Partial<InfiniteScroller>;
 
 export declare function instantiateTemplate(sourceSelector: string, attributeUpdates: Record<string, string>, contentUpdates: Record<string, string>): string;
+
+declare type IScrollerSubject = {
+    type: 'scroll';
+    scroller: InfiniteScroller;
+    page: HTMLElement;
+};
 
 export declare class LazyImgLoader {
     lazyImgObserver: Observer;
@@ -226,6 +228,10 @@ declare interface MemoizedFunction<T extends AnyFunction> extends CallableFuncti
     clear: () => void;
 }
 
+export declare const MOBILE_UA: {
+    readonly 'User-Agent': string;
+};
+
 export declare function objectToFormData<T extends {}>(obj: T): FormData;
 
 export declare class Observer {
@@ -240,7 +246,7 @@ export declare class Observer {
     static observeWhile(target: Element, callback: () => Promise<boolean> | boolean, throttleTime: number): Observer;
 }
 
-declare type OffsetGenerator<T = GeneratorResult> = Generator<T> | AsyncGenerator<T>;
+export declare type OffsetGenerator<T = GeneratorResult> = Generator<T> | AsyncGenerator<T>;
 
 export declare class OnHover {
     private container;
@@ -259,7 +265,7 @@ export declare class OnHover {
     static create(...args: ConstructorParameters<typeof OnHover>): OnHover;
 }
 
-declare class PaginationStrategy {
+export declare class PaginationStrategy {
     doc: Document;
     url: URL;
     paginationSelector: string;
@@ -277,6 +283,31 @@ declare class PaginationStrategy {
     getPaginationUrlGenerator(): (offset: number) => string | Promise<string>;
 }
 
+export declare class PaginationStrategyDataParams extends PaginationStrategy {
+    getPaginationLast(): number;
+    getPaginationOffset(): number;
+    getPaginationUrlGenerator(): (n: number) => string;
+    static testLinks(doc?: HTMLElement | Document): boolean;
+}
+
+export declare class PaginationStrategyPathnameParams extends PaginationStrategy {
+    extractPage: (a: HTMLAnchorElement | Location | string) => number;
+    static checkLink(link: URL, pathnameSelector?: RegExp): boolean;
+    static testLinks(links: URL[], options: Partial<PaginationStrategy>): boolean;
+    getPaginationLast(): number;
+    getPaginationOffset(): number;
+    getPaginationUrlGenerator(url_?: URL): (offset: number) => string;
+}
+
+export declare class PaginationStrategySearchParams extends PaginationStrategy {
+    extractPage: (a: HTMLAnchorElement | Location | URL | string) => number;
+    getPaginationLast(): number;
+    getPaginationOffset(): number;
+    getPaginationUrlGenerator(): (offset: number) => string;
+    static checkLink(link: URL, searchParamSelector?: string): boolean;
+    static testLinks(links: URL[], searchParamSelector?: string): boolean;
+}
+
 export declare function parseCssUrl(s: string): string;
 
 export declare function parseDataParams(str: string): Record<string, string>;
@@ -284,6 +315,12 @@ export declare function parseDataParams(str: string): Record<string, string>;
 export declare function parseHtml(html: string): HTMLElement;
 
 export declare function parseIntegerOr(n: string | number, or: number): number;
+
+export declare function parseUrl(s: HTMLAnchorElement | Location | URL | string): URL;
+
+declare type Primitive = string | number | boolean;
+
+declare type PrimitiveString = 'boolean' | 'string' | 'number' | 'duration';
 
 export declare function querySelectorLast<T extends Element = HTMLElement>(root: ParentNode | undefined, selector: string): T | undefined;
 
@@ -305,45 +342,33 @@ export declare function removeClassesAndDataAttributes(element: HTMLElement, key
 
 export declare function replaceElementTag(e: HTMLElement, tagName: string): HTMLElement;
 
-export declare class RulesGlobal {
-    delay?: number;
-    customGenerator?: OffsetGenerator;
+export declare class Rules {
     getThumbUrl(thumb: HTMLElement | HTMLAnchorElement): string;
-    titleSelector: undefined | string;
-    uploaderSelector: undefined | string;
-    durationSelector: undefined | string;
-    customThumbDataSelectors: undefined | CustomThumbDataSelector;
-    getThumbDataStrategy: 'default' | 'auto-select' | 'auto-text';
-    getThumbDataCallback?: (thumb: HTMLElement, thumbData: ThumbData) => void;
-    getThumbData(thumb: HTMLElement): ThumbData;
-    getThumbImgDataAttrSelector?: string | string[] | ((img: HTMLImageElement) => string);
-    getThumbImgDataAttrDelete?: 'auto' | string;
-    getThumbImgDataStrategy: 'default' | 'auto';
-    getThumbImgData(thumb: HTMLElement): {
-        img?: HTMLImageElement;
-        imgSrc?: string;
-    };
+    thumb: Parameters<typeof ThumbDataParser.create>[0];
+    thumbDataParser: ThumbDataParser;
+    thumbImg: Parameters<typeof ThumbImgParser.create>[0];
+    thumbImgParser: ThumbImgParser;
+    thumbs: Parameters<typeof ThumbsParser.create>[0];
+    thumbsParser: ThumbsParser;
     containerSelector: string | (() => HTMLElement);
     containerSelectorLast?: string;
+    get container(): HTMLElement;
     intersectionObservableSelector?: string;
     get intersectionObservable(): "" | Element | null | undefined;
     get observable(): HTMLElement;
-    get container(): HTMLElement;
-    thumbsSelector: string;
-    getThumbsStrategy: 'default' | 'auto';
-    getThumbsTransform?: (thumb: HTMLElement) => void;
-    getThumbs(html: HTMLElement): HTMLElement[];
     paginationStrategyOptions: Partial<PaginationStrategy>;
     paginationStrategy: PaginationStrategy;
+    dataManager: DataManager;
+    dataHomogenity: ConstructorParameters<typeof DataManager>[1];
     customDataSelectorFns: (Record<string, DataSelectorFn<any>> | string)[];
     animatePreview?: (doc: HTMLElement) => void;
     storeOptions?: JabroniTypes.StoreStateOptions;
-    private createStore;
     schemeOptions: SchemeOptions;
-    private createGui;
     store: JabronioStore;
     gui: JabronioGUI;
-    dataManager: DataManager;
+    private createStore;
+    private createGui;
+    customGenerator?: OffsetGenerator;
     infiniteScroller?: InfiniteScroller;
     getPaginationData?: InfiniteScroller['getPaginationData'];
     private resetInfiniteScroller;
@@ -351,14 +376,12 @@ export declare class RulesGlobal {
     gropeInit(): void;
     get isEmbedded(): boolean;
     private setupStoreListeners;
-    dataManagerOptions: Partial<DataManager>;
-    private setupDataManager;
     private mutationObservers;
     resetOnPaginationOrContainerDeath: boolean;
     private resetOn;
     onResetCallback?: () => void;
     private reset;
-    constructor(options: Partial<RulesGlobal>);
+    constructor(options: Partial<Rules>);
 }
 
 export declare function sanitizeStr(s: string): string;
@@ -367,12 +390,56 @@ declare type SchemeOptions = (Parameters<typeof setupScheme>[0][0] | JabroniType
 
 export declare function splitWith(s: string, c?: string): Array<string>;
 
-declare type ThumbData = {
-    title: string;
-    duration?: number;
-} & {
-    [x: string]: string | boolean | number;
+declare type ThumbData = Record<string, Primitive>;
+
+export declare class ThumbDataParser {
+    strategy: 'manual' | 'auto-select' | 'auto-text';
+    selectors: ThumbDataSelectorsRaw;
+    callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined;
+    stringsMeltInTitle: boolean;
+    private autoParseText;
+    private preprocessCustomThumbDataSelectors;
+    private thumbDataSelectors;
+    private readonly defaultThumbDataSelectors;
+    private getThumbDataWith;
+    constructor(strategy?: 'manual' | 'auto-select' | 'auto-text', selectors?: ThumbDataSelectorsRaw, callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined, stringsMeltInTitle?: boolean);
+    static create(o?: Partial<Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback' | 'stringsMeltInTitle'>>): ThumbDataParser;
+    getThumbData(thumb: HTMLElement): ThumbData;
+}
+
+declare type ThumbDataSelector = {
+    name: string;
+    selector: string;
+    type: PrimitiveString;
 };
+
+declare type ThumbDataSelectorsRaw = Record<string, string | Pick<ThumbDataSelector, 'selector' | 'type'>>;
+
+export declare class ThumbImgParser {
+    selector?: string | string[] | ((img: HTMLImageElement) => string);
+    remove?: 'auto' | string;
+    strategy: 'default' | 'auto';
+    static create(options?: Partial<Pick<ThumbImgParser, 'selector' | 'remove' | 'strategy' | 'getImgData'>>): ThumbImgParser & Partial<Pick<ThumbImgParser, "selector" | "strategy" | "remove" | "getImgData">>;
+    private removeAttrs;
+    private getImgSrc;
+    getImgData(thumb: HTMLElement): {
+        img?: undefined;
+        imgSrc?: undefined;
+    } | {
+        img: HTMLImageElement;
+        imgSrc: string;
+    };
+}
+
+export declare class ThumbsParser {
+    containerSelector: string;
+    selector: string;
+    strategy: 'default' | 'auto';
+    transform?: (thumb: HTMLElement) => void;
+    static create(options: Partial<Pick<ThumbsParser, "selector" | "strategy" | "transform">> | undefined, containerSelector: string): ThumbsParser & Partial<Pick<ThumbsParser, "selector" | "strategy" | "transform">>;
+    constructor(containerSelector: string);
+    getThumbs(html: HTMLElement): HTMLElement[];
+}
 
 export declare class Tick {
     private delay;

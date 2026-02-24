@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.eroprofile.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -22,15 +22,19 @@
   'use strict';
 
   document.querySelector(".videoGrid")?.after(document.querySelector(".clB"));
-  new core.RulesGlobal({
+  new core.Rules({
     paginationStrategyOptions: {
       paginationSelector: ".boxNav2",
       searchParamSelector: "pnum"
     },
-    titleSelector: "[title]",
-    durationSelector: ".videoDur",
+    thumbs: { selector: ".video" },
+    thumb: {
+      selectors: {
+        title: "[title]",
+        duration: ".videoDur"
+      }
+    },
     containerSelector: ".videoGrid",
-    thumbsSelector: ".video",
     customDataSelectorFns: ["filterInclude", "filterExclude", "filterDuration"],
     schemeOptions: [
       "Text Filter",

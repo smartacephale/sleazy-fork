@@ -4,6 +4,9 @@ import {
   PaginationStrategyPathnameParams,
   PaginationStrategySearchParams,
 } from './pagination-strategies';
+
+export * from './pagination-strategies';
+
 import { getPaginationLinks } from './pagination-utils';
 
 export function getPaginationStrategy(

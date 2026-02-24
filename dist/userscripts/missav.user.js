@@ -15,7 +15,7 @@
 // @match        https://*.missav.ws/*
 // @match        https://*.missav.to/*
 // @match        https://*.missav.live/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.8/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -25,15 +25,19 @@
 (function (core) {
   'use strict';
 
-  new core.RulesGlobal({
+  new core.Rules({
     paginationStrategyOptions: {
       paginationSelector: "nav[x-data]"
     },
     containerSelector: ".grid[x-data]",
-    thumbsSelector: "div:has(> .thumbnail.group)",
-    getThumbImgDataStrategy: "auto",
-    titleSelector: "div > div > a.text-secondary",
-    durationSelector: "div > a > span.text-xs",
+    thumbs: { selector: "div:has(> .thumbnail.group)" },
+    thumb: {
+      selectors: {
+        title: "div > div > a.text-secondary",
+        duration: "div > a > span.text-xs"
+      }
+    },
+    thumbImg: { strategy: "auto" },
     schemeOptions: ["Text Filter", "Duration Filter", "Badge", "Advanced"]
   });
 

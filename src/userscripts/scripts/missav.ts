@@ -1,5 +1,5 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
-import { RulesGlobal } from '../../core';
+import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Missav PervertMonkey',
@@ -14,14 +14,18 @@ export const meta: MonkeyUserScript = {
   ],
 };
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: 'nav[x-data]',
   },
   containerSelector: '.grid[x-data]',
-  thumbsSelector: 'div:has(> .thumbnail.group)',
-  getThumbImgDataStrategy: 'auto',
-  titleSelector: 'div > div > a.text-secondary',
-  durationSelector: 'div > a > span.text-xs',
+  thumbs: { selector: 'div:has(> .thumbnail.group)' },
+  thumb: {
+    selectors: {
+      title: 'div > div > a.text-secondary',
+      duration: 'div > a > span.text-xs',
+    }
+  },
+  thumbImg: { strategy: 'auto' },
   schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
 });

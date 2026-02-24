@@ -1,13 +1,13 @@
 import { LSKDB } from 'lskdb';
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { GM_addStyle, unsafeWindow } from '$';
-import { getPaginationStrategy, InfiniteScroller, RulesGlobal } from '../../core';
+import { getPaginationStrategy, InfiniteScroller, Rules } from '../../core';
 import {
   circularShift,
   downloader,
   fetchHtml,
-  objectToFormData,
   OnHover,
+  objectToFormData,
   parseHtml,
   querySelectorLastNumber,
   querySelectorText,
@@ -39,22 +39,27 @@ const IS_COMMUNITY_LIST = /\/members\/$/.test(location.pathname);
 const IS_VIDEO_PAGE = /^(\/videos)?\/\d+\//.test(location.pathname);
 const IS_LOGGED_IN = document.cookie.includes('kt_member');
 
-const rules = new RulesGlobal({
+const rules = new Rules({
   containerSelector:
     '[id*="playlist"]:has(> .item .title),[id*="videos"]:has(> .item .title),form:has(>.item .title)',
   paginationStrategyOptions: {
     paginationSelector: '.pagination:not([id *= member])',
     overwritePaginationLast: IS_MEMBER_PAGE ? () => 1 : (x) => (x === 9 ? 9999 : x),
   },
-  getThumbImgDataAttrSelector: 'data-original',
-  getThumbImgDataStrategy: 'auto',
-  thumbsSelector:
-    '.list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)',
-  gropeStrategy: 'all-in-all',
-  getThumbDataStrategy: 'auto-select',
-  customThumbDataSelectors: {
-    private: { type: 'boolean', selector: '[class*=private]' },
+  thumbs: {
+    selector:
+      '.list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)'
   },
+  thumb: {
+    strategy: 'auto-select',
+    selectors: {
+      private: { type: 'boolean', selector: '[class*=private]' },
+    },
+  },
+  thumbImg: {
+    selector: 'data-original',
+  },
+  gropeStrategy: 'all-in-all',
   customDataSelectorFns: [
     'filterInclude',
     'filterExclude',
@@ -175,7 +180,7 @@ async function getMemberFriends(id: number | string) {
   const paginationStrategy = getPaginationStrategy({
     doc,
     url,
-    overwritePaginationLast: (x) => (x === 9 ? 999 : x),
+    overwritePaginationLast: (x: number) => (x === 9 ? 999 : x),
   });
 
   const gen = InfiniteScroller.generatorForPaginationStrategy(paginationStrategy);
@@ -301,7 +306,7 @@ async function acceptFriendRequest(id: number | string) {
 async function clearMessages() {
   const pages = InfiniteScroller.generatorForPaginationStrategy(
     getPaginationStrategy({
-      overwritePaginationLast: (x) => (x === 9 ? 999 : x),
+      overwritePaginationLast: (x: number) => (x === 9 ? 999 : x),
     }),
   );
 
