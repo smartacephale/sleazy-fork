@@ -5,7 +5,7 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.2',
+  version: '2.0.3',
   description: 'Infinite scroll [optional], Filter by Title, Duration and HD',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
 };

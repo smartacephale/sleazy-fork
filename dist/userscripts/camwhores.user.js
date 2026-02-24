@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.4
+// @version      3.0.5
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button
 // @license      MIT

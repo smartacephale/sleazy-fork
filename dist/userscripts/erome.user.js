@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.1
+// @version      5.0.2
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Video/Photo albums
 // @license      MIT

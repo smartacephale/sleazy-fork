@@ -5,7 +5,7 @@ import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'XVideos Improved',
-  version: '4.0.2',
+  version: '4.0.3',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: 'https://*.xvideos.com/*',
 };

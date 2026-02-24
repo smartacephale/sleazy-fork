@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const FOLDER: string = 'src/userscripts/scripts/test';
+const FOLDER: string = 'src/userscripts/scripts';
 
 function incrementVersion(major: string, minor: string, patch: string): string {
   let maj: number = parseInt(major, 10);

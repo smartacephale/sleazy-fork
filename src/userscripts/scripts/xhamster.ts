@@ -14,7 +14,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster Improved',
-  version: '5.0.2',
+  version: '5.0.3',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
   exclude: 'https://*.xhamster.com/embed*',

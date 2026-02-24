@@ -4,7 +4,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'NameThatPorn PervertMonkey',
-  version: '3.0.1',
+  version: '3.0.2',
   description: 'Infinite scroll [optional], Filter by Title and Un/Solved',
   match: ['https://namethatporn.com/*'],
 };
