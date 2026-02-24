@@ -6,7 +6,8 @@
 
 ## Userscripts
 ```shell
-src/userscripts/scripts
+src/userscripts/scripts # dev
+dist/userscripts        # build
 ```
 
 ## Build
