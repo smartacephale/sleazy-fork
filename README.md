@@ -31,7 +31,7 @@ If you are lucky monkey, you can build your own userscript with infinite scrolle
 
 ```typescript
 // replace with selectors of your own
-const rules = new RulesGlobal({
+const rules = new Rules({
   containerSelector: '.content',
   thumbs: {
     selector: '.thumb',
@@ -46,7 +46,8 @@ const rules = new RulesGlobal({
 });
 ```
 
-Use `RulesGlobal` from `src/core/rules` as documentation.
+> [!TIP]
+> Use `Rules` from `src/core/rules` as documentation
 
 _see you space cowboy 😘_
 
