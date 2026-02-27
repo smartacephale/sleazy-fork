@@ -9,6 +9,22 @@ export function parseIntegerOr(n: string | number, or: number): number {
   return Number.isSafeInteger(num) ? num : or;
 }
 
+export function parseNumberWithLetter(str: string): number {
+  const multipliers = { k: 1e3, m: 1e6 } as const;
+  const match = str.trim().match(/^([\d.]+)(\w)?$/);
+
+  if (!match) return 0;
+
+  const num = parseFloat(match[1]);
+  const suffix = match[2]?.toLowerCase() as keyof typeof multipliers;
+
+  if (suffix && suffix in multipliers) {
+    return num * multipliers[suffix];
+  }
+
+  return num;
+}
+
 // "data:02;body+head:async;void:;zero:;"
 export function parseDataParams(str: string): Record<string, string> {
   const paramsStr = decodeURI(str.trim()).split(';');

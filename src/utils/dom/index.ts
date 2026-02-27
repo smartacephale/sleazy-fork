@@ -8,6 +8,16 @@ export {
   watchElementChildrenCount,
 } from './dom-observers';
 
+export function findSelfOrChild<T extends HTMLElement>(
+  element: T,
+  selector: string,
+): T | null {
+  if (element.matches(selector)) {
+    return element as T;
+  }
+  return element.querySelector<T>(selector);
+}
+
 export function querySelectorLast<T extends Element = HTMLElement>(
   root: ParentNode = document,
   selector: string,

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    pervertmonkey
-// @version      4.0.3
+// @version      4.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xvideos.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -74,16 +74,11 @@
     function getVideoURL(src) {
       return src.replace(/\w+\.\w+$/, () => "preview.mp4");
     }
-    utils.OnHover.create(
-      container,
-      (target) => target.tagName === "IMG" && target.id.includes("pic_"),
-      (target) => {
-        const videoSrc = getVideoURL(target.src);
-        const onOverCallback = createPreviewElement(videoSrc, target);
-        const leaveTarget = target.closest(".thumb-inside");
-        return { leaveTarget, onOverCallback };
-      }
-    );
+    utils.OnHover.create(container, "div.thumb-block[id^=video_]:not(.thumb-ad)", (target) => {
+      const img = target.querySelector("img");
+      const videoSrc = getVideoURL(img.src);
+      return createPreviewElement(videoSrc, img);
+    });
   }
 
 })(core, utils);

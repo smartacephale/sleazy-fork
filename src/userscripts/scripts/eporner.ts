@@ -5,7 +5,7 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.3',
+  version: '2.0.4',
   description: 'Infinite scroll [optional], Filter by Title, Duration and HD',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
 };
@@ -16,6 +16,7 @@ const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: '.numlist2',
   },
+  thumbs: { selector: 'div[id^=vf][data-id]' },
   thumb: {
     selectors: {
       quality: { type: 'number', selector: '[title="Quality"]' },
@@ -27,9 +28,6 @@ const rules = new Rules({
   thumbImg: {
     strategy: 'auto',
     remove: 'auto',
-  },
-  thumbs: {
-    selector: 'div[id^=vf][data-id]',
   },
   containerSelectorLast: '#vidresults',
   customDataSelectorFns: [
@@ -82,14 +80,10 @@ const rules = new Rules({
 });
 
 function animatePreview(doc: HTMLElement) {
-  OnHover.create(
-    doc,
-    (e) => e instanceof HTMLImageElement,
-    (e) => {
-      const target = e as HTMLImageElement;
-      const thumb = target.closest('[data-id]');
-      const id = thumb?.getAttribute('data-id');
-      show_video_prev(id);
-    },
-  );
+  OnHover.create(doc, 'div[id^=vf][data-id]', (e) => {
+    const target = e as HTMLImageElement;
+    const thumb = target.closest('[data-id]');
+    const id = thumb?.getAttribute('data-id');
+    show_video_prev(id);
+  });
 }

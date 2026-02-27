@@ -5,7 +5,7 @@ import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'XVideos Improved',
-  version: '4.0.3',
+  version: '4.0.4',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: 'https://*.xvideos.com/*',
 };
@@ -67,14 +67,9 @@ function animatePreview(container: HTMLElement) {
     return src.replace(/\w+\.\w+$/, () => 'preview.mp4');
   }
 
-  OnHover.create(
-    container,
-    (target) => target.tagName === 'IMG' && target.id.includes('pic_'),
-    (target) => {
-      const videoSrc = getVideoURL((target as HTMLImageElement).src);
-      const onOverCallback = createPreviewElement(videoSrc, target);
-      const leaveTarget = target.closest('.thumb-inside') as HTMLElement;
-      return { leaveTarget, onOverCallback };
-    },
-  );
+  OnHover.create(container, 'div.thumb-block[id^=video_]:not(.thumb-ad)', (target) => {
+    const img = target.querySelector('img') as HTMLImageElement;
+    const videoSrc = getVideoURL(img.src);
+    return createPreviewElement(videoSrc, img);
+  });
 }

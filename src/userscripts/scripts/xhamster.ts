@@ -11,10 +11,11 @@ import {
   waitForElementToAppear,
   watchElementChildrenCount,
 } from '../../utils';
+import { findSelfOrChild } from '../../utils/dom';
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster Improved',
-  version: '5.0.3',
+  version: '5.0.4',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
   exclude: 'https://*.xhamster.com/embed*',
@@ -150,16 +151,13 @@ function animatePreview() {
     return () => exterminateVideo(video);
   }
 
-  OnHover.create(
-    document.body,
-    (e) => e.classList.contains('thumb-image-container__image'),
-    (e) => {
-      const videoSrc = e.parentElement?.getAttribute('data-previewvideo') as string;
-      const onOverCallback = createPreviewVideoElement(videoSrc, e);
-      const leaveTarget = e.parentElement?.parentElement as HTMLElement;
-      return { leaveTarget, onOverCallback };
-    },
-  );
+  OnHover.create(document.body, '.video-thumb', (e) => {
+    const container = e.querySelector('.thumb-image-container__image') as HTMLElement;
+    const videoSrc = e
+      .querySelector('[data-previewvideo]')
+      ?.getAttribute('data-previewvideo') as string;
+    return createPreviewVideoElement(videoSrc, container);
+  });
 }
 
 function expandMoreVideoPage() {

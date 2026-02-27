@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    pervertmonkey
-// @version      8.0.2
+// @version      8.0.3
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Preview for private videos. Filter: title, duration, public/private. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.thisvid.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -1157,24 +1157,22 @@ function takeWhile(predicate) {
         (_2, n) => `${utils.circularShift(parseInt(n), 6)}`
       );
     }
-    function animate(container) {
-      utils.OnHover.create(
-        container,
-        (target) => !!target.getAttribute("src"),
-        (target) => {
-          const e = target;
-          const orig = target.getAttribute("src");
-          tick.start(
-            () => iteratePreviewFrames(e),
-            () => {
-              e.src = orig;
-            }
-          );
-        },
-        () => tick.stop()
-      );
-    }
-    animate(document.querySelector(".content") || document.body);
+    const container = document.querySelector(".content") || document.body;
+    utils.OnHover.create(
+      container,
+      "div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder",
+      (target) => {
+        const img = target.querySelector("img");
+        const orig = img.getAttribute("src");
+        tick.start(
+          () => iteratePreviewFrames(img),
+          () => {
+            img.src = orig;
+          }
+        );
+        return () => tick.stop();
+      }
+    );
   }
   async function getMemberVideos(id, type = "private") {
     const { uploadedPrivate, uploadedPublic, name } = await getMemberData(id);

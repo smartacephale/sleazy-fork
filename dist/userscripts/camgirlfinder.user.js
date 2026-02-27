@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamGirlFinder PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.6.1
+// @version      1.6.2
 // @author       violent-orangutan
 // @description  Adds model links for CamWhores, webcamrecordings, recu.me, camvideos, privat-zapisi
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://camgirlfinder.net/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        none
 // @run-at       document-idle

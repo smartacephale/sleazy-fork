@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         3Hentai PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.3
+// @version      1.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.3hentai.net/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -43,30 +43,23 @@
     const tick = new utils.Tick(500, false);
     const end = 9999;
     function rotate(src) {
-      return src.replace(
-        /(\d+)(?=t\.jpg$)/,
-        (_, n) => `${utils.circularShift(parseInt(n), end)}`
-      );
+      return src.replace(/(\d+)(?=t\.jpg$)/, (_, n) => `${utils.circularShift(parseInt(n), end)}`);
     }
-    utils.OnHover.create(
-      document.body,
-      (e) => e instanceof HTMLImageElement && e.src.endsWith(".jpg"),
-      (e) => {
-        const t = e;
-        const origin = t.src;
-        t.src = t.src.replace(/\w+\.\w+$/, "1t.jpg");
-        t.onerror = (_) => tick.stop();
-        tick.start(
-          () => {
-            t.src = rotate(t.src);
-          },
-          () => {
-            t.src = origin;
-          }
-        );
-      },
-      (_) => tick.stop()
-    );
+    utils.OnHover.create(document.body, ".doujin-col", (e) => {
+      const img = e.querySelector("img");
+      const origin = img.src;
+      img.src = img.src.replace(/\w+\.\w+$/, "1t.jpg");
+      img.onerror = (_) => tick.stop();
+      tick.start(
+        () => {
+          img.src = rotate(img.src);
+        },
+        () => {
+          img.src = origin;
+        }
+      );
+      return () => tick.stop();
+    });
   }
 
 })(core, utils);

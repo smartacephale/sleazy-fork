@@ -4,7 +4,7 @@ import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Ebalka PervertMonkey',
-  version: '3.0.2',
+  version: '3.0.3',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: [
     'https://b.ebalka.zip/*',
@@ -21,13 +21,13 @@ const rules = new Rules({
     paginationSelector: '.pagination:not([id *= member])',
   },
   thumbs: {
-    selector: '.card_video'
+    selector: '.card_video',
   },
   thumb: {
     selectors: {
       title: '.card__title',
       duration: '.card__spot > span:last-child',
-    }
+    },
   },
   animatePreview,
   schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
@@ -50,13 +50,8 @@ function animatePreview(container: HTMLElement) {
     };
   }
 
-  OnHover.create(
-    container,
-    (target) => target.tagName === 'IMG',
-    (target) => {
-      const thumb = target.closest('.card') as HTMLElement;
-      const onOverCallback = animateThumb(thumb);
-      return { leaveTarget: thumb, onOverCallback };
-    },
-  );
+  OnHover.create(container, '.card_video', (target) => {
+    const thumb = target.closest('.card') as HTMLElement;
+    return animateThumb(thumb);
+  });
 }

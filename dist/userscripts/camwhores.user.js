@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.5
+// @version      3.0.6
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button
 // @license      MIT
@@ -13,7 +13,7 @@
 // @match        https://*.camwhores.tv
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -153,24 +153,21 @@
     }
     utils.OnHover.create(
       container,
-      (target) => target.tagName === "IMG" && target.classList.contains("thumb") && !!target.getAttribute("src") && !/data:image|avatar/.test(target.getAttribute("src")),
-      (_target) => {
-        const target = _target;
-        const origin = target.src;
-        const count = parseInt(target.getAttribute("data-cnt")) || 5;
+      ".list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)",
+      (e) => {
+        const img = e.querySelector("img");
+        const origin = img.src;
+        const count = parseInt(img.getAttribute("data-cnt")) || 5;
         tick.start(
           () => {
-            target.src = rotateImg(target.src, count);
+            img.src = rotateImg(img.src, count);
           },
           () => {
-            target.src = origin;
+            img.src = origin;
           }
         );
-        return {
-          leaveTarget: target.closest(".item")
-        };
-      },
-      () => tick.stop()
+        return () => tick.stop();
+      }
     );
   }
   const createDownloadButton = () => utils.downloader({

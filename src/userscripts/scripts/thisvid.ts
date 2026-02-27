@@ -21,7 +21,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'ThisVid.com Improved',
-  version: '8.0.2',
+  version: '8.0.3',
   description:
     'Infinite scroll [optional]. Preview for private videos. Filter: title, duration, public/private. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
   match: ['https://*.thisvid.com/*'],
@@ -390,25 +390,24 @@ function animatePreview(_: HTMLElement) {
     );
   }
 
-  function animate(container: HTMLElement) {
-    OnHover.create(
-      container,
-      (target) => !!target.getAttribute('src'),
-      (target) => {
-        const e = target as HTMLImageElement;
-        const orig = target.getAttribute('src') as string;
-        tick.start(
-          () => iteratePreviewFrames(e),
-          () => {
-            e.src = orig;
-          },
-        );
-      },
-      () => tick.stop(),
-    );
-  }
+  const container = document.querySelector<HTMLElement>('.content') || document.body;
 
-  animate(document.querySelector('.content') || document.body);
+  OnHover.create(
+    container,
+    'div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder',
+    (target) => {
+      const img = target.querySelector('img') as HTMLImageElement;
+      const orig = img.getAttribute('src') as string;
+      tick.start(
+        () => iteratePreviewFrames(img),
+        () => {
+          img.src = orig;
+        },
+      );
+
+      return () => tick.stop();
+    },
+  );
 }
 
 //====================================================================================================

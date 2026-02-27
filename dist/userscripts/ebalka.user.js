@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ebalka PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.2
+// @version      3.0.3
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -15,7 +15,7 @@
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
 // @match        https://*.fuckingbear*.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -55,15 +55,10 @@
         utils.exterminateVideo(videoElem);
       };
     }
-    utils.OnHover.create(
-      container,
-      (target) => target.tagName === "IMG",
-      (target) => {
-        const thumb = target.closest(".card");
-        const onOverCallback = animateThumb(thumb);
-        return { leaveTarget: thumb, onOverCallback };
-      }
-    );
+    utils.OnHover.create(container, ".card_video", (target) => {
+      const thumb = target.closest(".card");
+      return animateThumb(thumb);
+    });
   }
 
 })(core, utils);

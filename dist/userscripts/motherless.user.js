@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.3
+// @version      5.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://motherless.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -35,7 +35,8 @@
       selectors: {
         uploader: ".uploader",
         title: ".title",
-        duration: ".size"
+        duration: ".size",
+        views: { selector: ".hits", type: "float" }
       }
     },
     thumbImg: { strategy: "auto" },
@@ -44,26 +45,16 @@
     },
     animatePreview,
     gropeStrategy: "all-in-all",
-    schemeOptions: ["Text Filter", "Duration Filter", "Badge", "Advanced"]
+    schemeOptions: ["Text Filter", "Sort By", "Duration Filter", "Badge", "Advanced"]
   });
   function animatePreview(_) {
-    const ANIMATION_INTERVAL = 500;
-    const tick = new utils.Tick(ANIMATION_INTERVAL);
-    let currentOverlay = null;
-    function onLeave(target) {
-      tick.stop();
-      const img = target.querySelector("img.static");
-      img.classList.remove("animating");
-      if (currentOverlay) {
-        currentOverlay.style.display = "none";
-      }
-    }
+    const tick = new utils.Tick(500);
     function onOver(target) {
       $(".video").off();
-      const container = target.closest(".desktop-thumb.video");
+      const container = target.querySelector(".desktop-thumb.video");
       const img = container.querySelector("img.static");
       const stripSrc = img.getAttribute("data-strip-src");
-      img.classList.add("animating");
+      container.classList.toggle("animating");
       let overlay = img.nextElementSibling;
       if (!overlay || overlay.tagName !== "DIV") {
         overlay = document.createElement("div");
@@ -71,43 +62,32 @@
           "style",
           "z-index: 8; position: absolute; top: 0; left: 0; pointer-events: none;"
         );
-        img.parentNode?.insertBefore(overlay, img.nextSibling);
+        img.after(overlay);
       }
-      currentOverlay = overlay;
       overlay.style.display = "block";
       let j = 0;
-      const containerHeight = container.offsetHeight;
+      const containerHeight = container.offsetHeight + 20;
+      const w = img.offsetWidth;
+      const h = img.offsetHeight;
+      const widthRatio = Math.floor(1000.303 * w / 100);
+      const heightRatio = Math.floor(228.6666 * h / 100);
+      const verticalOffset = (containerHeight - h) / 2;
       tick.start(() => {
-        const w = img.offsetWidth;
-        const h = img.offsetHeight;
-        const widthRatio = Math.floor(1000.303 * w / 100);
-        const heightRatio = Math.floor(228.6666 * h / 100);
-        const verticalOffset = (containerHeight - h) / 2;
         Object.assign(overlay.style, {
           width: `${w}px`,
           height: `${containerHeight}px`,
           backgroundImage: `url('${stripSrc}')`,
           backgroundSize: `${widthRatio}px ${heightRatio}px`,
-          backgroundPosition: `-${j++ * w % widthRatio}px ${verticalOffset}px`,
-          backgroundRepeat: "no-repeat"
+          backgroundPosition: `-${j++ * w % widthRatio}px ${verticalOffset}px`
         });
       });
-      const onOverCallback = () => onLeave(container);
-      return { onOverCallback, leaveTarget: container };
+      return () => {
+        tick.stop();
+        container.classList.toggle("animating");
+        overlay.style.display = "none";
+      };
     }
-    utils.OnHover.create(
-      document.body,
-      (e) => {
-        const container = e.closest(".desktop-thumb.video");
-        if (!container) return false;
-        const img = container.querySelector("img.static");
-        if (!img) return false;
-        const stripSrc = img.getAttribute("data-strip-src");
-        if (!stripSrc || img.classList.contains("animating")) return false;
-        return true;
-      },
-      onOver
-    );
+    utils.OnHover.create(document.body, ".thumb-container, .mobile-thumb", onOver);
   }
   function fixURLs() {
     document.querySelectorAll(".gallery-container").forEach((g) => {

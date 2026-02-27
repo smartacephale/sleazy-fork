@@ -18,9 +18,7 @@ export class Tick {
     if (this.tick !== undefined) {
       clearInterval(this.tick);
       this.tick = undefined;
-    }
-    if (this.callbackFinal) {
-      this.callbackFinal();
+      this.callbackFinal?.();
       this.callbackFinal = undefined;
     }
   }

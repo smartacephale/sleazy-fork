@@ -17,7 +17,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'CamWhores PervertMonkey',
-  version: '3.0.5',
+  version: '3.0.6',
   description:
     'Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button',
   match: ['https://*.camwhores.tv', 'https://*.camwhores.*/*'],
@@ -48,7 +48,7 @@ const rules = new Rules({
   },
   thumbs: {
     selector:
-      '.list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)'
+      '.list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)',
   },
   thumb: {
     strategy: 'auto-select',
@@ -108,28 +108,21 @@ function animatePreview(container: HTMLElement) {
 
   OnHover.create(
     container,
-    (target) =>
-      target.tagName === 'IMG' &&
-      target.classList.contains('thumb') &&
-      !!target.getAttribute('src') &&
-      !/data:image|avatar/.test(target.getAttribute('src') as string),
-    (_target) => {
-      const target = _target as HTMLImageElement;
-      const origin = target.src;
-      const count = parseInt(target.getAttribute('data-cnt') as string) || 5;
+    '.list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)',
+    (e) => {
+      const img = e.querySelector('img') as HTMLImageElement;
+      const origin = img.src;
+      const count = parseInt(img.getAttribute('data-cnt') as string) || 5;
       tick.start(
         () => {
-          target.src = rotateImg(target.src, count);
+          img.src = rotateImg(img.src, count);
         },
         () => {
-          target.src = origin;
+          img.src = origin;
         },
       );
-      return {
-        leaveTarget: target.closest('.item') as HTMLElement,
-      };
+      return () => tick.stop();
     },
-    () => tick.stop(),
   );
 }
 

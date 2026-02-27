@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xhamster Improved
 // @namespace    pervertmonkey
-// @version      5.0.3
+// @version      5.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -13,7 +13,7 @@
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.*/*
 // @exclude      https://*.xhamster.com/embed*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -135,16 +135,12 @@
       );
       return () => utils.exterminateVideo(video);
     }
-    utils.OnHover.create(
-      document.body,
-      (e) => e.classList.contains("thumb-image-container__image"),
-      (e) => {
-        const videoSrc = e.parentElement?.getAttribute("data-previewvideo");
-        const onOverCallback = createPreviewVideoElement(videoSrc, e);
-        const leaveTarget = e.parentElement?.parentElement;
-        return { leaveTarget, onOverCallback };
-      }
-    );
+    utils.OnHover.create(document.body, ".video-thumb", (e) => {
+      const container = e.querySelector(".thumb-image-container__image");
+      const videoSrc = e.querySelector("[data-previewvideo]")?.getAttribute("data-previewvideo");
+      console.log(container, videoSrc);
+      return createPreviewVideoElement(videoSrc, container);
+    });
   }
   function expandMoreVideoPage() {
     utils.watchElementChildrenCount(rules.container, () => setTimeout(rules.gropeInit, 1800));

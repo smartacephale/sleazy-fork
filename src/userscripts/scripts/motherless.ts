@@ -5,7 +5,7 @@ import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.3',
+  version: '5.0.4',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://motherless.com/*'],
   grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],
@@ -22,6 +22,7 @@ const rules = new Rules({
       uploader: '.uploader',
       title: '.title',
       duration: '.size',
+      views: { selector: '.hits', type: 'float' },
     },
   },
   thumbImg: { strategy: 'auto' },
@@ -30,32 +31,19 @@ const rules = new Rules({
   },
   animatePreview,
   gropeStrategy: 'all-in-all',
-  schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
+  schemeOptions: ['Text Filter', 'Sort By', 'Duration Filter', 'Badge', 'Advanced'],
 });
 
 function animatePreview(_: HTMLElement) {
-  const ANIMATION_INTERVAL = 500;
-  const tick = new Tick(ANIMATION_INTERVAL);
-  let currentOverlay: HTMLElement | null = null;
-
-  function onLeave(target: HTMLElement) {
-    tick.stop();
-
-    const img = target.querySelector('img.static') as HTMLElement;
-    img.classList.remove('animating');
-
-    if (currentOverlay) {
-      currentOverlay.style.display = 'none';
-    }
-  }
+  const tick = new Tick(500);
 
   function onOver(target: HTMLElement) {
     $('.video').off();
-    const container = target.closest('.desktop-thumb.video') as HTMLElement;
+    const container = target.querySelector('.desktop-thumb.video') as HTMLElement;
     const img = container.querySelector('img.static') as HTMLImageElement;
     const stripSrc = img.getAttribute('data-strip-src');
 
-    img.classList.add('animating');
+    container.classList.toggle('animating');
 
     let overlay = img.nextElementSibling as HTMLElement;
     if (!overlay || overlay.tagName !== 'DIV') {
@@ -64,54 +52,37 @@ function animatePreview(_: HTMLElement) {
         'style',
         'z-index: 8; position: absolute; top: 0; left: 0; pointer-events: none;',
       );
-      img.parentNode?.insertBefore(overlay, img.nextSibling);
+      img.after(overlay);
     }
 
-    currentOverlay = overlay;
     overlay.style.display = 'block';
 
     let j = 0;
-    const containerHeight = container.offsetHeight;
+    const containerHeight = container.offsetHeight + 20;
+    const w = img.offsetWidth;
+    const h = img.offsetHeight;
+    const widthRatio = Math.floor((1000.303 * w) / 100);
+    const heightRatio = Math.floor((228.6666 * h) / 100);
+    const verticalOffset = (containerHeight - h) / 2;
 
     tick.start(() => {
-      const w = img.offsetWidth;
-      const h = img.offsetHeight;
-
-      const widthRatio = Math.floor((1000.303 * w) / 100);
-      const heightRatio = Math.floor((228.6666 * h) / 100);
-
-      const verticalOffset = (containerHeight - h) / 2;
-
       Object.assign(overlay.style, {
         width: `${w}px`,
         height: `${containerHeight}px`,
         backgroundImage: `url('${stripSrc}')`,
         backgroundSize: `${widthRatio}px ${heightRatio}px`,
         backgroundPosition: `-${(j++ * w) % widthRatio}px ${verticalOffset}px`,
-        backgroundRepeat: 'no-repeat',
       });
     });
 
-    const onOverCallback = () => onLeave(container);
-    return { onOverCallback, leaveTarget: container };
+    return () => {
+      tick.stop();
+      container.classList.toggle('animating');
+      overlay.style.display = 'none';
+    };
   }
 
-  OnHover.create(
-    document.body,
-    (e) => {
-      const container = e.closest('.desktop-thumb.video') as HTMLElement;
-      if (!container) return false;
-
-      const img = container.querySelector('img.static') as HTMLImageElement;
-      if (!img) return false;
-
-      const stripSrc = img.getAttribute('data-strip-src');
-      if (!stripSrc || img.classList.contains('animating')) return false;
-
-      return true;
-    },
-    onOver,
-  );
+  OnHover.create(document.body, '.thumb-container, .mobile-thumb', onOver);
 }
 
 //====================================================================================================

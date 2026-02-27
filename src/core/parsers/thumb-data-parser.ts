@@ -1,4 +1,5 @@
 import {
+  parseNumberWithLetter,
   querySelectorLast,
   querySelectorText,
   sanitizeStr,
@@ -6,7 +7,7 @@ import {
 } from '../../utils';
 
 type Primitive = string | number | boolean;
-type PrimitiveString = 'boolean' | 'string' | 'number' | 'duration';
+type PrimitiveString = 'boolean' | 'string' | 'number' | 'float' | 'duration';
 type ThumbData = Record<string, Primitive>;
 type ThumbDataSelector = {
   name: string;
@@ -23,6 +24,10 @@ export class ThumbDataParser {
     const title = sanitizeStr(thumb.innerText);
     const duration = timeToSeconds(title.match(/\d+m|\d+:\d+/)?.[0] || '');
     return { title, duration };
+  }
+
+  public getUrl(thumb: HTMLElement | HTMLAnchorElement) {
+    return ((thumb.querySelector('a[href]') || thumb) as HTMLAnchorElement).href;
   }
 
   private preprocessCustomThumbDataSelectors() {
@@ -65,6 +70,10 @@ export class ThumbDataParser {
     }
     if (type === 'duration') {
       return timeToSeconds(querySelectorText(thumb, selector));
+    }
+    if (type === 'float') {
+      const value = querySelectorText(thumb, selector);
+      return parseNumberWithLetter(value);
     }
     return Number.parseInt(querySelectorText(thumb, selector));
   }

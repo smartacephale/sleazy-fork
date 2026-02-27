@@ -14,7 +14,7 @@ export class DataManager {
 
   constructor(
     private rules: Rules,
-    private parseDataParentHomogenity?: Parameters<typeof checkHomogenity>[2]
+    private parentHomogenity?: Parameters<typeof checkHomogenity>[2],
   ) {
     this.dataFilter = new DataFilter(this.rules);
   }
@@ -82,10 +82,10 @@ export class DataManager {
     const dataOffset = this.data.size;
     const fragment = document.createDocumentFragment();
     const parent = container || this.rules.container;
-    const homogenity = !!this.parseDataParentHomogenity;
+    const homogenity = !!this.parentHomogenity;
 
     for (const thumbElement of thumbs) {
-      const url = this.rules.getThumbUrl(thumbElement);
+      const url = this.rules.thumbDataParser.getUrl(thumbElement);
       if (
         !url ||
         this.data.has(url) ||
@@ -94,7 +94,7 @@ export class DataManager {
           !checkHomogenity(
             parent,
             thumbElement.parentElement as HTMLElement,
-            this.parseDataParentHomogenity as object,
+            this.parentHomogenity as object,
           ))
       ) {
         if (removeDuplicates) thumbElement.remove();

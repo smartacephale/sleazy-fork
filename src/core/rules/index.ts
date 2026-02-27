@@ -6,20 +6,21 @@ import {
 } from '../../utils';
 import { DataManager, type DataSelectorFn } from '../data-handler';
 import { InfiniteScroller, type OffsetGenerator } from '../infinite-scroll';
-import { DefaultScheme, type SchemeOptions, StoreStateDefault } from '../jabroni-config';
+import {
+  DefaultScheme,
+  JabronioGuiController,
+  type SchemeOptions,
+  StoreStateDefault,
+} from '../jabroni-config';
 import {
   getPaginationStrategy,
   type PaginationStrategy,
   ThumbDataParser,
   ThumbImgParser,
-  ThumbsParser
+  ThumbsParser,
 } from '../parsers';
 
 export class Rules {
-  public getThumbUrl(thumb: HTMLElement | HTMLAnchorElement) {
-    return ((thumb.querySelector('a[href]') || thumb) as HTMLAnchorElement).href;
-  }
-
   public thumb: Parameters<typeof ThumbDataParser.create>[0] = {};
   public thumbDataParser: ThumbDataParser;
 
@@ -73,6 +74,7 @@ export class Rules {
   public schemeOptions: SchemeOptions = [];
   public store: JabronioStore;
   public gui: JabronioGUI;
+  public inputController: JabronioGuiController;
 
   private createStore() {
     const config = { ...StoreStateDefault, ...this.storeOptions };
@@ -117,35 +119,6 @@ export class Rules {
     return window.self !== window.top;
   }
 
-  private setupStoreListeners() {
-    const eventsMap = {
-      'sort by duration': {
-        action: (direction: boolean) => this.dataManager.sortBy('duration', direction),
-      },
-    };
-
-    let lastEvent: undefined | string;
-    let direction = true;
-
-    this.store.eventSubject.subscribe((event) => {
-      if (event === lastEvent) {
-        direction = !direction;
-      } else {
-        lastEvent = event;
-        direction = true;
-      }
-
-      if (event in eventsMap) {
-        const ev = eventsMap[event as keyof typeof eventsMap];
-        ev?.action(direction);
-      }
-    });
-
-    this.store.stateSubject.subscribe((a) => {
-      this.dataManager.applyFilters(a as { [key: string]: boolean });
-    });
-  }
-
   private mutationObservers: MutationObserver[] = [];
 
   public resetOnPaginationOrContainerDeath = true;
@@ -171,8 +144,6 @@ export class Rules {
   public onResetCallback?: () => void;
 
   private reset() {
-    // console.log('\nRESET\n');
-
     this.mutationObservers.forEach((o) => {
       o.disconnect();
     });
@@ -181,7 +152,9 @@ export class Rules {
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
 
     this.dataManager = new DataManager(this, this.dataHomogenity);
-    this.setupStoreListeners();
+
+    this.inputController.dispose();
+    this.inputController = new JabronioGuiController(this.store, this.dataManager);
 
     this.resetInfiniteScroller();
 
@@ -209,8 +182,8 @@ export class Rules {
     this.gui = this.createGui();
 
     this.dataManager = new DataManager(this, this.dataHomogenity);
+    this.inputController = new JabronioGuiController(this.store, this.dataManager);
 
     this.reset();
-    // console.log('data', this.dataManager.data.values().toArray());
   }
 }

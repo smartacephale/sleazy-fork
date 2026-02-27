@@ -46,11 +46,11 @@ declare interface DataFilterResult {
 
 export declare class DataManager {
     private rules;
-    private parseDataParentHomogenity?;
+    private parentHomogenity?;
     data: Map<string, DataElement>;
     private lazyImgLoader;
     dataFilter: DataFilter;
-    constructor(rules: Rules, parseDataParentHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
+    constructor(rules: Rules, parentHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
     applyFilters: (filters?: Record<string, boolean>, offset?: number) => Promise<void>;
     filterAll: (offset?: number) => Promise<void>;
     parseData: (html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean) => void;
@@ -213,6 +213,18 @@ declare type IScrollerSubject = {
     page: HTMLElement;
 };
 
+declare class JabronioGuiController {
+    private store;
+    private dataManager;
+    constructor(store: JabronioStore, dataManager: DataManager);
+    private readonly destroy$;
+    dispose(): void;
+    private directionalEventObservable$?;
+    private directionalEvent;
+    private readonly eventsMap;
+    private setupStoreListeners;
+}
+
 export declare class LazyImgLoader {
     lazyImgObserver: Observer;
     private attributeName;
@@ -250,18 +262,13 @@ export declare type OffsetGenerator<T = GeneratorResult> = Generator<T> | AsyncG
 
 export declare class OnHover {
     private container;
-    private subjectSelector;
+    private targetSelector;
     private onOver;
-    private onLeave?;
-    private handleLeaveEvent;
-    private handleEvent;
-    private target;
-    private leaveSubject;
-    private onOverFinally;
-    constructor(container: HTMLElement, subjectSelector: (target: HTMLElement) => boolean, onOver: (target: HTMLElement) => void | {
-        onOverCallback?: () => void;
-        leaveTarget?: HTMLElement;
-    }, onLeave?: ((target: HTMLElement) => void) | undefined);
+    private handleLeave;
+    private handleHover;
+    private target?;
+    private onOverCallback?;
+    constructor(container: HTMLElement, targetSelector: string, onOver: (target: HTMLElement) => void | (() => void));
     static create(...args: ConstructorParameters<typeof OnHover>): OnHover;
 }
 
@@ -316,11 +323,13 @@ export declare function parseHtml(html: string): HTMLElement;
 
 export declare function parseIntegerOr(n: string | number, or: number): number;
 
+export declare function parseNumberWithLetter(str: string): number;
+
 export declare function parseUrl(s: HTMLAnchorElement | Location | URL | string): URL;
 
 declare type Primitive = string | number | boolean;
 
-declare type PrimitiveString = 'boolean' | 'string' | 'number' | 'duration';
+declare type PrimitiveString = 'boolean' | 'string' | 'number' | 'float' | 'duration';
 
 export declare function querySelectorLast<T extends Element = HTMLElement>(root: ParentNode | undefined, selector: string): T | undefined;
 
@@ -343,7 +352,6 @@ export declare function removeClassesAndDataAttributes(element: HTMLElement, key
 export declare function replaceElementTag(e: HTMLElement, tagName: string): HTMLElement;
 
 export declare class Rules {
-    getThumbUrl(thumb: HTMLElement | HTMLAnchorElement): string;
     thumb: Parameters<typeof ThumbDataParser.create>[0];
     thumbDataParser: ThumbDataParser;
     thumbImg: Parameters<typeof ThumbImgParser.create>[0];
@@ -366,6 +374,7 @@ export declare class Rules {
     schemeOptions: SchemeOptions;
     store: JabronioStore;
     gui: JabronioGUI;
+    inputController: JabronioGuiController;
     private createStore;
     private createGui;
     customGenerator?: OffsetGenerator;
@@ -375,7 +384,6 @@ export declare class Rules {
     gropeStrategy: 'all-in-one' | 'all-in-all';
     gropeInit(): void;
     get isEmbedded(): boolean;
-    private setupStoreListeners;
     private mutationObservers;
     resetOnPaginationOrContainerDeath: boolean;
     private resetOn;
@@ -398,6 +406,7 @@ export declare class ThumbDataParser {
     callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined;
     stringsMeltInTitle: boolean;
     private autoParseText;
+    getUrl(thumb: HTMLElement | HTMLAnchorElement): string;
     private preprocessCustomThumbDataSelectors;
     private thumbDataSelectors;
     private readonly defaultThumbDataSelectors;

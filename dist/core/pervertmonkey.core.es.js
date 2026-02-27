@@ -242,36 +242,28 @@ function downloader(options = { append: "", after: "", button: "", cbBefore: () 
   });
 }
 class OnHover {
-  constructor(container, subjectSelector, onOver, onLeave) {
+  constructor(container, targetSelector, onOver) {
     __publicField(this, "target");
-    __publicField(this, "leaveSubject");
-    __publicField(this, "onOverFinally");
+    __publicField(this, "onOverCallback");
     this.container = container;
-    this.subjectSelector = subjectSelector;
+    this.targetSelector = targetSelector;
     this.onOver = onOver;
-    this.onLeave = onLeave;
-    this.container.addEventListener("pointerover", (e) => this.handleEvent(e));
+    this.container.addEventListener("pointerover", (e) => this.handleHover(e));
   }
-  handleLeaveEvent() {
-    var _a3, _b2;
-    (_a3 = this.onLeave) == null ? void 0 : _a3.call(this, this.target);
-    (_b2 = this.onOverFinally) == null ? void 0 : _b2.call(this);
-    this.target = void 0;
-    this.onOverFinally = void 0;
-    this.leaveSubject = void 0;
-  }
-  handleEvent(e) {
+  handleLeave() {
     var _a3;
-    const currentTarget = e.target;
-    if (!this.subjectSelector(currentTarget) || this.target === currentTarget) return;
-    (_a3 = this.leaveSubject) == null ? void 0 : _a3.dispatchEvent(new PointerEvent("pointerleave"));
-    this.target = currentTarget;
-    const result = this.onOver(this.target);
-    this.onOverFinally = result == null ? void 0 : result.onOverCallback;
-    this.leaveSubject = (result == null ? void 0 : result.leaveTarget) || this.target;
-    this.leaveSubject.addEventListener("pointerleave", (_2) => this.handleLeaveEvent(), {
-      once: true
-    });
+    (_a3 = this.onOverCallback) == null ? void 0 : _a3.call(this);
+    this.onOverCallback = void 0;
+    this.target = void 0;
+  }
+  handleHover(e) {
+    var _a3;
+    const newTarget = e.target.closest(this.targetSelector);
+    if (!newTarget || this.target === newTarget) return;
+    (_a3 = this.target) == null ? void 0 : _a3.dispatchEvent(new PointerEvent("pointerleave"));
+    this.target = newTarget;
+    this.onOverCallback = this.onOver(this.target);
+    this.target.addEventListener("pointerleave", () => this.handleLeave(), { once: true });
   }
   static create(...args) {
     return new OnHover(...args);
@@ -291,12 +283,11 @@ class Tick {
     this.tick = window.setInterval(callback, this.delay);
   }
   stop() {
+    var _a3;
     if (this.tick !== void 0) {
       clearInterval(this.tick);
       this.tick = void 0;
-    }
-    if (this.callbackFinal) {
-      this.callbackFinal();
+      (_a3 = this.callbackFinal) == null ? void 0 : _a3.call(this);
       this.callbackFinal = void 0;
     }
   }
@@ -402,6 +393,18 @@ function parseUrl(s) {
 function parseIntegerOr(n, or2) {
   const num = Number(n);
   return Number.isSafeInteger(num) ? num : or2;
+}
+function parseNumberWithLetter(str) {
+  var _a3;
+  const multipliers = { k: 1e3, m: 1e6 };
+  const match = str.trim().match(/^([\d.]+)(\w)?$/);
+  if (!match) return 0;
+  const num = parseFloat(match[1]);
+  const suffix = (_a3 = match[2]) == null ? void 0 : _a3.toLowerCase();
+  if (suffix && suffix in multipliers) {
+    return num * multipliers[suffix];
+  }
+  return num;
 }
 function parseDataParams(str) {
   const paramsStr = decodeURI(str.trim()).split(";");
@@ -524,7 +527,7 @@ __publicField(_DataFilter, "customDataSelectorFnsDefault", {
 });
 let DataFilter = _DataFilter;
 class DataManager {
-  constructor(rules, parseDataParentHomogenity) {
+  constructor(rules, parentHomogenity) {
     __publicField(this, "data", /* @__PURE__ */ new Map());
     __publicField(this, "lazyImgLoader", new LazyImgLoader(
       (target) => !DataFilter.isFiltered(target)
@@ -533,13 +536,13 @@ class DataManager {
     __publicField(this, "applyFilters", async (filters = {}, offset = 0) => {
       const filtersToApply = this.dataFilter.selectFilters(filters);
       if (filtersToApply.length === 0) return;
-      const iterator = this.data.values().drop(offset);
+      const iterator2 = this.data.values().drop(offset);
       let finished = false;
       await new Promise((resolve) => {
         function runBatch(deadline) {
           const updates = [];
           while (deadline.timeRemaining() > 0) {
-            const { value, done } = iterator.next();
+            const { value, done } = iterator2.next();
             finished = !!done;
             if (done) break;
             for (const f of filtersToApply) {
@@ -575,13 +578,13 @@ class DataManager {
       const dataOffset = this.data.size;
       const fragment = document.createDocumentFragment();
       const parent = container || this.rules.container;
-      const homogenity = !!this.parseDataParentHomogenity;
+      const homogenity = !!this.parentHomogenity;
       for (const thumbElement of thumbs) {
-        const url = this.rules.getThumbUrl(thumbElement);
+        const url = this.rules.thumbDataParser.getUrl(thumbElement);
         if (!url || this.data.has(url) || parent !== container && (parent == null ? void 0 : parent.contains(thumbElement)) || homogenity && !checkHomogenity(
           parent,
           thumbElement.parentElement,
-          this.parseDataParentHomogenity
+          this.parentHomogenity
         )) {
           if (removeDuplicates) thumbElement.remove();
           continue;
@@ -601,7 +604,7 @@ class DataManager {
       });
     });
     this.rules = rules;
-    this.parseDataParentHomogenity = parseDataParentHomogenity;
+    this.parentHomogenity = parentHomogenity;
     this.dataFilter = new DataFilter(this.rules);
   }
   sortBy(key, direction = true) {
@@ -634,6 +637,102 @@ function __extends(d2, b2) {
     this.constructor = d2;
   }
   d2.prototype = b2 === null ? Object.create(b2) : (__.prototype = b2.prototype, new __());
+}
+function __awaiter(thisArg, _arguments, P2, generator) {
+  function adopt(value) {
+    return value instanceof P2 ? value : new P2(function(resolve) {
+      resolve(value);
+    });
+  }
+  return new (P2 || (P2 = Promise))(function(resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+}
+function __generator(thisArg, body) {
+  var _2 = { label: 0, sent: function() {
+    if (t[0] & 1) throw t[1];
+    return t[1];
+  }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+  return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() {
+    return this;
+  }), g;
+  function verb(n) {
+    return function(v2) {
+      return step([n, v2]);
+    };
+  }
+  function step(op2) {
+    if (f) throw new TypeError("Generator is already executing.");
+    while (g && (g = 0, op2[0] && (_2 = 0)), _2) try {
+      if (f = 1, y && (t = op2[0] & 2 ? y["return"] : op2[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op2[1])).done) return t;
+      if (y = 0, t) op2 = [op2[0] & 2, t.value];
+      switch (op2[0]) {
+        case 0:
+        case 1:
+          t = op2;
+          break;
+        case 4:
+          _2.label++;
+          return { value: op2[1], done: false };
+        case 5:
+          _2.label++;
+          y = op2[1];
+          op2 = [0];
+          continue;
+        case 7:
+          op2 = _2.ops.pop();
+          _2.trys.pop();
+          continue;
+        default:
+          if (!(t = _2.trys, t = t.length > 0 && t[t.length - 1]) && (op2[0] === 6 || op2[0] === 2)) {
+            _2 = 0;
+            continue;
+          }
+          if (op2[0] === 3 && (!t || op2[1] > t[0] && op2[1] < t[3])) {
+            _2.label = op2[1];
+            break;
+          }
+          if (op2[0] === 6 && _2.label < t[1]) {
+            _2.label = t[1];
+            t = op2;
+            break;
+          }
+          if (t && _2.label < t[2]) {
+            _2.label = t[2];
+            _2.ops.push(op2);
+            break;
+          }
+          if (t[2]) _2.ops.pop();
+          _2.trys.pop();
+          continue;
+      }
+      op2 = body.call(thisArg, _2);
+    } catch (e) {
+      op2 = [6, e];
+      y = 0;
+    } finally {
+      f = t = 0;
+    }
+    if (op2[0] & 5) throw op2[1];
+    return { value: op2[0] ? op2[1] : void 0, done: true };
+  }
 }
 function __values(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
@@ -671,6 +770,69 @@ function __spreadArray(to2, from, pack) {
     }
   }
   return to2.concat(ar2 || Array.prototype.slice.call(from));
+}
+function __await(v2) {
+  return this instanceof __await ? (this.v = v2, this) : new __await(v2);
+}
+function __asyncGenerator(thisArg, _arguments, generator) {
+  if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+  var g = generator.apply(thisArg, _arguments || []), i, q2 = [];
+  return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() {
+    return this;
+  }, i;
+  function awaitReturn(f) {
+    return function(v2) {
+      return Promise.resolve(v2).then(f, reject);
+    };
+  }
+  function verb(n, f) {
+    if (g[n]) {
+      i[n] = function(v2) {
+        return new Promise(function(a2, b2) {
+          q2.push([n, v2, a2, b2]) > 1 || resume(n, v2);
+        });
+      };
+      if (f) i[n] = f(i[n]);
+    }
+  }
+  function resume(n, v2) {
+    try {
+      step(g[n](v2));
+    } catch (e) {
+      settle(q2[0][3], e);
+    }
+  }
+  function step(r) {
+    r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q2[0][2], r);
+  }
+  function fulfill(value) {
+    resume("next", value);
+  }
+  function reject(value) {
+    resume("throw", value);
+  }
+  function settle(f, v2) {
+    if (f(v2), q2.shift(), q2.length) resume(q2[0][0], q2[0][1]);
+  }
+}
+function __asyncValues(o) {
+  if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+  var m = o[Symbol.asyncIterator], i;
+  return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() {
+    return this;
+  }, i);
+  function verb(n) {
+    i[n] = o[n] && function(v2) {
+      return new Promise(function(resolve, reject) {
+        v2 = o[n](v2), settle(resolve, reject, v2.done, v2.value);
+      });
+    };
+  }
+  function settle(resolve, reject, d2, v2) {
+    Promise.resolve(v2).then(function(v3) {
+      resolve({ value: v3, done: d2 });
+    }, reject);
+  }
 }
 typeof SuppressedError === "function" ? SuppressedError : function(error, suppressed, message) {
   var e = new Error(message);
@@ -1112,6 +1274,69 @@ function isObserver(value) {
 function isSubscriber(value) {
   return value && value instanceof Subscriber || isObserver(value) && isSubscription(value);
 }
+function hasLift(source) {
+  return isFunction(source === null || source === void 0 ? void 0 : source.lift);
+}
+function operate(init) {
+  return function(source) {
+    if (hasLift(source)) {
+      return source.lift(function(liftedSource) {
+        try {
+          return init(liftedSource, this);
+        } catch (err) {
+          this.error(err);
+        }
+      });
+    }
+    throw new TypeError("Unable to lift unknown Observable type");
+  };
+}
+function createOperatorSubscriber(destination, onNext, onComplete, onError, onFinalize) {
+  return new OperatorSubscriber(destination, onNext, onComplete, onError, onFinalize);
+}
+var OperatorSubscriber = (function(_super) {
+  __extends(OperatorSubscriber2, _super);
+  function OperatorSubscriber2(destination, onNext, onComplete, onError, onFinalize, shouldUnsubscribe) {
+    var _this = _super.call(this, destination) || this;
+    _this.onFinalize = onFinalize;
+    _this.shouldUnsubscribe = shouldUnsubscribe;
+    _this._next = onNext ? function(value) {
+      try {
+        onNext(value);
+      } catch (err) {
+        destination.error(err);
+      }
+    } : _super.prototype._next;
+    _this._error = onError ? function(err) {
+      try {
+        onError(err);
+      } catch (err2) {
+        destination.error(err2);
+      } finally {
+        this.unsubscribe();
+      }
+    } : _super.prototype._error;
+    _this._complete = onComplete ? function() {
+      try {
+        onComplete();
+      } catch (err) {
+        destination.error(err);
+      } finally {
+        this.unsubscribe();
+      }
+    } : _super.prototype._complete;
+    return _this;
+  }
+  OperatorSubscriber2.prototype.unsubscribe = function() {
+    var _a3;
+    if (!this.shouldUnsubscribe || this.shouldUnsubscribe()) {
+      var closed_1 = this.closed;
+      _super.prototype.unsubscribe.call(this);
+      !closed_1 && ((_a3 = this.onFinalize) === null || _a3 === void 0 ? void 0 : _a3.call(this));
+    }
+  };
+  return OperatorSubscriber2;
+})(Subscriber);
 var ObjectUnsubscribedError = createErrorClass(function(_super) {
   return function ObjectUnsubscribedErrorImpl() {
     _super(this);
@@ -1272,6 +1497,404 @@ var AnonymousSubject = (function(_super) {
   };
   return AnonymousSubject2;
 })(Subject);
+var dateTimestampProvider = {
+  now: function() {
+    return (dateTimestampProvider.delegate || Date).now();
+  },
+  delegate: void 0
+};
+var ReplaySubject = (function(_super) {
+  __extends(ReplaySubject2, _super);
+  function ReplaySubject2(_bufferSize, _windowTime, _timestampProvider) {
+    if (_bufferSize === void 0) {
+      _bufferSize = Infinity;
+    }
+    if (_windowTime === void 0) {
+      _windowTime = Infinity;
+    }
+    if (_timestampProvider === void 0) {
+      _timestampProvider = dateTimestampProvider;
+    }
+    var _this = _super.call(this) || this;
+    _this._bufferSize = _bufferSize;
+    _this._windowTime = _windowTime;
+    _this._timestampProvider = _timestampProvider;
+    _this._buffer = [];
+    _this._infiniteTimeWindow = true;
+    _this._infiniteTimeWindow = _windowTime === Infinity;
+    _this._bufferSize = Math.max(1, _bufferSize);
+    _this._windowTime = Math.max(1, _windowTime);
+    return _this;
+  }
+  ReplaySubject2.prototype.next = function(value) {
+    var _a3 = this, isStopped = _a3.isStopped, _buffer = _a3._buffer, _infiniteTimeWindow = _a3._infiniteTimeWindow, _timestampProvider = _a3._timestampProvider, _windowTime = _a3._windowTime;
+    if (!isStopped) {
+      _buffer.push(value);
+      !_infiniteTimeWindow && _buffer.push(_timestampProvider.now() + _windowTime);
+    }
+    this._trimBuffer();
+    _super.prototype.next.call(this, value);
+  };
+  ReplaySubject2.prototype._subscribe = function(subscriber) {
+    this._throwIfClosed();
+    this._trimBuffer();
+    var subscription = this._innerSubscribe(subscriber);
+    var _a3 = this, _infiniteTimeWindow = _a3._infiniteTimeWindow, _buffer = _a3._buffer;
+    var copy = _buffer.slice();
+    for (var i = 0; i < copy.length && !subscriber.closed; i += _infiniteTimeWindow ? 1 : 2) {
+      subscriber.next(copy[i]);
+    }
+    this._checkFinalizedStatuses(subscriber);
+    return subscription;
+  };
+  ReplaySubject2.prototype._trimBuffer = function() {
+    var _a3 = this, _bufferSize = _a3._bufferSize, _timestampProvider = _a3._timestampProvider, _buffer = _a3._buffer, _infiniteTimeWindow = _a3._infiniteTimeWindow;
+    var adjustedBufferSize = (_infiniteTimeWindow ? 1 : 2) * _bufferSize;
+    _bufferSize < Infinity && adjustedBufferSize < _buffer.length && _buffer.splice(0, _buffer.length - adjustedBufferSize);
+    if (!_infiniteTimeWindow) {
+      var now = _timestampProvider.now();
+      var last = 0;
+      for (var i = 1; i < _buffer.length && _buffer[i] <= now; i += 2) {
+        last = i;
+      }
+      last && _buffer.splice(0, last + 1);
+    }
+  };
+  return ReplaySubject2;
+})(Subject);
+var isArrayLike = (function(x2) {
+  return x2 && typeof x2.length === "number" && typeof x2 !== "function";
+});
+function isPromise(value) {
+  return isFunction(value === null || value === void 0 ? void 0 : value.then);
+}
+function isInteropObservable(input) {
+  return isFunction(input[observable]);
+}
+function isAsyncIterable(obj) {
+  return Symbol.asyncIterator && isFunction(obj === null || obj === void 0 ? void 0 : obj[Symbol.asyncIterator]);
+}
+function createInvalidObservableTypeError(input) {
+  return new TypeError("You provided " + (input !== null && typeof input === "object" ? "an invalid object" : "'" + input + "'") + " where a stream was expected. You can provide an Observable, Promise, ReadableStream, Array, AsyncIterable, or Iterable.");
+}
+function getSymbolIterator() {
+  if (typeof Symbol !== "function" || !Symbol.iterator) {
+    return "@@iterator";
+  }
+  return Symbol.iterator;
+}
+var iterator = getSymbolIterator();
+function isIterable(input) {
+  return isFunction(input === null || input === void 0 ? void 0 : input[iterator]);
+}
+function readableStreamLikeToAsyncGenerator(readableStream) {
+  return __asyncGenerator(this, arguments, function readableStreamLikeToAsyncGenerator_1() {
+    var reader, _a3, value, done;
+    return __generator(this, function(_b2) {
+      switch (_b2.label) {
+        case 0:
+          reader = readableStream.getReader();
+          _b2.label = 1;
+        case 1:
+          _b2.trys.push([1, , 9, 10]);
+          _b2.label = 2;
+        case 2:
+          return [4, __await(reader.read())];
+        case 3:
+          _a3 = _b2.sent(), value = _a3.value, done = _a3.done;
+          if (!done) return [3, 5];
+          return [4, __await(void 0)];
+        case 4:
+          return [2, _b2.sent()];
+        case 5:
+          return [4, __await(value)];
+        case 6:
+          return [4, _b2.sent()];
+        case 7:
+          _b2.sent();
+          return [3, 2];
+        case 8:
+          return [3, 10];
+        case 9:
+          reader.releaseLock();
+          return [7];
+        case 10:
+          return [2];
+      }
+    });
+  });
+}
+function isReadableStreamLike(obj) {
+  return isFunction(obj === null || obj === void 0 ? void 0 : obj.getReader);
+}
+function innerFrom(input) {
+  if (input instanceof Observable) {
+    return input;
+  }
+  if (input != null) {
+    if (isInteropObservable(input)) {
+      return fromInteropObservable(input);
+    }
+    if (isArrayLike(input)) {
+      return fromArrayLike(input);
+    }
+    if (isPromise(input)) {
+      return fromPromise(input);
+    }
+    if (isAsyncIterable(input)) {
+      return fromAsyncIterable(input);
+    }
+    if (isIterable(input)) {
+      return fromIterable(input);
+    }
+    if (isReadableStreamLike(input)) {
+      return fromReadableStreamLike(input);
+    }
+  }
+  throw createInvalidObservableTypeError(input);
+}
+function fromInteropObservable(obj) {
+  return new Observable(function(subscriber) {
+    var obs = obj[observable]();
+    if (isFunction(obs.subscribe)) {
+      return obs.subscribe(subscriber);
+    }
+    throw new TypeError("Provided object does not correctly implement Symbol.observable");
+  });
+}
+function fromArrayLike(array) {
+  return new Observable(function(subscriber) {
+    for (var i = 0; i < array.length && !subscriber.closed; i++) {
+      subscriber.next(array[i]);
+    }
+    subscriber.complete();
+  });
+}
+function fromPromise(promise) {
+  return new Observable(function(subscriber) {
+    promise.then(function(value) {
+      if (!subscriber.closed) {
+        subscriber.next(value);
+        subscriber.complete();
+      }
+    }, function(err) {
+      return subscriber.error(err);
+    }).then(null, reportUnhandledError);
+  });
+}
+function fromIterable(iterable) {
+  return new Observable(function(subscriber) {
+    var e_1, _a3;
+    try {
+      for (var iterable_1 = __values(iterable), iterable_1_1 = iterable_1.next(); !iterable_1_1.done; iterable_1_1 = iterable_1.next()) {
+        var value = iterable_1_1.value;
+        subscriber.next(value);
+        if (subscriber.closed) {
+          return;
+        }
+      }
+    } catch (e_1_1) {
+      e_1 = { error: e_1_1 };
+    } finally {
+      try {
+        if (iterable_1_1 && !iterable_1_1.done && (_a3 = iterable_1.return)) _a3.call(iterable_1);
+      } finally {
+        if (e_1) throw e_1.error;
+      }
+    }
+    subscriber.complete();
+  });
+}
+function fromAsyncIterable(asyncIterable) {
+  return new Observable(function(subscriber) {
+    process(asyncIterable, subscriber).catch(function(err) {
+      return subscriber.error(err);
+    });
+  });
+}
+function fromReadableStreamLike(readableStream) {
+  return fromAsyncIterable(readableStreamLikeToAsyncGenerator(readableStream));
+}
+function process(asyncIterable, subscriber) {
+  var asyncIterable_1, asyncIterable_1_1;
+  var e_2, _a3;
+  return __awaiter(this, void 0, void 0, function() {
+    var value, e_2_1;
+    return __generator(this, function(_b2) {
+      switch (_b2.label) {
+        case 0:
+          _b2.trys.push([0, 5, 6, 11]);
+          asyncIterable_1 = __asyncValues(asyncIterable);
+          _b2.label = 1;
+        case 1:
+          return [4, asyncIterable_1.next()];
+        case 2:
+          if (!(asyncIterable_1_1 = _b2.sent(), !asyncIterable_1_1.done)) return [3, 4];
+          value = asyncIterable_1_1.value;
+          subscriber.next(value);
+          if (subscriber.closed) {
+            return [2];
+          }
+          _b2.label = 3;
+        case 3:
+          return [3, 1];
+        case 4:
+          return [3, 11];
+        case 5:
+          e_2_1 = _b2.sent();
+          e_2 = { error: e_2_1 };
+          return [3, 11];
+        case 6:
+          _b2.trys.push([6, , 9, 10]);
+          if (!(asyncIterable_1_1 && !asyncIterable_1_1.done && (_a3 = asyncIterable_1.return))) return [3, 8];
+          return [4, _a3.call(asyncIterable_1)];
+        case 7:
+          _b2.sent();
+          _b2.label = 8;
+        case 8:
+          return [3, 10];
+        case 9:
+          if (e_2) throw e_2.error;
+          return [7];
+        case 10:
+          return [7];
+        case 11:
+          subscriber.complete();
+          return [2];
+      }
+    });
+  });
+}
+function map(project, thisArg) {
+  return operate(function(source, subscriber) {
+    var index = 0;
+    source.subscribe(createOperatorSubscriber(subscriber, function(value) {
+      subscriber.next(project.call(thisArg, value, index++));
+    }));
+  });
+}
+function scanInternals(accumulator, seed, hasSeed, emitOnNext, emitBeforeComplete) {
+  return function(source, subscriber) {
+    var hasState = hasSeed;
+    var state = seed;
+    var index = 0;
+    source.subscribe(createOperatorSubscriber(subscriber, function(value) {
+      var i = index++;
+      state = hasState ? accumulator(state, value, i) : (hasState = true, value);
+      subscriber.next(state);
+    }, emitBeforeComplete));
+  };
+}
+function scan(accumulator, seed) {
+  return operate(scanInternals(accumulator, seed, arguments.length >= 2, true));
+}
+function share(options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var _a3 = options.connector, connector = _a3 === void 0 ? function() {
+    return new Subject();
+  } : _a3, _b2 = options.resetOnError, resetOnError = _b2 === void 0 ? true : _b2, _c2 = options.resetOnComplete, resetOnComplete = _c2 === void 0 ? true : _c2, _d2 = options.resetOnRefCountZero, resetOnRefCountZero = _d2 === void 0 ? true : _d2;
+  return function(wrapperSource) {
+    var connection;
+    var resetConnection;
+    var subject;
+    var refCount = 0;
+    var hasCompleted = false;
+    var hasErrored = false;
+    var cancelReset = function() {
+      resetConnection === null || resetConnection === void 0 ? void 0 : resetConnection.unsubscribe();
+      resetConnection = void 0;
+    };
+    var reset = function() {
+      cancelReset();
+      connection = subject = void 0;
+      hasCompleted = hasErrored = false;
+    };
+    var resetAndUnsubscribe = function() {
+      var conn = connection;
+      reset();
+      conn === null || conn === void 0 ? void 0 : conn.unsubscribe();
+    };
+    return operate(function(source, subscriber) {
+      refCount++;
+      if (!hasErrored && !hasCompleted) {
+        cancelReset();
+      }
+      var dest = subject = subject !== null && subject !== void 0 ? subject : connector();
+      subscriber.add(function() {
+        refCount--;
+        if (refCount === 0 && !hasErrored && !hasCompleted) {
+          resetConnection = handleReset(resetAndUnsubscribe, resetOnRefCountZero);
+        }
+      });
+      dest.subscribe(subscriber);
+      if (!connection && refCount > 0) {
+        connection = new SafeSubscriber({
+          next: function(value) {
+            return dest.next(value);
+          },
+          error: function(err) {
+            hasErrored = true;
+            cancelReset();
+            resetConnection = handleReset(reset, resetOnError, err);
+            dest.error(err);
+          },
+          complete: function() {
+            hasCompleted = true;
+            cancelReset();
+            resetConnection = handleReset(reset, resetOnComplete);
+            dest.complete();
+          }
+        });
+        innerFrom(source).subscribe(connection);
+      }
+    })(wrapperSource);
+  };
+}
+function handleReset(reset, on2) {
+  var args = [];
+  for (var _i4 = 2; _i4 < arguments.length; _i4++) {
+    args[_i4 - 2] = arguments[_i4];
+  }
+  if (on2 === true) {
+    reset();
+    return;
+  }
+  if (on2 === false) {
+    return;
+  }
+  var onSubscriber = new SafeSubscriber({
+    next: function() {
+      onSubscriber.unsubscribe();
+      reset();
+    }
+  });
+  return innerFrom(on2.apply(void 0, __spreadArray([], __read(args)))).subscribe(onSubscriber);
+}
+function shareReplay(configOrBufferSize, windowTime, scheduler) {
+  var bufferSize;
+  var refCount = false;
+  {
+    bufferSize = configOrBufferSize;
+  }
+  return share({
+    connector: function() {
+      return new ReplaySubject(bufferSize, windowTime, scheduler);
+    },
+    resetOnError: true,
+    resetOnComplete: false,
+    resetOnRefCountZero: refCount
+  });
+}
+function takeUntil(notifier) {
+  return operate(function(source, subscriber) {
+    innerFrom(notifier).subscribe(createOperatorSubscriber(subscriber, function() {
+      return subscriber.complete();
+    }, noop));
+    !subscriber.closed && source.subscribe(subscriber);
+  });
+}
 class InfiniteScroller {
   constructor(options) {
     __publicField(this, "enabled", true);
@@ -2396,6 +3019,9 @@ class ThumbDataParser {
     const duration = timeToSeconds(((_a3 = title.match(/\d+m|\d+:\d+/)) == null ? void 0 : _a3[0]) || "");
     return { title, duration };
   }
+  getUrl(thumb) {
+    return (thumb.querySelector("a[href]") || thumb).href;
+  }
   preprocessCustomThumbDataSelectors() {
     if (!this.selectors) return;
     Object.entries(this.selectors).forEach(([key, value]) => {
@@ -2422,6 +3048,10 @@ class ThumbDataParser {
     }
     if (type === "duration") {
       return timeToSeconds(querySelectorText(thumb, selector));
+    }
+    if (type === "float") {
+      const value = querySelectorText(thumb, selector);
+      return parseNumberWithLetter(value);
     }
     return Number.parseInt(querySelectorText(thumb, selector));
   }
@@ -9075,6 +9705,50 @@ const StoreStateDefault = {
   $paginationLast: 1,
   $paginationOffset: 1
 };
+class JabronioGuiController {
+  constructor(store, dataManager) {
+    __publicField(this, "destroy$", new Subject());
+    __publicField(this, "directionalEventObservable$");
+    __publicField(this, "eventsMap", {
+      "sort by duration": (direction) => this.dataManager.sortBy("duration", direction),
+      "sort by views": (direction) => this.dataManager.sortBy("views", direction)
+    });
+    this.store = store;
+    this.dataManager = dataManager;
+    this.directionalEventObservable$ = this.directionalEvent();
+    this.setupStoreListeners();
+  }
+  dispose() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+  directionalEvent() {
+    return this.store.eventSubject.pipe(
+      scan(
+        (acc, value) => ({
+          type: value,
+          direction: acc.type === value ? !acc.direction : true
+        }),
+        { type: void 0, direction: true }
+      ),
+      map(({ type, direction }) => ({
+        type,
+        direction
+      })),
+      shareReplay(1),
+      takeUntil(this.destroy$)
+    );
+  }
+  setupStoreListeners() {
+    var _a3;
+    (_a3 = this.directionalEventObservable$) == null ? void 0 : _a3.subscribe((e) => {
+      this.eventsMap[e.type](e.direction);
+    });
+    this.store.stateSubject.pipe(takeUntil(this.destroy$)).subscribe((a2) => {
+      this.dataManager.applyFilters(a2);
+    });
+  }
+}
 class Rules {
   constructor(options) {
     __publicField(this, "thumb", {});
@@ -9100,6 +9774,7 @@ class Rules {
     __publicField(this, "schemeOptions", []);
     __publicField(this, "store");
     __publicField(this, "gui");
+    __publicField(this, "inputController");
     __publicField(this, "customGenerator");
     __publicField(this, "infiniteScroller");
     __publicField(this, "getPaginationData");
@@ -9116,10 +9791,8 @@ class Rules {
     this.store = this.createStore();
     this.gui = this.createGui();
     this.dataManager = new DataManager(this, this.dataHomogenity);
+    this.inputController = new JabronioGuiController(this.store, this.dataManager);
     this.reset();
-  }
-  getThumbUrl(thumb) {
-    return (thumb.querySelector("a[href]") || thumb).href;
   }
   get container() {
     if (typeof this.containerSelectorLast === "string") {
@@ -9170,30 +9843,6 @@ class Rules {
   get isEmbedded() {
     return window.self !== window.top;
   }
-  setupStoreListeners() {
-    const eventsMap = {
-      "sort by duration": {
-        action: (direction2) => this.dataManager.sortBy("duration", direction2)
-      }
-    };
-    let lastEvent;
-    let direction = true;
-    this.store.eventSubject.subscribe((event) => {
-      if (event === lastEvent) {
-        direction = !direction;
-      } else {
-        lastEvent = event;
-        direction = true;
-      }
-      if (event in eventsMap) {
-        const ev = eventsMap[event];
-        ev == null ? void 0 : ev.action(direction);
-      }
-    });
-    this.store.stateSubject.subscribe((a2) => {
-      this.dataManager.applyFilters(a2);
-    });
-  }
   resetOn() {
     if (!this.resetOnPaginationOrContainerDeath) return;
     const observables = [
@@ -9216,7 +9865,8 @@ class Rules {
     this.mutationObservers = [];
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
     this.dataManager = new DataManager(this, this.dataHomogenity);
-    this.setupStoreListeners();
+    this.inputController.dispose();
+    this.inputController = new JabronioGuiController(this.store, this.dataManager);
     this.resetInfiniteScroller();
     this.container && ((_a3 = this.animatePreview) == null ? void 0 : _a3.call(this, this.container));
     this.gropeInit();
@@ -9263,6 +9913,7 @@ export {
   parseDataParams,
   parseHtml,
   parseIntegerOr,
+  parseNumberWithLetter,
   parseUrl,
   querySelectorLast,
   querySelectorLastNumber,

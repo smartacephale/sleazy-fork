@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eporner PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.3
+// @version      2.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Duration and HD
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.eporner.com/*
 // @match        https://*.eporner.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.11/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -29,6 +29,7 @@
     paginationStrategyOptions: {
       paginationSelector: ".numlist2"
     },
+    thumbs: { selector: "div[id^=vf][data-id]" },
     thumb: {
       selectors: {
         quality: { type: "number", selector: '[title="Quality"]' },
@@ -40,9 +41,6 @@
     thumbImg: {
       strategy: "auto",
       remove: "auto"
-    },
-    thumbs: {
-      selector: "div[id^=vf][data-id]"
     },
     containerSelectorLast: "#vidresults",
     customDataSelectorFns: [
@@ -94,16 +92,12 @@
     animatePreview
   });
   function animatePreview(doc) {
-    utils.OnHover.create(
-      doc,
-      (e) => e instanceof HTMLImageElement,
-      (e) => {
-        const target = e;
-        const thumb = target.closest("[data-id]");
-        const id = thumb?.getAttribute("data-id");
-        show_video_prev(id);
-      }
-    );
+    utils.OnHover.create(doc, "div[id^=vf][data-id]", (e) => {
+      const target = e;
+      const thumb = target.closest("[data-id]");
+      const id = thumb?.getAttribute("data-id");
+      show_video_prev(id);
+    });
   }
 
 })(core, utils);

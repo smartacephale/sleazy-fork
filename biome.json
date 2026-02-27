@@ -39,6 +39,7 @@
         "useNumberNamespace": "off"
       },
       "suspicious": {
+        "noConfusingVoidType": "off",
         "noRedundantUseStrict": "off"
       }
     }

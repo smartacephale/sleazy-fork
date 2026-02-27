@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Eroprofile PervertMonkey',
-  version: '2.0.2',
+  version: '2.0.3',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://*.eroprofile.com/*'],
 };
@@ -20,7 +20,7 @@ const rules = new Rules({
     selectors: {
       title: '[title]',
       duration: '.videoDur',
-    }
+    },
   },
   containerSelector: '.videoGrid',
   customDataSelectorFns: ['filterInclude', 'filterExclude', 'filterDuration'],
@@ -31,7 +31,7 @@ const rules = new Rules({
       title: 'Sort By ',
       content: [
         {
-          'sort by duration': () => { },
+          'sort by duration': () => {},
         },
       ],
     },

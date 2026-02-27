@@ -1,39 +1,31 @@
 export class OnHover {
-  private handleLeaveEvent() {
-    this.onLeave?.(this.target as HTMLElement);
-    this.onOverFinally?.();
+  private handleLeave() {
+    this.onOverCallback?.();
+    this.onOverCallback = undefined;
     this.target = undefined;
-    this.onOverFinally = undefined;
-    this.leaveSubject = undefined;
   }
 
-  private handleEvent(e: PointerEvent) {
-    const currentTarget = e.target as HTMLElement;
-    if (!this.subjectSelector(currentTarget) || this.target === currentTarget) return;
-    this.leaveSubject?.dispatchEvent(new PointerEvent('pointerleave'));
+  private handleHover(e: PointerEvent) {
+    const newTarget = (e.target as HTMLElement).closest<HTMLElement>(this.targetSelector);
+    if (!newTarget || this.target === newTarget) return;
 
-    this.target = currentTarget;
-    const result = this.onOver(this.target);
-    this.onOverFinally = result?.onOverCallback;
-    this.leaveSubject = result?.leaveTarget || this.target;
-    this.leaveSubject.addEventListener('pointerleave', (_) => this.handleLeaveEvent(), {
-      once: true,
-    });
+    this.target?.dispatchEvent(new PointerEvent('pointerleave'));
+    this.target = newTarget;
+
+    this.onOverCallback = this.onOver(this.target) as undefined | (() => void);
+
+    this.target.addEventListener('pointerleave', () => this.handleLeave(), { once: true });
   }
 
-  private target: HTMLElement | undefined;
-  private leaveSubject: HTMLElement | undefined;
-  private onOverFinally: (() => void) | undefined;
+  private target?: HTMLElement;
+  private onOverCallback?: () => void;
 
   constructor(
     private container: HTMLElement,
-    private subjectSelector: (target: HTMLElement) => boolean,
-    private onOver: (
-      target: HTMLElement,
-    ) => void | { onOverCallback?: () => void; leaveTarget?: HTMLElement },
-    private onLeave?: (target: HTMLElement) => void,
+    private targetSelector: string,
+    private onOver: (target: HTMLElement) => void | (() => void),
   ) {
-    this.container.addEventListener('pointerover', (e) => this.handleEvent(e));
+    this.container.addEventListener('pointerover', (e) => this.handleHover(e));
   }
 
   static create(...args: ConstructorParameters<typeof OnHover>) {
