@@ -11,11 +11,10 @@ import {
   waitForElementToAppear,
   watchElementChildrenCount,
 } from '../../utils';
-import { findSelfOrChild } from '../../utils/dom';
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster Improved',
-  version: '5.0.4',
+  version: '5.0.5',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
   exclude: 'https://*.xhamster.com/embed*',

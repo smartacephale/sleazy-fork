@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamGirlFinder PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.6.2
+// @version      1.6.3
 // @author       violent-orangutan
 // @description  Adds model links for CamWhores, webcamrecordings, recu.me, camvideos, privat-zapisi
 // @license      MIT

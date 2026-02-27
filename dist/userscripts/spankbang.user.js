@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.3
+// @version      4.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title and Duration
 // @license      MIT

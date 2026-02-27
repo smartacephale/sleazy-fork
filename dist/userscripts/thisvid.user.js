@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    pervertmonkey
-// @version      8.0.3
+// @version      8.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Preview for private videos. Filter: title, duration, public/private. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
 // @license      MIT

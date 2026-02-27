@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NameThatPorn PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.3
+// @version      3.0.4
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Un/Solved
 // @license      MIT

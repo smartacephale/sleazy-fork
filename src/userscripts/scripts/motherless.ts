@@ -5,7 +5,7 @@ import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.4',
+  version: '5.0.5',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: ['https://motherless.com/*'],
   grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],

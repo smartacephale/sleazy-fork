@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xhamster Improved
 // @namespace    pervertmonkey
-// @version      5.0.4
+// @version      5.0.5
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration
 // @license      MIT
@@ -138,7 +138,6 @@
     utils.OnHover.create(document.body, ".video-thumb", (e) => {
       const container = e.querySelector(".thumb-image-container__image");
       const videoSrc = e.querySelector("[data-previewvideo]")?.getAttribute("data-previewvideo");
-      console.log(container, videoSrc);
       return createPreviewVideoElement(videoSrc, container);
     });
   }

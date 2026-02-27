@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Javhdporn PervertMonkey',
-  version: '3.0.3',
+  version: '3.0.4',
   description: 'Infinite scroll [optional], Filter by Title and Duration',
   match: [
     "https://*.javhdporn.net/*",

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         3Hentai PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.4
+// @version      1.0.5
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT
