@@ -3,8 +3,9 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'SpankBang.com PervertMonkey',
-  version: '4.0.4',
-  description: 'Infinite scroll [optional]. Filter by Title and Duration',
+  version: '4.0.6',
+  description:
+    'Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views',
   match: ['https://*.spankbang.com/*', 'https://*.spankbang.*/*'],
 };
 
@@ -17,11 +18,34 @@ const rules = new Rules({
   thumb: {
     selectors: {
       title: '[title]',
-      tags: { selector: '[data-testid="title"]', type: 'string' },
       duration: '[data-testid="video-item-length"]',
-    }
+      // tags: { selector: '[data-testid="title"]', type: 'string' },
+      views: { selector: '[data-testid="views"]', type: 'float' },
+      quality: { selector: '[data-testid="video-item-resolution"]', type: 'string' },
+    },
   },
   thumbImg: { strategy: 'auto' },
   gropeStrategy: 'all-in-all',
-  schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
+  customDataFilterFns: [
+    { qualityLow: (el, state) => !!state.qualityLow && el.quality !== '' },
+    { qualityHD: (el, state) => !!state.qualityHD && el.quality !== 'HD' },
+    { quality4k: (el, state) => !!state.quality4k && el.quality !== '4K' },
+  ],
+  schemeOptions: [
+    'Title Filter',
+    'Duration Filter',
+    {
+      title: 'Quality Filter',
+      content: [
+        { qualityLow: false, label: 'Low' },
+        { qualityHD: false, label: 'HD' },
+        { quality4k: false, label: '4K' },
+      ],
+    },
+    'Sort By',
+    'Badge',
+    'Advanced',
+  ],
 });
+
+console.log(rules.dataManager.data.values().toArray());

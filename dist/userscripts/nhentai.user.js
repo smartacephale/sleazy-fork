@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.4
+// @version      4.0.6
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.nhentai.net/*
 // @match        https://*.nhentai.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -26,18 +26,10 @@
   const IS_SEARCH_PAGE = /^\/search\//.test(location.pathname);
   const nhentaiRules = new core.Rules({
     thumbs: { selector: ".gallery" },
-    thumb: {
-      selectors: {
-        title: ".caption"
-      }
-    },
-    thumbImg: {
-      strategy: "auto",
-      remove: "auto"
-    },
+    thumb: { selectors: { title: ".caption" } },
+    thumbImg: { strategy: "auto", remove: "auto" },
     containerSelectorLast: ".index-container, .container",
-    customDataSelectorFns: ["filterInclude", "filterExclude"],
-    schemeOptions: ["Text Filter", "Badge", "Advanced"],
+    schemeOptions: ["Title Filter", "Badge", "Advanced"],
     gropeStrategy: "all-in-all"
   });
   const filterDescriptors = {

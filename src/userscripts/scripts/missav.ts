@@ -3,8 +3,8 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Missav PervertMonkey',
-  version: '3.0.4',
-  description: 'Infinite scroll [optional], Filter by Title and Duration',
+  version: '3.0.6',
+  description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
   match: [
     'https://*.missav123.com/*',
     'https://*.missav.*/*',
@@ -24,8 +24,14 @@ const rules = new Rules({
     selectors: {
       title: 'div > div > a.text-secondary',
       duration: 'div > a > span.text-xs',
-    }
+    },
   },
   thumbImg: { strategy: 'auto' },
-  schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
+  schemeOptions: [
+    'Title Filter',
+    'Duration Filter',
+    'Sort By Duration',
+    'Badge',
+    'Advanced',
+  ],
 });

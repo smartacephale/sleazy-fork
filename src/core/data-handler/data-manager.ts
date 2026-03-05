@@ -3,7 +3,10 @@ import { checkHomogenity, LazyImgLoader } from '../../utils';
 import type { Rules } from '../rules';
 import { DataFilter } from './data-filter';
 
-export type DataElement = Record<string, string | number | boolean | HTMLElement>;
+export type DataElement = {
+  element: HTMLElement;
+  [key: string]: HTMLElement | string | number | boolean;
+};
 
 export class DataManager {
   public data = new Map<string, DataElement>();
@@ -14,7 +17,7 @@ export class DataManager {
 
   constructor(
     private rules: Rules,
-    private parentHomogenity?: Parameters<typeof checkHomogenity>[2],
+    private containerHomogenity?: Parameters<typeof checkHomogenity>[2],
   ) {
     this.dataFilter = new DataFilter(this.rules);
   }
@@ -29,10 +32,10 @@ export class DataManager {
     const iterator = this.data.values().drop(offset);
     let finished = false;
 
+    const updates: { e: HTMLElement; tag: string; condition: boolean }[] = [];
+
     await new Promise((resolve) => {
       function runBatch(deadline: IdleDeadline) {
-        const updates: { e: HTMLElement; tag: string; condition: boolean }[] = [];
-
         while (deadline.timeRemaining() > 0) {
           const { value, done } = iterator.next();
           finished = !!done;
@@ -44,14 +47,6 @@ export class DataManager {
           }
         }
 
-        if (updates.length > 0) {
-          requestAnimationFrame(() => {
-            updates.forEach((u) => {
-              u.e.classList.toggle(u.tag, u.condition);
-            });
-          });
-        }
-
         if (!finished) {
           requestIdleCallback(runBatch);
         } else {
@@ -60,6 +55,32 @@ export class DataManager {
       }
 
       requestIdleCallback(runBatch);
+    });
+
+    const parents = new Set(updates.map((u) => u.e.parentElement));
+
+    requestAnimationFrame(() => {
+      const revertDisplayStyle = [...parents].map((p) => {
+        const display = p?.style.display;
+        if (!display) return undefined;
+        p.style.display = 'none';
+        p.style.contain = 'layout style paint';
+        p.style.willChange = 'contents';
+        return () => {
+          p.style.display = display;
+          requestAnimationFrame(() => {
+            p.style.willChange = 'auto';
+          });
+        };
+      });
+
+      updates.forEach((u) => {
+        u.e.classList.toggle(u.tag, u.condition);
+      });
+
+      revertDisplayStyle.forEach((f) => {
+        f?.();
+      });
     });
   };
 
@@ -82,7 +103,12 @@ export class DataManager {
     const dataOffset = this.data.size;
     const fragment = document.createDocumentFragment();
     const parent = container || this.rules.container;
-    const homogenity = !!this.parentHomogenity;
+    const homogenity = !!this.containerHomogenity;
+
+    if (parent) {
+      parent.style.contain = 'layout style paint';
+      parent.style.willChange = 'contents';
+    }
 
     for (const thumbElement of thumbs) {
       const url = this.rules.thumbDataParser.getUrl(thumbElement);
@@ -94,7 +120,7 @@ export class DataManager {
           !checkHomogenity(
             parent,
             thumbElement.parentElement as HTMLElement,
-            this.parentHomogenity as object,
+            this.containerHomogenity as object,
           ))
       ) {
         if (removeDuplicates) thumbElement.remove();
@@ -114,7 +140,7 @@ export class DataManager {
 
     this.filterAll(dataOffset).then(() => {
       requestAnimationFrame(() => {
-        parent.appendChild(fragment);
+        parent?.appendChild(fragment);
       });
     });
   };
@@ -122,23 +148,46 @@ export class DataManager {
   public sortBy<K extends keyof DataElement>(key: K, direction = true): void {
     if (this.data.size < 2) return;
 
-    let sorted: DataElement[] = this.data
+    const elements = this.data
       .values()
       .toArray()
-      .sort((a: DataElement, b: DataElement) => {
-        return (a[key] as number) - (b[key] as number);
-      });
+      .filter((e) => e.element.parentElement !== null)
+      .map((e) => e);
 
-    if (!direction) sorted = sorted.reverse();
-
-    const container = (sorted[0].element as HTMLElement).parentElement as HTMLElement;
-
-    container.style.visibility = 'hidden';
-
-    sorted.forEach((s) => {
-      container.append(s.element as HTMLElement);
+    const containers = new Set(elements.map((e) => e.element.parentElement as HTMLElement));
+    containers.forEach((c) => {
+      c.style.contain = 'layout style paint';
+      c.style.willChange = 'contents';
     });
 
-    container.style.visibility = 'visible';
+    const elementsByContainers = new Map<HTMLElement, DataElement[]>();
+    containers.forEach((c) => {
+      elementsByContainers.set(c, []);
+    });
+
+    elements.forEach((e) => {
+      const parent = e.element.parentElement as HTMLElement;
+      const container = elementsByContainers.get(parent);
+      container?.push(e);
+    });
+
+    const dir = direction ? -1 : 1;
+
+    for (const [container, items] of elementsByContainers) {
+      items.sort((a, b) => ((a[key] as number) - (b[key] as number)) * dir);
+      const domNodes = items.map((e) => e.element);
+
+      const display = container.style.display;
+      container.style.display = 'none';
+
+      container.replaceChildren(...domNodes);
+
+      requestAnimationFrame(() => {
+        container.style.display = display;
+        requestAnimationFrame(() => {
+          container.style.willChange = 'auto';
+        });
+      });
+    }
   }
 }

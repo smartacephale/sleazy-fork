@@ -5,8 +5,8 @@ import { fetchHtml, parseUrl } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Obmensvem PervertMonkey',
-  version: '1.0.4',
-  description: 'Infinite scroll [optional], Filter by Title and Duration',
+  version: '1.0.6',
+  description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
   match: ['https://*.obmenvsem.com/*', 'https://*.obmenvsem.*/*'],
   grant: ['GM_addStyle', 'GM_addElement', 'unsafeWindow'],
 };
@@ -67,5 +67,11 @@ const rules = new Rules({
       return img.src;
     },
   },
-  schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
+  schemeOptions: [
+    'Title Filter',
+    'Duration Filter',
+    'Sort By Duration',
+    'Badge',
+    'Advanced',
+  ],
 });

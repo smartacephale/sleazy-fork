@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         CamWhores PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.7
+// @version      3.0.9
 // @author       violent-orangutan
-// @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button
+// @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Sort by Duration and Views. Mass friend request button. Download button
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -13,7 +13,7 @@
 // @match        https://*.camwhores.tv
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -103,28 +103,19 @@
     thumb: {
       strategy: "auto-select",
       selectors: {
-        private: { type: "boolean", selector: "[class*=private]" }
+        private: { type: "boolean", selector: "[class*=private]" },
+        views: { selector: ".views", type: "float" }
       }
     },
     thumbImg: {
       selector: "data-original"
     },
     gropeStrategy: "all-in-all",
-    customDataSelectorFns: [
-      "filterInclude",
-      "filterExclude",
-      "filterDuration",
-      {
-        filterPrivate: (e, state) => state.filterPrivate && e.private
-      },
-      {
-        filterPublic: (e, state) => state.filterPublic && !e.private
-      }
-    ],
     schemeOptions: [
-      "Text Filter",
+      "Title Filter",
       "Duration Filter",
       "Privacy Filter",
+      "Sort By",
       "Badge",
       {
         title: "Advanced",

@@ -4,10 +4,12 @@ import {
   querySelectorLast,
   waitForElementToDisappear,
 } from '../../utils';
-import { DataManager, type DataSelectorFn } from '../data-handler';
+import { DataManager } from '../data-handler';
+import type { DataFilterFnFrom } from '../data-handler/data-filter-fn';
 import { InfiniteScroller, type OffsetGenerator } from '../infinite-scroll';
 import {
   DefaultScheme,
+  getSelectorFnsFromScheme,
   JabronioGuiController,
   type SchemeOptions,
   StoreStateDefault,
@@ -61,12 +63,15 @@ export class Rules {
   public paginationStrategy: PaginationStrategy;
 
   public dataManager: DataManager;
-  public dataHomogenity: ConstructorParameters<typeof DataManager>[1];
-  public customDataSelectorFns: (Record<string, DataSelectorFn<any>> | string)[] = [
-    'filterInclude',
-    'filterExclude',
-    'filterDuration',
-  ];
+  public containerHomogenity: ConstructorParameters<typeof DataManager>[1];
+
+  public customDataFilterFns: (Record<string, DataFilterFnFrom<any>> | string)[] = [];
+  private hookDataFilterFns() {
+    const defaultFilterFns = getSelectorFnsFromScheme(
+      this.schemeOptions.filter((s) => typeof s === 'string'),
+    );
+    this.customDataFilterFns.push(...defaultFilterFns);
+  }
 
   public animatePreview?: (doc: HTMLElement) => void;
 
@@ -151,7 +156,7 @@ export class Rules {
 
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
 
-    this.dataManager = new DataManager(this, this.dataHomogenity);
+    this.dataManager = new DataManager(this, this.containerHomogenity);
 
     this.inputController.dispose();
     this.inputController = new JabronioGuiController(this.store, this.dataManager);
@@ -181,7 +186,8 @@ export class Rules {
     this.store = this.createStore();
     this.gui = this.createGui();
 
-    this.dataManager = new DataManager(this, this.dataHomogenity);
+    this.hookDataFilterFns();
+    this.dataManager = new DataManager(this, this.containerHomogenity);
     this.inputController = new JabronioGuiController(this.store, this.dataManager);
 
     this.reset();

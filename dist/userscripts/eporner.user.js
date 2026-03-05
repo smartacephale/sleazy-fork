@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Eporner PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.5
+// @version      2.0.7
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title, Duration and HD
+// @description  Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=eporner.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.eporner.com/*
 // @match        https://*.eporner.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -32,10 +32,11 @@
     thumbs: { selector: "div[id^=vf][data-id]" },
     thumb: {
       selectors: {
-        quality: { type: "number", selector: '[title="Quality"]' },
         title: "a",
         uploader: '[title="Uploader"]',
-        duration: '[title="Duration"]'
+        duration: '[title="Duration"]',
+        views: { selector: '[title="Views"]', type: "float" },
+        quality: { selector: '[title="Quality"]', type: "number" }
       }
     },
     thumbImg: {
@@ -43,50 +44,29 @@
       remove: "auto"
     },
     containerSelectorLast: "#vidresults",
-    customDataSelectorFns: [
-      "filterInclude",
-      "filterExclude",
-      "filterDuration",
-      {
-        quality360: (el, state) => !!state.quality360 && el.quality !== 360
-      },
-      {
-        quality480: (el, state) => !!state.quality480 && el.quality !== 480
-      },
-      {
-        quality720: (el, state) => !!state.quality720 && el.quality !== 720
-      },
-      {
-        quality1080: (el, state) => !!state.quality1080 && el.quality !== 1080
-      },
-      {
-        quality4k: (el, state) => !!state.quality4k && el.quality !== 4
-      }
+    customDataFilterFns: [
+      { quality360: (el, state) => !!state.quality360 && el.quality !== 360 },
+      { quality480: (el, state) => !!state.quality480 && el.quality !== 480 },
+      { quality720: (el, state) => !!state.quality720 && el.quality !== 720 },
+      { quality1080: (el, state) => !!state.quality1080 && el.quality !== 1080 },
+      { quality4k: (el, state) => !!state.quality4k && el.quality !== 4 }
     ],
     schemeOptions: [
-      "Text Filter",
-      "Badge",
+      "Title Filter",
+      "Uploader Filter",
       "Duration Filter",
       {
         title: "Quality Filter ",
         content: [
-          {
-            quality360: false
-          },
-          {
-            quality480: false
-          },
-          {
-            quality720: false
-          },
-          {
-            quality1080: false
-          },
-          {
-            quality4k: false
-          }
+          { quality360: false },
+          { quality480: false },
+          { quality720: false },
+          { quality1080: false },
+          { quality4k: false }
         ]
       },
+      "Sort By",
+      "Badge",
       "Advanced"
     ],
     animatePreview

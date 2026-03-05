@@ -5,8 +5,9 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.5',
-  description: 'Infinite scroll [optional], Filter by Title, Duration and HD',
+  version: '2.0.7',
+  description:
+    'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
 };
 
@@ -19,10 +20,11 @@ const rules = new Rules({
   thumbs: { selector: 'div[id^=vf][data-id]' },
   thumb: {
     selectors: {
-      quality: { type: 'number', selector: '[title="Quality"]' },
       title: 'a',
       uploader: '[title="Uploader"]',
       duration: '[title="Duration"]',
+      views: { selector: '[title="Views"]', type: 'float' },
+      quality: { selector: '[title="Quality"]', type: 'number' },
     },
   },
   thumbImg: {
@@ -30,50 +32,29 @@ const rules = new Rules({
     remove: 'auto',
   },
   containerSelectorLast: '#vidresults',
-  customDataSelectorFns: [
-    'filterInclude',
-    'filterExclude',
-    'filterDuration',
-    {
-      quality360: (el, state) => !!state.quality360 && el.quality !== 360,
-    },
-    {
-      quality480: (el, state) => !!state.quality480 && el.quality !== 480,
-    },
-    {
-      quality720: (el, state) => !!state.quality720 && el.quality !== 720,
-    },
-    {
-      quality1080: (el, state) => !!state.quality1080 && el.quality !== 1080,
-    },
-    {
-      quality4k: (el, state) => !!state.quality4k && el.quality !== 4,
-    },
+  customDataFilterFns: [
+    { quality360: (el, state) => !!state.quality360 && el.quality !== 360 },
+    { quality480: (el, state) => !!state.quality480 && el.quality !== 480 },
+    { quality720: (el, state) => !!state.quality720 && el.quality !== 720 },
+    { quality1080: (el, state) => !!state.quality1080 && el.quality !== 1080 },
+    { quality4k: (el, state) => !!state.quality4k && el.quality !== 4 },
   ],
   schemeOptions: [
-    'Text Filter',
-    'Badge',
+    'Title Filter',
+    'Uploader Filter',
     'Duration Filter',
     {
       title: 'Quality Filter ',
       content: [
-        {
-          quality360: false,
-        },
-        {
-          quality480: false,
-        },
-        {
-          quality720: false,
-        },
-        {
-          quality1080: false,
-        },
-        {
-          quality4k: false,
-        },
+        { quality360: false },
+        { quality480: false },
+        { quality720: false },
+        { quality1080: false },
+        { quality4k: false },
       ],
     },
+    'Sort By',
+    'Badge',
     'Advanced',
   ],
   animatePreview,

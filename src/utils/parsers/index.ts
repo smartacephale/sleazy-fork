@@ -11,11 +11,14 @@ export function parseIntegerOr(n: string | number, or: number): number {
 
 export function parseNumberWithLetter(str: string): number {
   const multipliers = { k: 1e3, m: 1e6 } as const;
-  const match = str.trim().match(/^([\d.]+)(\w)?$/);
+  const match = str.trim().match(/([\d., ]+)(\w)?/);
 
   if (!match) return 0;
 
-  const num = parseFloat(match[1]);
+  const s1 = match[1].replace(/,/g, '.').replace(/[ ]/g, '');
+  const s2 = s1.split('.').filter(Boolean).length < 3 ? s1 : s1.replace('.', '');
+
+  const num = parseFloat(s2);
   const suffix = match[2]?.toLowerCase() as keyof typeof multipliers;
 
   if (suffix && suffix in multipliers) {

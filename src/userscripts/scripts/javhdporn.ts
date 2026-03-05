@@ -3,12 +3,10 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Javhdporn PervertMonkey',
-  version: '3.0.4',
-  description: 'Infinite scroll [optional], Filter by Title and Duration',
-  match: [
-    "https://*.javhdporn.net/*",
-    "https://*.javhdporn.*/*"
-  ],
+  version: '3.0.6',
+  description:
+    'Infinite scroll [optional], Filter by Title and Duration, Sort By Duration and Views',
+  match: ['https://*.javhdporn.net/*', 'https://*.javhdporn.*/*'],
 };
 
 const rules = new Rules({
@@ -18,10 +16,11 @@ const rules = new Rules({
     selectors: {
       title: 'header.entry-header',
       duration: '.duration',
-    }
+      views: { selector: '.views', type: 'float' },
+    },
   },
   paginationStrategyOptions: {
     pathnameSelector: /\/page\/(\d+)\/?$/,
   },
-  schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
+  schemeOptions: ['Title Filter', 'Duration Filter', 'Sort By', 'Badge', 'Advanced'],
 });

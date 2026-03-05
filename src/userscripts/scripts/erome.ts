@@ -4,8 +4,9 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Erome PervertMonkey',
-  version: '5.0.4',
-  description: 'Infinite scroll [optional], Filter by Title and Video/Photo albums',
+  version: '5.0.6',
+  description:
+    'Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views',
   match: ['*://*.erome.com/*'],
 };
 
@@ -22,13 +23,12 @@ const rules = new Rules({
     selectors: {
       title: '.album-title',
       uploader: '.album-user',
-      videoAlbum: { type: 'boolean', selector: '.album-videos' },
+      videoAlbum: { selector: '.album-videos', type: 'boolean' },
+      views: { selector: '.album-bottom-views', type: 'float' },
     },
   },
   storeOptions: { showPhotos: true },
-  customDataSelectorFns: [
-    'filterInclude',
-    'filterExclude',
+  customDataFilterFns: [
     {
       filterPhotoAlbums: (el, state) =>
         (state.filterPhotoAlbums && !el.videoAlbum) as boolean,
@@ -39,7 +39,8 @@ const rules = new Rules({
     },
   ],
   schemeOptions: [
-    'Text Filter',
+    'Title Filter',
+    'Uploader Filter',
     {
       title: 'Filter Albums',
       content: [
@@ -53,6 +54,7 @@ const rules = new Rules({
         },
       ],
     },
+    'Sort By Views',
     'Badge',
     'Advanced',
   ],

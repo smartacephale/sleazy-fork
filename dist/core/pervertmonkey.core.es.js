@@ -11,6 +11,42 @@ var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 var _i2, _n2, _t, _e2, _s2, _l2, _o2, _d, _p2, _g, _C_instances, r_fn, R_fn, b_fn, u_fn, m_fn, a_fn, P_fn, E_fn, S_fn, O_fn, k_fn, x_fn, h_fn, f_fn, T_fn, A_fn, y_fn, w_fn, c_fn, C_fn, _a, _i3, _n3, _t2, _e3, _s3, _l3, _b;
 import { GM_addStyle } from "vite-plugin-monkey/dist/client";
+class DataFilterFn {
+  constructor(handle, deps = [], name, $preDefine) {
+    __publicField(this, "tag");
+    this.handle = handle;
+    this.deps = deps;
+    this.name = name;
+    this.$preDefine = $preDefine;
+    this.tag = `filter-${name}`;
+  }
+  static from(options, name) {
+    if (typeof options === "function") {
+      const deps = [name];
+      return new DataFilterFn(options, deps, name);
+    }
+    return new DataFilterFn(
+      options.handle,
+      options.deps,
+      name,
+      options.$preDefine
+    );
+  }
+  renderFn(state) {
+    const tag = this.tag;
+    return () => {
+      var _a3;
+      const preDefined = (_a3 = this.$preDefine) == null ? void 0 : _a3.call(this, state);
+      return (a2) => {
+        const condition = this.handle(a2, state, preDefined);
+        return {
+          condition,
+          tag
+        };
+      };
+    };
+  }
+}
 function chunks(arr, size) {
   return Array.from(
     { length: Math.ceil(arr.length / size) },
@@ -397,9 +433,11 @@ function parseIntegerOr(n, or2) {
 function parseNumberWithLetter(str) {
   var _a3;
   const multipliers = { k: 1e3, m: 1e6 };
-  const match = str.trim().match(/^([\d.]+)(\w)?$/);
+  const match = str.trim().match(/([\d., ]+)(\w)?/);
   if (!match) return 0;
-  const num = parseFloat(match[1]);
+  const s1 = match[1].replace(/,/g, ".").replace(/[ ]/g, "");
+  const s2 = s1.split(".").filter(Boolean).length < 3 ? s1 : s1.replace(".", "");
+  const num = parseFloat(s2);
   const suffix = (_a3 = match[2]) == null ? void 0 : _a3.toLowerCase();
   if (suffix && suffix in multipliers) {
     return num * multipliers[suffix];
@@ -427,13 +465,54 @@ function parseDataParams(str) {
 function parseCssUrl(s) {
   return s.replace(/url\("|"\).*/g, "");
 }
-const _DataFilter = class _DataFilter {
+function createTextFilter(filterName, dataPropName, positive) {
+  const filterNameValue = `${filterName}Words`;
+  return {
+    handle(el2, state, searchFilter) {
+      if (!Object.hasOwn(state, filterName) || !state[filterName]) return false;
+      return !(searchFilter == null ? void 0 : searchFilter(el2[dataPropName]));
+    },
+    $preDefine: (state) => {
+      const r = new RegexFilter(state[filterNameValue]);
+      if (positive) return (s) => r.hasEvery(s);
+      return (s) => r.hasNone(s);
+    },
+    deps: [filterNameValue]
+  };
+}
+const filterDuration = {
+  handle(el2, state, notInRange) {
+    if (!state.filterDuration) return false;
+    return !!(notInRange == null ? void 0 : notInRange(el2.duration));
+  },
+  $preDefine: (state) => {
+    const from = state.filterDurationFrom;
+    const to2 = state.filterDurationTo;
+    function notInRange(d2) {
+      return d2 < from || d2 > to2;
+    }
+    return notInRange;
+  },
+  deps: ["filterDurationFrom", "filterDurationTo"]
+};
+const defaultDataFilterFns = {
+  filterDuration,
+  filterExclude: createTextFilter("filterExclude", "title", false),
+  filterInclude: createTextFilter("filterInclude", "title", true),
+  filterUploaderExclude: createTextFilter("filterUploaderExclude", "uploader", false),
+  filterUploaderInclude: createTextFilter("filterUploaderInclude", "uploader", true),
+  filterHD: (el2, state) => state.filterHD && !el2.hd,
+  filterNonHD: (el2, state) => state.filterNonHD && el2.hd,
+  filterPrivate: (el2, state) => state.filterPrivate && el2.private,
+  filterPublic: (el2, state) => state.filterPublic && !el2.private
+};
+class DataFilter {
   constructor(rules) {
     __publicField(this, "filters", /* @__PURE__ */ new Map());
-    __publicField(this, "customDataSelectorFns", {});
+    __publicField(this, "customDataFilterFns", {});
     __publicField(this, "filterMapping", {});
     this.rules = rules;
-    this.registerFilters(rules.customDataSelectorFns);
+    this.registerFilters(rules.customDataFilterFns);
     this.applyCSSFilters();
   }
   static isFiltered(el2) {
@@ -447,87 +526,30 @@ const _DataFilter = class _DataFilter {
   }
   registerFilters(customFilters) {
     customFilters.forEach((o) => {
-      if (typeof o === "string") {
-        this.customDataSelectorFns[o] = _DataFilter.customDataSelectorFnsDefault[o];
-        this.registerFilter(o);
-      } else {
-        const k2 = Object.keys(o)[0];
-        this.customDataSelectorFns[k2] = o[k2];
-        this.registerFilter(k2);
-      }
+      const isStr = typeof o === "string";
+      const k2 = isStr ? o : Object.keys(o)[0];
+      this.customDataFilterFns[k2] = isStr ? defaultDataFilterFns[o] : o[k2];
+      this.registerFilter(k2);
     });
-  }
-  customSelectorParser(name, selector) {
-    if ("handle" in selector) {
-      return selector;
-    } else {
-      return { handle: selector, deps: [name] };
-    }
   }
   registerFilter(customSelectorName) {
     var _a3;
-    const handler = this.customSelectorParser(
-      customSelectorName,
-      this.customDataSelectorFns[customSelectorName]
+    const dataFilterFn = DataFilterFn.from(
+      this.customDataFilterFns[customSelectorName],
+      customSelectorName
     );
-    const tag = `filter-${customSelectorName}`;
-    (_a3 = [customSelectorName, ...handler.deps || []]) == null ? void 0 : _a3.forEach((name) => {
+    (_a3 = [customSelectorName, ...dataFilterFn.deps]) == null ? void 0 : _a3.forEach((name) => {
       Object.assign(this.filterMapping, { [name]: customSelectorName });
     });
-    const fn2 = () => {
-      var _a4;
-      const preDefined = (_a4 = handler.$preDefine) == null ? void 0 : _a4.call(handler, this.rules.store.state);
-      return (v2) => {
-        const condition = handler.handle(v2, this.rules.store.state, preDefined);
-        return {
-          condition,
-          tag
-        };
-      };
-    };
-    this.filters.set(customSelectorName, fn2);
+    this.filters.set(customSelectorName, dataFilterFn.renderFn(this.rules.store.state));
   }
   selectFilters(filters) {
     const selectedFilters = Object.keys(filters).filter((k2) => k2 in this.filterMapping).map((k2) => this.filterMapping[k2]).map((k2) => this.filters.get(k2));
     return selectedFilters;
   }
-};
-__publicField(_DataFilter, "customDataSelectorFnsDefault", {
-  filterDuration: {
-    handle(el2, state, notInRange) {
-      if (!state.filterDuration) return false;
-      return notInRange(el2.duration);
-    },
-    $preDefine: (state) => {
-      const from = state.filterDurationFrom;
-      const to2 = state.filterDurationTo;
-      function notInRange(d2) {
-        return d2 < from || d2 > to2;
-      }
-      return notInRange;
-    },
-    deps: ["filterDurationFrom", "filterDurationTo"]
-  },
-  filterExclude: {
-    handle(el2, state, searchFilter) {
-      if (!state.filterExclude) return false;
-      return !searchFilter.hasNone(el2.title);
-    },
-    $preDefine: (state) => new RegexFilter(state.filterExcludeWords),
-    deps: ["filterExcludeWords"]
-  },
-  filterInclude: {
-    handle(el2, state, searchFilter) {
-      if (!state.filterInclude) return false;
-      return !searchFilter.hasEvery(el2.title);
-    },
-    $preDefine: (state) => new RegexFilter(state.filterIncludeWords),
-    deps: ["filterIncludeWords"]
-  }
-});
-let DataFilter = _DataFilter;
+}
 class DataManager {
-  constructor(rules, parentHomogenity) {
+  constructor(rules, containerHomogenity) {
     __publicField(this, "data", /* @__PURE__ */ new Map());
     __publicField(this, "lazyImgLoader", new LazyImgLoader(
       (target) => !DataFilter.isFiltered(target)
@@ -538,9 +560,9 @@ class DataManager {
       if (filtersToApply.length === 0) return;
       const iterator2 = this.data.values().drop(offset);
       let finished = false;
+      const updates = [];
       await new Promise((resolve) => {
         function runBatch(deadline) {
-          const updates = [];
           while (deadline.timeRemaining() > 0) {
             const { value, done } = iterator2.next();
             finished = !!done;
@@ -550,13 +572,6 @@ class DataManager {
               updates.push({ e: value.element, tag, condition });
             }
           }
-          if (updates.length > 0) {
-            requestAnimationFrame(() => {
-              updates.forEach((u) => {
-                u.e.classList.toggle(u.tag, u.condition);
-              });
-            });
-          }
           if (!finished) {
             requestIdleCallback(runBatch);
           } else {
@@ -564,6 +579,28 @@ class DataManager {
           }
         }
         requestIdleCallback(runBatch);
+      });
+      const parents = new Set(updates.map((u) => u.e.parentElement));
+      requestAnimationFrame(() => {
+        const revertDisplayStyle = [...parents].map((p) => {
+          const display = p == null ? void 0 : p.style.display;
+          if (!display) return void 0;
+          p.style.display = "none";
+          p.style.contain = "layout style paint";
+          p.style.willChange = "contents";
+          return () => {
+            p.style.display = display;
+            requestAnimationFrame(() => {
+              p.style.willChange = "auto";
+            });
+          };
+        });
+        updates.forEach((u) => {
+          u.e.classList.toggle(u.tag, u.condition);
+        });
+        revertDisplayStyle.forEach((f) => {
+          f == null ? void 0 : f();
+        });
       });
     });
     __publicField(this, "filterAll", async (offset) => {
@@ -578,13 +615,17 @@ class DataManager {
       const dataOffset = this.data.size;
       const fragment = document.createDocumentFragment();
       const parent = container || this.rules.container;
-      const homogenity = !!this.parentHomogenity;
+      const homogenity = !!this.containerHomogenity;
+      if (parent) {
+        parent.style.contain = "layout style paint";
+        parent.style.willChange = "contents";
+      }
       for (const thumbElement of thumbs) {
         const url = this.rules.thumbDataParser.getUrl(thumbElement);
         if (!url || this.data.has(url) || parent !== container && (parent == null ? void 0 : parent.contains(thumbElement)) || homogenity && !checkHomogenity(
           parent,
           thumbElement.parentElement,
-          this.parentHomogenity
+          this.containerHomogenity
         )) {
           if (removeDuplicates) thumbElement.remove();
           continue;
@@ -599,26 +640,45 @@ class DataManager {
       }
       this.filterAll(dataOffset).then(() => {
         requestAnimationFrame(() => {
-          parent.appendChild(fragment);
+          parent == null ? void 0 : parent.appendChild(fragment);
         });
       });
     });
     this.rules = rules;
-    this.parentHomogenity = parentHomogenity;
+    this.containerHomogenity = containerHomogenity;
     this.dataFilter = new DataFilter(this.rules);
   }
   sortBy(key, direction = true) {
     if (this.data.size < 2) return;
-    let sorted = this.data.values().toArray().sort((a2, b2) => {
-      return a2[key] - b2[key];
+    const elements = this.data.values().toArray().filter((e) => e.element.parentElement !== null).map((e) => e);
+    const containers = new Set(elements.map((e) => e.element.parentElement));
+    containers.forEach((c) => {
+      c.style.contain = "layout style paint";
+      c.style.willChange = "contents";
     });
-    if (!direction) sorted = sorted.reverse();
-    const container = sorted[0].element.parentElement;
-    container.style.visibility = "hidden";
-    sorted.forEach((s) => {
-      container.append(s.element);
+    const elementsByContainers = /* @__PURE__ */ new Map();
+    containers.forEach((c) => {
+      elementsByContainers.set(c, []);
     });
-    container.style.visibility = "visible";
+    elements.forEach((e) => {
+      const parent = e.element.parentElement;
+      const container = elementsByContainers.get(parent);
+      container == null ? void 0 : container.push(e);
+    });
+    const dir = direction ? -1 : 1;
+    for (const [container, items] of elementsByContainers) {
+      items.sort((a2, b2) => (a2[key] - b2[key]) * dir);
+      const domNodes = items.map((e) => e.element);
+      const display = container.style.display;
+      container.style.display = "none";
+      container.replaceChildren(...domNodes);
+      requestAnimationFrame(() => {
+        container.style.display = display;
+        requestAnimationFrame(() => {
+          container.style.willChange = "auto";
+        });
+      });
+    }
   }
 }
 var extendStatics = function(d2, b2) {
@@ -2996,7 +3056,7 @@ function getPaginationStrategy(options) {
   return paginationStrategy;
 }
 class ThumbDataParser {
-  constructor(strategy = "manual", selectors = {}, callback, stringsMeltInTitle = true) {
+  constructor(strategy = "manual", selectors = {}, callback) {
     __publicField(this, "thumbDataSelectors", []);
     __publicField(this, "defaultThumbDataSelectors", [
       { name: "title", type: "string", selector: "[class *= title],[title]" },
@@ -3006,11 +3066,11 @@ class ThumbDataParser {
         selector: "[class *= uploader], [class *= user], [class *= name]"
       },
       { name: "duration", type: "duration", selector: "[class *= duration]" }
+      // { name: 'views', type: 'float', selector: '[class *= view]' },
     ]);
     this.strategy = strategy;
     this.selectors = selectors;
     this.callback = callback;
-    this.stringsMeltInTitle = stringsMeltInTitle;
     this.preprocessCustomThumbDataSelectors();
   }
   autoParseText(thumb) {
@@ -3056,7 +3116,7 @@ class ThumbDataParser {
     return Number.parseInt(querySelectorText(thumb, selector));
   }
   static create(o = {}) {
-    return new ThumbDataParser(o.strategy, o.selectors, o.callback, o.stringsMeltInTitle);
+    return new ThumbDataParser(o.strategy, o.selectors, o.callback);
   }
   getThumbData(thumb) {
     var _a3;
@@ -3064,19 +3124,11 @@ class ThumbDataParser {
       return this.autoParseText(thumb);
     }
     if (this.strategy === "auto-select") {
-      this.thumbDataSelectors = this.defaultThumbDataSelectors;
+      this.thumbDataSelectors.push(...this.defaultThumbDataSelectors);
     }
     const thumbData = Object.fromEntries(
       this.thumbDataSelectors.map((s) => [s.name, this.getThumbDataWith(thumb, s)])
     );
-    if (this.stringsMeltInTitle) {
-      Object.entries(thumbData).forEach(([k2, v2]) => {
-        if (typeof v2 === "string" && k2 !== "title") {
-          thumbData.title = `${thumbData.title} ${k2}:${v2}`;
-          delete thumbData[k2];
-        }
-      });
-    }
     (_a3 = this.callback) == null ? void 0 : _a3.call(this, thumb, thumbData);
     return thumbData;
   }
@@ -9606,7 +9658,7 @@ function Wp(t, e = []) {
 }
 const DefaultScheme = [
   {
-    title: "Text Filter",
+    title: "Title Filter",
     collapsed: true,
     content: [
       { filterExclude: false, label: "exclude" },
@@ -9621,6 +9673,26 @@ const DefaultScheme = [
         filterIncludeWords: "",
         label: "keywords",
         watch: "filterInclude",
+        placeholder: "word, f:full_word, r:RegEx..."
+      }
+    ]
+  },
+  {
+    title: "Uploader Filter",
+    collapsed: true,
+    content: [
+      { filterUploaderExclude: false, label: "exclude" },
+      {
+        filterUploaderExcludeWords: "",
+        label: "keywords",
+        watch: "filterUploaderExclude",
+        placeholder: "word, f:full_word, r:RegEx..."
+      },
+      { filterUploaderInclude: false, label: "include" },
+      {
+        filterUploaderIncludeWords: "",
+        label: "keywords",
+        watch: "filterUploaderInclude",
         placeholder: "word, f:full_word, r:RegEx..."
       }
     ]
@@ -9646,6 +9718,7 @@ const DefaultScheme = [
   },
   {
     title: "Sort By",
+    collapsed: true,
     content: [
       {
         "sort by views": () => {
@@ -9658,12 +9731,40 @@ const DefaultScheme = [
     ]
   },
   {
+    title: "Sort By Duration",
+    collapsed: true,
+    content: [
+      {
+        "sort by duration": () => {
+        }
+      }
+    ]
+  },
+  {
+    title: "Sort By Views",
+    collapsed: true,
+    content: [
+      {
+        "sort by views": () => {
+        }
+      }
+    ]
+  },
+  {
     title: "Privacy Filter",
+    collapsed: true,
     content: [
       { filterPrivate: false, label: "private" },
       { filterPublic: false, label: "public" },
       { "check access 🔓": () => {
       } }
+    ]
+  },
+  {
+    title: "HD Filter",
+    content: [
+      { filterHD: false, label: "hd" },
+      { filterNonHD: false, label: "non-hd" }
     ]
   },
   {
@@ -9685,6 +9786,11 @@ const DefaultScheme = [
       {
         writeHistory: false,
         label: "write history"
+      },
+      {
+        reset: () => {
+          localStorage.removeItem("state_acephale");
+        }
       }
     ]
   },
@@ -9742,12 +9848,21 @@ class JabronioGuiController {
   setupStoreListeners() {
     var _a3;
     (_a3 = this.directionalEventObservable$) == null ? void 0 : _a3.subscribe((e) => {
-      this.eventsMap[e.type](e.direction);
+      var _a4, _b2;
+      (_b2 = (_a4 = this.eventsMap)[e.type]) == null ? void 0 : _b2.call(_a4, e.direction);
     });
     this.store.stateSubject.pipe(takeUntil(this.destroy$)).subscribe((a2) => {
       this.dataManager.applyFilters(a2);
     });
   }
+}
+function getSelectorFnsFromScheme(xs2) {
+  const keys = xs2.flatMap((s) => {
+    const schemeBlock = DefaultScheme.find((e) => e.title === s);
+    if (!schemeBlock) return [];
+    return schemeBlock.content.flatMap((c) => Object.keys(c));
+  });
+  return keys.filter((k2) => k2 in defaultDataFilterFns);
 }
 class Rules {
   constructor(options) {
@@ -9763,12 +9878,8 @@ class Rules {
     __publicField(this, "paginationStrategyOptions", {});
     __publicField(this, "paginationStrategy");
     __publicField(this, "dataManager");
-    __publicField(this, "dataHomogenity");
-    __publicField(this, "customDataSelectorFns", [
-      "filterInclude",
-      "filterExclude",
-      "filterDuration"
-    ]);
+    __publicField(this, "containerHomogenity");
+    __publicField(this, "customDataFilterFns", []);
     __publicField(this, "animatePreview");
     __publicField(this, "storeOptions");
     __publicField(this, "schemeOptions", []);
@@ -9790,7 +9901,8 @@ class Rules {
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
     this.store = this.createStore();
     this.gui = this.createGui();
-    this.dataManager = new DataManager(this, this.dataHomogenity);
+    this.hookDataFilterFns();
+    this.dataManager = new DataManager(this, this.containerHomogenity);
     this.inputController = new JabronioGuiController(this.store, this.dataManager);
     this.reset();
   }
@@ -9808,6 +9920,12 @@ class Rules {
   }
   get observable() {
     return this.intersectionObservable || this.paginationStrategy.getPaginationElement();
+  }
+  hookDataFilterFns() {
+    const defaultFilterFns = getSelectorFnsFromScheme(
+      this.schemeOptions.filter((s) => typeof s === "string")
+    );
+    this.customDataFilterFns.push(...defaultFilterFns);
   }
   createStore() {
     const config2 = { ...StoreStateDefault, ...this.storeOptions };
@@ -9864,7 +9982,7 @@ class Rules {
     });
     this.mutationObservers = [];
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
-    this.dataManager = new DataManager(this, this.dataHomogenity);
+    this.dataManager = new DataManager(this, this.containerHomogenity);
     this.inputController.dispose();
     this.inputController = new JabronioGuiController(this.store, this.dataManager);
     this.resetInfiniteScroller();

@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    pervertmonkey
-// @version      4.0.5
+// @version      4.0.7
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title and Duration
+// @description  Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xvideos.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xvideos.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -35,7 +35,9 @@
       selectors: {
         title: "[class*=title]",
         uploader: "[class*=name]",
-        duration: "[class*=duration]"
+        duration: "[class*=duration]",
+        views: { selector: ".metadata a ~ span", type: "float" },
+        quality: { selector: ".video-hd-mark", type: "string" }
       },
       callback: (thumb) => {
         setTimeout(() => {
@@ -44,7 +46,33 @@
         }, 200);
       }
     },
-    schemeOptions: ["Text Filter", "Duration Filter", "Badge", "Advanced"],
+    customDataFilterFns: [
+      { qualityLow: (el, state) => !!state.qualityLow && el.quality !== "" },
+      { quality360: (el, state) => !!state.quality360 && el.quality !== "360p" },
+      { quality720: (el, state) => !!state.quality720 && el.quality !== "720p" },
+      { quality1080: (el, state) => !!state.quality1080 && el.quality !== "1080p" },
+      { quality1440: (el, state) => !!state.quality1440 && el.quality !== "1440p" },
+      { quality4k: (el, state) => !!state.quality4k && el.quality !== "4k" }
+    ],
+    schemeOptions: [
+      "Title Filter",
+      "Uploader Filter",
+      "Duration Filter",
+      {
+        title: "Quality Filter",
+        content: [
+          { qualityLow: false, label: "Low" },
+          { quality360: false, label: "360p" },
+          { quality720: false, label: "720p" },
+          { quality1080: false, label: "1080p" },
+          { quality1440: false, label: "1440p" },
+          { quality4k: false, label: "4k" }
+        ]
+      },
+      "Sort By",
+      "Badge",
+      "Advanced"
+    ],
     animatePreview
   });
   function animatePreview(container) {

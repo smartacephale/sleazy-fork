@@ -4,8 +4,8 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'NameThatPorn PervertMonkey',
-  version: '3.0.4',
-  description: 'Infinite scroll [optional], Filter by Title and Un/Solved',
+  version: '3.0.6',
+  description: 'Infinite scroll [optional], Filter by Title, Uploader and Solved/Unsolved',
   match: ['https://namethatporn.com/*'],
 };
 
@@ -16,26 +16,18 @@ const rules = new Rules({
     selectors: {
       title: '.item_title, .nsw_r_tit',
       uploader: '.item_answer b, .nsw_r_desc',
-      solved: {
-        type: 'boolean',
-        selector: '.item_solved, .nsw_r_slvd',
-      },
+      solved: { selector: '.item_solved, .nsw_r_slvd', type: 'boolean' },
     },
   },
   thumbImg: {
-    selector: (img: HTMLImageElement) => {
-      return (
-        img.getAttribute('data-dyn')?.concat('.webp') || (img.getAttribute('src') as string)
-      );
-    },
+    selector: (img: HTMLImageElement) =>
+      img.getAttribute('data-dyn')?.concat('.webp') || (img.getAttribute('src') as string),
   },
   paginationStrategyOptions: {
     paginationSelector: '#smi_wrp, #nsw_p',
   },
   gropeStrategy: 'all-in-all',
-  customDataSelectorFns: [
-    'filterInclude',
-    'filterExclude',
+  customDataFilterFns: [
     {
       filterSolved: (el, state) => (state.filterSolved && el.solved) as boolean,
     },
@@ -44,7 +36,8 @@ const rules = new Rules({
     },
   ],
   schemeOptions: [
-    'Text Filter',
+    'Title Filter',
+    'Uploader Filter',
     {
       title: 'Filter Status',
       content: [

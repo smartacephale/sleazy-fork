@@ -13,6 +13,7 @@ import {
   objectToFormData,
   parseCssUrl,
   parseHtml,
+  querySelectorLast,
   querySelectorLastNumber,
   range,
   replaceElementTag,
@@ -21,9 +22,9 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'ThisVid.com Improved',
-  version: '8.0.4',
+  version: '8.0.6',
   description:
-    'Infinite scroll [optional]. Preview for private videos. Filter: title, duration, public/private. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
+    'Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
   match: ['https://*.thisvid.com/*'],
 };
 
@@ -88,36 +89,18 @@ const defaultRulesConfig: RulesConfig = {
       return { img, imgSrc };
     },
   },
-  containerSelectorLast: '.thumbs-items',
+  containerSelector: () =>
+    (querySelectorLast(
+      document,
+      'div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder)',
+    ) as HTMLElement) || document.querySelector<HTMLElement>('.thumbs-items'),
   animatePreview,
-  customDataSelectorFns: [
-    'filterInclude',
-    'filterExclude',
-    'filterDuration',
-    {
-      filterPrivate: (el, state) => (state.filterPrivate && el.private) as boolean,
-    },
-    {
-      filterPublic: (el, state) => (state.filterPublic && !el.private) as boolean,
-    },
-    {
-      filterHD: (el, state) => (state.filterHD && !el.hd) as boolean,
-    },
-    {
-      filterNonHD: (el, state) => (state.filterNonHD && el.hd) as boolean,
-    },
-  ],
   schemeOptions: [
-    'Text Filter',
+    'Title Filter',
     'Duration Filter',
     'Privacy Filter',
-    {
-      title: 'HD Filter',
-      content: [
-        { filterHD: false, label: 'hd' },
-        { filterNonHD: false, label: 'non-hd' },
-      ],
-    },
+    'HD Filter',
+    'Sort By',
     'Badge',
     {
       title: 'Advanced',
@@ -398,6 +381,8 @@ function animatePreview(_: HTMLElement) {
     (target) => {
       const img = target.querySelector('img') as HTMLImageElement;
       const orig = img.getAttribute('src') as string;
+      if (!orig) return;
+
       tick.start(
         () => iteratePreviewFrames(img),
         () => {
@@ -610,7 +595,7 @@ async function createPrivateFeed() {
       paginationSelector: '.footer',
     },
     schemeOptions: [
-      'Text Filter',
+      'Title Filter',
       'Duration Filter',
       'Privacy Filter',
       'Badge',

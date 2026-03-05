@@ -17,9 +17,9 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'CamWhores PervertMonkey',
-  version: '3.0.7',
+  version: '3.0.9',
   description:
-    'Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Mass friend request button. Download button',
+    'Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Sort by Duration and Views. Mass friend request button. Download button',
   match: ['https://*.camwhores.tv', 'https://*.camwhores.*/*'],
   exclude: 'https://*.camwhores.tv/*mode=async*',
 };
@@ -54,27 +54,18 @@ const rules = new Rules({
     strategy: 'auto-select',
     selectors: {
       private: { type: 'boolean', selector: '[class*=private]' },
+      views: { selector: '.views', type: 'float' },
     },
   },
   thumbImg: {
     selector: 'data-original',
   },
   gropeStrategy: 'all-in-all',
-  customDataSelectorFns: [
-    'filterInclude',
-    'filterExclude',
-    'filterDuration',
-    {
-      filterPrivate: (e, state) => (state.filterPrivate && e.private) as boolean,
-    },
-    {
-      filterPublic: (e, state) => (state.filterPublic && !e.private) as boolean,
-    },
-  ],
   schemeOptions: [
-    'Text Filter',
+    'Title Filter',
     'Duration Filter',
     'Privacy Filter',
+    'Sort By',
     'Badge',
     {
       title: 'Advanced',

@@ -4,7 +4,7 @@ import { circularShift, OnHover, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: '3Hentai PervertMonkey',
-  version: '1.0.5',
+  version: '1.0.7',
   description: 'Infinite scroll [optional], Filter by Title',
   match: 'https://*.3hentai.net/*',
 };
@@ -23,8 +23,7 @@ const rules = new Rules({
     strategy: 'auto',
   },
   gropeStrategy: 'all-in-all',
-  customDataSelectorFns: ['filterInclude', 'filterExclude'],
-  schemeOptions: ['Text Filter', 'Badge', 'Advanced'],
+  schemeOptions: ['Title Filter', 'Badge', 'Advanced'],
   animatePreview,
 });
 
@@ -42,9 +41,7 @@ function animatePreview() {
     img.src = img.src.replace(/\w+\.\w+$/, '1t.jpg');
     img.onerror = (_) => tick.stop();
     tick.start(
-      () => {
-        img.src = rotate(img.src);
-      },
+      () => img.setAttribute('src', img.src),
       () => {
         img.src = origin;
       },

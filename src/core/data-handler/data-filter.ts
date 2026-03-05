@@ -1,31 +1,17 @@
-import type { StoreState } from 'jabroni-outfit';
 import { GM_addStyle } from 'vite-plugin-monkey/dist/client';
-import { RegexFilter } from '../../utils';
 import type { Rules } from '../rules';
-import type { DataElement } from './data-manager';
-
-export type DataSelectorFnShort = (e: DataElement, state: StoreState) => boolean;
-
-export type DataSelectorFnAdvanced<R> = {
-  handle: (el: DataElement, state: StoreState, $preDefineResult?: R) => boolean;
-  $preDefine?: (state: StoreState) => R;
-  deps?: string[];
-};
-
-export type DataSelectorFn<R> = DataSelectorFnAdvanced<R> | DataSelectorFnShort;
-
-interface DataFilterResult {
-  tag: string;
-  condition: boolean;
-}
-
-export type DataFilterFn = (v: DataElement) => DataFilterResult;
+import {
+  DataFilterFn,
+  type DataFilterFnFrom,
+  type DataFilterFnRendered,
+} from './data-filter-fn';
+import { defaultDataFilterFns } from './data-filter-fn-defaults';
 
 export class DataFilter {
-  public filters = new Map<string, () => DataFilterFn>();
+  public filters = new Map<string, () => DataFilterFnRendered>();
 
   constructor(private rules: Rules) {
-    this.registerFilters(rules.customDataSelectorFns);
+    this.registerFilters(rules.customDataFilterFns);
     this.applyCSSFilters();
   }
 
@@ -40,57 +26,31 @@ export class DataFilter {
     });
   }
 
-  public customDataSelectorFns: Record<string, DataSelectorFn<any>> = {};
+  public customDataFilterFns: Record<string, DataFilterFnFrom<any>> = {};
 
-  public registerFilters(customFilters: (Record<string, DataSelectorFn<any>> | string)[]) {
+  public registerFilters(
+    customFilters: (Record<string, DataFilterFnFrom<any>> | string)[],
+  ) {
     customFilters.forEach((o) => {
-      if (typeof o === 'string') {
-        this.customDataSelectorFns[o] = DataFilter.customDataSelectorFnsDefault[o];
-        this.registerFilter(o);
-      } else {
-        const k = Object.keys(o)[0];
-        this.customDataSelectorFns[k] = o[k];
-        this.registerFilter(k);
-      }
-    });
-  }
+      const isStr = typeof o === 'string';
+      const k = isStr ? o : Object.keys(o)[0];
 
-  private customSelectorParser<T>(
-    name: string,
-    selector: DataSelectorFn<T>,
-  ): DataSelectorFnAdvanced<T> {
-    if ('handle' in selector) {
-      return selector as DataSelectorFnAdvanced<T>;
-    } else {
-      return { handle: selector, deps: [name] } as DataSelectorFnAdvanced<T>;
-    }
+      this.customDataFilterFns[k] = isStr ? defaultDataFilterFns[o] : o[k];
+      this.registerFilter(k);
+    });
   }
 
   public registerFilter(customSelectorName: string) {
-    const handler = this.customSelectorParser(
+    const dataFilterFn = DataFilterFn.from(
+      this.customDataFilterFns[customSelectorName],
       customSelectorName,
-      this.customDataSelectorFns[customSelectorName],
     );
-    const tag = `filter-${customSelectorName}`;
 
-    [customSelectorName, ...(handler.deps || [])]?.forEach((name) => {
+    [customSelectorName, ...dataFilterFn.deps]?.forEach((name) => {
       Object.assign(this.filterMapping, { [name]: customSelectorName });
     });
 
-    const fn = (): DataFilterFn => {
-      const preDefined = handler.$preDefine?.(this.rules.store.state);
-
-      return (v: DataElement) => {
-        const condition = handler.handle(v, this.rules.store.state, preDefined);
-
-        return {
-          condition,
-          tag,
-        };
-      };
-    };
-
-    this.filters.set(customSelectorName, fn);
+    this.filters.set(customSelectorName, dataFilterFn.renderFn(this.rules.store.state));
   }
 
   public filterMapping: Record<string, string> = {};
@@ -99,41 +59,7 @@ export class DataFilter {
     const selectedFilters = Object.keys(filters)
       .filter((k) => k in this.filterMapping)
       .map((k) => this.filterMapping[k])
-      .map((k) => this.filters.get(k) as () => DataFilterFn);
+      .map((k) => this.filters.get(k) as () => DataFilterFnRendered);
     return selectedFilters;
   }
-
-  static customDataSelectorFnsDefault: Record<string, DataSelectorFn<any>> = {
-    filterDuration: {
-      handle(el, state, notInRange) {
-        if (!state.filterDuration) return false;
-        return notInRange(el.duration);
-      },
-      $preDefine: (state) => {
-        const from = state.filterDurationFrom as number;
-        const to = state.filterDurationTo as number;
-        function notInRange(d: number): boolean {
-          return d < from || d > to;
-        }
-        return notInRange;
-      },
-      deps: ['filterDurationFrom', 'filterDurationTo'],
-    },
-    filterExclude: {
-      handle(el, state, searchFilter) {
-        if (!state.filterExclude) return false;
-        return !(searchFilter as RegexFilter).hasNone(el.title as string);
-      },
-      $preDefine: (state) => new RegexFilter(state.filterExcludeWords as string),
-      deps: ['filterExcludeWords'],
-    },
-    filterInclude: {
-      handle(el, state, searchFilter) {
-        if (!state.filterInclude) return false;
-        return !(searchFilter as RegexFilter).hasEvery(el.title as string);
-      },
-      $preDefine: (state) => new RegexFilter(state.filterIncludeWords as string),
-      deps: ['filterIncludeWords'],
-    },
-  };
 }

@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Xhamster Improved
 // @namespace    pervertmonkey
-// @version      5.0.5
+// @version      5.0.7
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title and Duration
+// @description  Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xhamster.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -13,7 +13,7 @@
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.*/*
 // @exclude      https://*.xhamster.com/embed*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -80,10 +80,8 @@
       selectors: {
         title: ".video-thumb-info__name,.video-thumb-info>a",
         duration: ".thumb-image-container__duration",
-        watched: {
-          type: "boolean",
-          selector: '[data-role="video-watched'
-        }
+        watched: { selector: '[data-role="video-watched', type: "boolean" },
+        views: { selector: ".video-thumb-views", type: "float" }
       }
     },
     thumbImg: {
@@ -91,10 +89,7 @@
       remove: "[loading]"
     },
     gropeStrategy: "all-in-all",
-    customDataSelectorFns: [
-      "filterInclude",
-      "filterExclude",
-      "filterDuration",
+    customDataFilterFns: [
       {
         filterWatched: (el, state) => !!(state.filterWatched && el.watched)
       },
@@ -103,8 +98,7 @@
       }
     ],
     schemeOptions: [
-      "Text Filter",
-      "Badge",
+      "Title Filter",
       {
         title: "Filter Watched",
         content: [
@@ -112,7 +106,9 @@
           { filterUnwatched: false, label: "unwatched" }
         ]
       },
+      "Sort By",
       "Duration Filter",
+      "Badge",
       "Advanced"
     ],
     animatePreview

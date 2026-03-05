@@ -2,7 +2,7 @@ import type { JabroniTypes, SchemeInput, setupScheme } from 'jabroni-outfit';
 
 export const DefaultScheme = [
   {
-    title: 'Text Filter',
+    title: 'Title Filter',
     collapsed: true,
     content: [
       { filterExclude: false, label: 'exclude' },
@@ -17,6 +17,26 @@ export const DefaultScheme = [
         filterIncludeWords: '',
         label: 'keywords',
         watch: 'filterInclude',
+        placeholder: 'word, f:full_word, r:RegEx...',
+      },
+    ],
+  },
+  {
+    title: 'Uploader Filter',
+    collapsed: true,
+    content: [
+      { filterUploaderExclude: false, label: 'exclude' },
+      {
+        filterUploaderExcludeWords: '',
+        label: 'keywords',
+        watch: 'filterUploaderExclude',
+        placeholder: 'word, f:full_word, r:RegEx...',
+      },
+      { filterUploaderInclude: false, label: 'include' },
+      {
+        filterUploaderIncludeWords: '',
+        label: 'keywords',
+        watch: 'filterUploaderInclude',
         placeholder: 'word, f:full_word, r:RegEx...',
       },
     ],
@@ -42,6 +62,7 @@ export const DefaultScheme = [
   },
   {
     title: 'Sort By',
+    collapsed: true,
     content: [
       {
         'sort by views': () => {},
@@ -52,11 +73,37 @@ export const DefaultScheme = [
     ],
   },
   {
+    title: 'Sort By Duration',
+    collapsed: true,
+    content: [
+      {
+        'sort by duration': () => {},
+      },
+    ],
+  },
+  {
+    title: 'Sort By Views',
+    collapsed: true,
+    content: [
+      {
+        'sort by views': () => {},
+      },
+    ],
+  },
+  {
     title: 'Privacy Filter',
+    collapsed: true,
     content: [
       { filterPrivate: false, label: 'private' },
       { filterPublic: false, label: 'public' },
       { 'check access 🔓': () => {} },
+    ],
+  },
+  {
+    title: 'HD Filter',
+    content: [
+      { filterHD: false, label: 'hd' },
+      { filterNonHD: false, label: 'non-hd' },
     ],
   },
   {
@@ -79,6 +126,9 @@ export const DefaultScheme = [
         writeHistory: false,
         label: 'write history',
       },
+      {
+        reset: () => { localStorage.removeItem('state_acephale'); }
+      }
     ],
   },
   {
@@ -92,7 +142,6 @@ export const DefaultScheme = [
   },
 ] as const satisfies SchemeInput;
 
-export type SchemeOptions = (
-  | Parameters<typeof setupScheme>[0][0]
-  | JabroniTypes.ExtractValuesByKey<typeof DefaultScheme, 'title'>
-)[];
+export type SchemeKeys = JabroniTypes.ExtractValuesByKey<typeof DefaultScheme, 'title'>;
+
+export type SchemeOptions = (Parameters<typeof setupScheme>[0][0] | SchemeKeys)[];

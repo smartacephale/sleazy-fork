@@ -4,8 +4,8 @@ import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Ebalka PervertMonkey',
-  version: '3.0.4',
-  description: 'Infinite scroll [optional], Filter by Title and Duration',
+  version: '3.0.6',
+  description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
   match: [
     'https://b.ebalka.zip/*',
     'https://a.ebalka.love/*',
@@ -27,10 +27,18 @@ const rules = new Rules({
     selectors: {
       title: '.card__title',
       duration: '.card__spot > span:last-child',
+      hd: { selector: '.card__icons > .card__icon', type: 'boolean' },
     },
   },
   animatePreview,
-  schemeOptions: ['Text Filter', 'Badge', 'Duration Filter', 'Advanced'],
+  schemeOptions: [
+    'Title Filter',
+    'Duration Filter',
+    'HD Filter',
+    'Sort By Duration',
+    'Badge',
+    'Advanced',
+  ],
 });
 
 function animatePreview(container: HTMLElement) {

@@ -56,6 +56,7 @@ export class ThumbDataParser {
       selector: '[class *= uploader], [class *= user], [class *= name]',
     },
     { name: 'duration', type: 'duration', selector: '[class *= duration]' },
+    // { name: 'views', type: 'float', selector: '[class *= view]' },
   ];
 
   private getThumbDataWith(
@@ -82,17 +83,14 @@ export class ThumbDataParser {
     public strategy: 'manual' | 'auto-select' | 'auto-text' = 'manual',
     public selectors: ThumbDataSelectorsRaw = {},
     public callback?: (thumb: HTMLElement, thumbData: ThumbData) => void,
-    public stringsMeltInTitle = true,
   ) {
     this.preprocessCustomThumbDataSelectors();
   }
 
   public static create(
-    o: Partial<
-      Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback' | 'stringsMeltInTitle'>
-    > = {},
+    o: Partial<Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback'>> = {},
   ) {
-    return new ThumbDataParser(o.strategy, o.selectors, o.callback, o.stringsMeltInTitle);
+    return new ThumbDataParser(o.strategy, o.selectors, o.callback);
   }
 
   public getThumbData(thumb: HTMLElement): ThumbData {
@@ -101,21 +99,12 @@ export class ThumbDataParser {
     }
 
     if (this.strategy === 'auto-select') {
-      this.thumbDataSelectors = this.defaultThumbDataSelectors;
+      this.thumbDataSelectors.push(...this.defaultThumbDataSelectors);
     }
 
     const thumbData = Object.fromEntries(
       this.thumbDataSelectors.map((s) => [s.name, this.getThumbDataWith(thumb, s)]),
     );
-
-    if (this.stringsMeltInTitle) {
-      Object.entries(thumbData).forEach(([k, v]) => {
-        if (typeof v === 'string' && k !== 'title') {
-          thumbData.title = `${thumbData.title} ${k}:${v}`;
-          delete thumbData[k];
-        }
-      });
-    }
 
     this.callback?.(thumb, thumbData);
 

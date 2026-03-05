@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    pervertmonkey
-// @version      8.0.4
+// @version      8.0.6
 // @author       violent-orangutan
-// @description  Infinite scroll [optional]. Preview for private videos. Filter: title, duration, public/private. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
+// @description  Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=thisvid.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.thisvid.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -929,36 +929,17 @@ function takeWhile(predicate) {
         return { img, imgSrc };
       }
     },
-    containerSelectorLast: ".thumbs-items",
+    containerSelector: () => utils.querySelectorLast(
+      document,
+      "div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder)"
+    ) || document.querySelector(".thumbs-items"),
     animatePreview,
-    customDataSelectorFns: [
-      "filterInclude",
-      "filterExclude",
-      "filterDuration",
-      {
-        filterPrivate: (el, state) => state.filterPrivate && el.private
-      },
-      {
-        filterPublic: (el, state) => state.filterPublic && !el.private
-      },
-      {
-        filterHD: (el, state) => state.filterHD && !el.hd
-      },
-      {
-        filterNonHD: (el, state) => state.filterNonHD && el.hd
-      }
-    ],
     schemeOptions: [
-      "Text Filter",
+      "Title Filter",
       "Duration Filter",
       "Privacy Filter",
-      {
-        title: "HD Filter",
-        content: [
-          { filterHD: false, label: "hd" },
-          { filterNonHD: false, label: "non-hd" }
-        ]
-      },
+      "HD Filter",
+      "Sort By",
       "Badge",
       {
         title: "Advanced",
@@ -1164,6 +1145,7 @@ function takeWhile(predicate) {
       (target) => {
         const img = target.querySelector("img");
         const orig = img.getAttribute("src");
+        if (!orig) return;
         tick.start(
           () => iteratePreviewFrames(img),
           () => {
@@ -1322,7 +1304,7 @@ function takeWhile(predicate) {
         paginationSelector: ".footer"
       },
       schemeOptions: [
-        "Text Filter",
+        "Title Filter",
         "Duration Filter",
         "Privacy Filter",
         "Badge",

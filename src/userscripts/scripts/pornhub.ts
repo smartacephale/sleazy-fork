@@ -3,8 +3,9 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'PornHub PervertMonkey',
-  version: '4.0.4',
-  description: 'Infinite scroll [optional]. Filter by Title and Duration',
+  version: '4.0.6',
+  description:
+    'Infinite scroll [optional]. Filter by Title, Uploader and Duration. Sort by Duration and Views',
   match: ['https://*.pornhub.com/*'],
   exclude: 'https://*.pornhub.com/embed/*',
 };
@@ -19,20 +20,28 @@ const rules = new Rules({
       .filter((e) => e.children.length > 0 && e.checkVisibility())
       .pop() as HTMLElement,
 
-  dataHomogenity: { id: true, className: true },
+  containerHomogenity: { id: true, className: true },
   thumbs: { selector: 'li[data-video-vkey]' },
   thumb: {
     selectors: {
       title: 'span.title',
       uploader: '.usernameWrap',
       duration: '.duration',
+      views: { selector: '.views', type: 'float' },
     },
   },
   thumbImg: {
     selector: ['data-mediumthumb', 'data-image'],
   },
   gropeStrategy: 'all-in-all',
-  schemeOptions: ['Text Filter', 'Duration Filter', 'Badge', 'Advanced'],
+  schemeOptions: [
+    'Title Filter',
+    'Uploader Filter',
+    'Duration Filter',
+    'Sort By',
+    'Badge',
+    'Advanced',
+  ],
 });
 
 function bypassAgeVerification() {

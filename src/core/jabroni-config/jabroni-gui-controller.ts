@@ -51,7 +51,7 @@ export class JabronioGuiController {
 
   private setupStoreListeners() {
     this.directionalEventObservable$?.subscribe((e) => {
-      this.eventsMap[e.type](e.direction);
+      this.eventsMap[e.type]?.(e.direction);
     });
 
     this.store.stateSubject.pipe(takeUntil(this.destroy$)).subscribe((a) => {

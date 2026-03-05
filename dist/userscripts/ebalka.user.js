@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Ebalka PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.4
+// @version      3.0.6
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title and Duration
+// @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=ebalka.zip
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -15,7 +15,7 @@
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
 // @match        https://*.fuckingbear*.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -36,11 +36,19 @@
     thumb: {
       selectors: {
         title: ".card__title",
-        duration: ".card__spot > span:last-child"
+        duration: ".card__spot > span:last-child",
+        hd: { selector: ".card__icons > .card__icon", type: "boolean" }
       }
     },
     animatePreview,
-    schemeOptions: ["Text Filter", "Badge", "Duration Filter", "Advanced"]
+    schemeOptions: [
+      "Title Filter",
+      "Duration Filter",
+      "HD Filter",
+      "Sort By Duration",
+      "Badge",
+      "Advanced"
+    ]
   });
   function animatePreview(container) {
     function animateThumb(thumb) {

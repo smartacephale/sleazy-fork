@@ -4,7 +4,7 @@ import { fetchHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'E-Hentai PervertMonkey',
-  version: '1.0.3',
+  version: '1.0.5',
   description: 'Infinite scroll [optional], Filter by Title',
   match: ['https://*.e-hentai.org/*'],
 };
@@ -13,16 +13,15 @@ const rules = new Rules({
   thumbs: { selector: '.gl1t' },
   thumb: {
     selectors: {
-      title: '.glname'
-    }
+      title: '.glname',
+    },
   },
   thumbImg: {
     selector: 'data-lazy-load',
   },
   containerSelectorLast: '.itg.gld',
   paginationStrategyOptions: createPaginationStrategyOptions(),
-  customDataSelectorFns: ['filterInclude', 'filterExclude'],
-  schemeOptions: ['Text Filter', 'Badge', 'Advanced'],
+  schemeOptions: ['Title Filter', 'Badge', 'Advanced'],
 });
 
 function createPaginationStrategyOptions(): Rules['paginationStrategyOptions'] {
@@ -39,7 +38,6 @@ function createPaginationStrategyOptions(): Rules['paginationStrategyOptions'] {
         nextLink = getNextLink();
         return nextLink;
       }
-      // need cache or reuse infinite scroller request
       const doc = await fetchHtml(nextLink);
       nextLink = getNextLink(doc);
       return nextLink;

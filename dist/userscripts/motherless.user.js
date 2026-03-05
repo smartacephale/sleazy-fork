@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.5
+// @version      5.0.7
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title and Duration
+// @description  Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://motherless.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -45,7 +45,14 @@
     },
     animatePreview,
     gropeStrategy: "all-in-all",
-    schemeOptions: ["Text Filter", "Sort By", "Duration Filter", "Badge", "Advanced"]
+    schemeOptions: [
+      "Title Filter",
+      "Uploader Filter",
+      "Duration Filter",
+      "Sort By",
+      "Badge",
+      "Advanced"
+    ]
   });
   function animatePreview(_) {
     const tick = new utils.Tick(500);
@@ -148,7 +155,7 @@
   document.querySelector(".ml-pagination")?.before(_GM_addElement("div", { class: "clear-left" }));
   function applySearchFilters() {
     let pathname = window.location.pathname;
-    const wordsToFilter = rules.store.state.filterExcludeWords.replace(/f:/g, "").match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];
+    const wordsToFilter = rules.store.state.filterExcludeWords.match(/\w+/g) || [];
     wordsToFilter.filter((w) => !pathname.includes(w)).forEach((w) => {
       pathname += `+-${w.trim()}`;
     });

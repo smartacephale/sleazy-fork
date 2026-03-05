@@ -18,57 +18,63 @@ export declare function circularShift(n: number, c?: number, s?: number): number
 
 export declare function copyAttributes<T extends Element = HTMLElement>(target: T, source: T): void;
 
-export declare type DataElement = Record<string, string | number | boolean | HTMLElement>;
+export declare type DataElement = {
+    element: HTMLElement;
+    [key: string]: HTMLElement | string | number | boolean;
+};
 
 export declare class DataFilter {
     private rules;
-    filters: Map<string, () => DataFilterFn>;
+    filters: Map<string, () => DataFilterFnRendered>;
     constructor(rules: Rules);
     static isFiltered(el: HTMLElement): boolean;
     applyCSSFilters(wrapper?: (cssRule: string) => string): void;
-    customDataSelectorFns: Record<string, DataSelectorFn<any>>;
-    registerFilters(customFilters: (Record<string, DataSelectorFn<any>> | string)[]): void;
-    private customSelectorParser;
+    customDataFilterFns: Record<string, DataFilterFnFrom<any>>;
+    registerFilters(customFilters: (Record<string, DataFilterFnFrom<any>> | string)[]): void;
     registerFilter(customSelectorName: string): void;
     filterMapping: Record<string, string>;
     selectFilters(filters: {
         [key: string]: boolean;
-    }): (() => DataFilterFn)[];
-    static customDataSelectorFnsDefault: Record<string, DataSelectorFn<any>>;
+    }): (() => DataFilterFnRendered)[];
 }
 
-export declare type DataFilterFn = (v: DataElement) => DataFilterResult;
+declare class DataFilterFn<R> {
+    handle: DataFilterFnHandle<R>;
+    deps: string[];
+    name: string;
+    $preDefine?: ((state: StoreState) => R) | undefined;
+    private tag;
+    constructor(handle: DataFilterFnHandle<R>, deps: string[] | undefined, name: string, $preDefine?: ((state: StoreState) => R) | undefined);
+    static from<R>(options: DataFilterFnFrom<R>, name: string): DataFilterFn<R>;
+    renderFn(state: StoreState): () => DataFilterFnRendered;
+}
 
-declare interface DataFilterResult {
+declare type DataFilterFnFrom<R> = Partial<DataFilterFn<R>> | DataFilterFnHandle<R>;
+
+declare type DataFilterFnHandle<R> = (el: DataElement, state: StoreState, $preDefineResult?: R) => boolean;
+
+declare type DataFilterFnRendered = (v: DataElement) => DataFilterFnRenderedResult;
+
+declare type DataFilterFnRenderedResult = {
     tag: string;
     condition: boolean;
-}
+};
 
 export declare class DataManager {
     private rules;
-    private parentHomogenity?;
+    private containerHomogenity?;
     data: Map<string, DataElement>;
     private lazyImgLoader;
     dataFilter: DataFilter;
-    constructor(rules: Rules, parentHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
+    constructor(rules: Rules, containerHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
     applyFilters: (filters?: Record<string, boolean>, offset?: number) => Promise<void>;
     filterAll: (offset?: number) => Promise<void>;
     parseData: (html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean) => void;
     sortBy<K extends keyof DataElement>(key: K, direction?: boolean): void;
 }
 
-export declare type DataSelectorFn<R> = DataSelectorFnAdvanced<R> | DataSelectorFnShort;
-
-export declare type DataSelectorFnAdvanced<R> = {
-    handle: (el: DataElement, state: StoreState, $preDefineResult?: R) => boolean;
-    $preDefine?: (state: StoreState) => R;
-    deps?: string[];
-};
-
-export declare type DataSelectorFnShort = (e: DataElement, state: StoreState) => boolean;
-
 declare const DefaultScheme: [{
-    readonly title: "Text Filter";
+    readonly title: "Title Filter";
     readonly collapsed: true;
     readonly content: [{
         readonly filterExclude: false;
@@ -85,6 +91,26 @@ declare const DefaultScheme: [{
         readonly filterIncludeWords: "";
         readonly label: "keywords";
         readonly watch: "filterInclude";
+        readonly placeholder: "word, f:full_word, r:RegEx...";
+    }];
+}, {
+    readonly title: "Uploader Filter";
+    readonly collapsed: true;
+    readonly content: [{
+        readonly filterUploaderExclude: false;
+        readonly label: "exclude";
+    }, {
+        readonly filterUploaderExcludeWords: "";
+        readonly label: "keywords";
+        readonly watch: "filterUploaderExclude";
+        readonly placeholder: "word, f:full_word, r:RegEx...";
+    }, {
+        readonly filterUploaderInclude: false;
+        readonly label: "include";
+    }, {
+        readonly filterUploaderIncludeWords: "";
+        readonly label: "keywords";
+        readonly watch: "filterUploaderInclude";
         readonly placeholder: "word, f:full_word, r:RegEx...";
     }];
 }, {
@@ -106,13 +132,27 @@ declare const DefaultScheme: [{
     }];
 }, {
     readonly title: "Sort By";
+    readonly collapsed: true;
     readonly content: [{
         readonly 'sort by views': () => void;
     }, {
         readonly 'sort by duration': () => void;
     }];
 }, {
+    readonly title: "Sort By Duration";
+    readonly collapsed: true;
+    readonly content: [{
+        readonly 'sort by duration': () => void;
+    }];
+}, {
+    readonly title: "Sort By Views";
+    readonly collapsed: true;
+    readonly content: [{
+        readonly 'sort by views': () => void;
+    }];
+}, {
     readonly title: "Privacy Filter";
+    readonly collapsed: true;
     readonly content: [{
         readonly filterPrivate: false;
         readonly label: "private";
@@ -121,6 +161,15 @@ declare const DefaultScheme: [{
         readonly label: "public";
     }, {
         readonly 'check access \uD83D\uDD13': () => void;
+    }];
+}, {
+    readonly title: "HD Filter";
+    readonly content: [{
+        readonly filterHD: false;
+        readonly label: "hd";
+    }, {
+        readonly filterNonHD: false;
+        readonly label: "non-hd";
     }];
 }, {
     readonly title: "Advanced";
@@ -137,6 +186,8 @@ declare const DefaultScheme: [{
     }, {
         readonly writeHistory: false;
         readonly label: "write history";
+    }, {
+        readonly reset: () => void;
     }];
 }, {
     readonly title: "Badge";
@@ -367,8 +418,9 @@ export declare class Rules {
     paginationStrategyOptions: Partial<PaginationStrategy>;
     paginationStrategy: PaginationStrategy;
     dataManager: DataManager;
-    dataHomogenity: ConstructorParameters<typeof DataManager>[1];
-    customDataSelectorFns: (Record<string, DataSelectorFn<any>> | string)[];
+    containerHomogenity: ConstructorParameters<typeof DataManager>[1];
+    customDataFilterFns: (Record<string, DataFilterFnFrom<any>> | string)[];
+    private hookDataFilterFns;
     animatePreview?: (doc: HTMLElement) => void;
     storeOptions?: JabroniTypes.StoreStateOptions;
     schemeOptions: SchemeOptions;
@@ -394,7 +446,9 @@ export declare class Rules {
 
 export declare function sanitizeStr(s: string): string;
 
-declare type SchemeOptions = (Parameters<typeof setupScheme>[0][0] | JabroniTypes.ExtractValuesByKey<typeof DefaultScheme, 'title'>)[];
+declare type SchemeKeys = JabroniTypes.ExtractValuesByKey<typeof DefaultScheme, 'title'>;
+
+declare type SchemeOptions = (Parameters<typeof setupScheme>[0][0] | SchemeKeys)[];
 
 export declare function splitWith(s: string, c?: string): Array<string>;
 
@@ -404,15 +458,14 @@ export declare class ThumbDataParser {
     strategy: 'manual' | 'auto-select' | 'auto-text';
     selectors: ThumbDataSelectorsRaw;
     callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined;
-    stringsMeltInTitle: boolean;
     private autoParseText;
     getUrl(thumb: HTMLElement | HTMLAnchorElement): string;
     private preprocessCustomThumbDataSelectors;
     private thumbDataSelectors;
     private readonly defaultThumbDataSelectors;
     private getThumbDataWith;
-    constructor(strategy?: 'manual' | 'auto-select' | 'auto-text', selectors?: ThumbDataSelectorsRaw, callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined, stringsMeltInTitle?: boolean);
-    static create(o?: Partial<Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback' | 'stringsMeltInTitle'>>): ThumbDataParser;
+    constructor(strategy?: 'manual' | 'auto-select' | 'auto-text', selectors?: ThumbDataSelectorsRaw, callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined);
+    static create(o?: Partial<Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback'>>): ThumbDataParser;
     getThumbData(thumb: HTMLElement): ThumbData;
 }
 

@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Erome PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.4
+// @version      5.0.6
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title and Video/Photo albums
+// @description  Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        *://*.erome.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -35,13 +35,12 @@
       selectors: {
         title: ".album-title",
         uploader: ".album-user",
-        videoAlbum: { type: "boolean", selector: ".album-videos" }
+        videoAlbum: { selector: ".album-videos", type: "boolean" },
+        views: { selector: ".album-bottom-views", type: "float" }
       }
     },
     storeOptions: { showPhotos: true },
-    customDataSelectorFns: [
-      "filterInclude",
-      "filterExclude",
+    customDataFilterFns: [
       {
         filterPhotoAlbums: (el, state) => state.filterPhotoAlbums && !el.videoAlbum
       },
@@ -50,7 +49,8 @@
       }
     ],
     schemeOptions: [
-      "Text Filter",
+      "Title Filter",
+      "Uploader Filter",
       {
         title: "Filter Albums",
         content: [
@@ -64,6 +64,7 @@
           }
         ]
       },
+      "Sort By Views",
       "Badge",
       "Advanced"
     ]

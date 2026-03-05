@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         PornHub PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.4
+// @version      4.0.6
 // @author       violent-orangutan
-// @description  Infinite scroll [optional]. Filter by Title and Duration
+// @description  Infinite scroll [optional]. Filter by Title, Uploader and Duration. Sort by Duration and Views
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pornhub.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.pornhub.com/*
 // @exclude      https://*.pornhub.com/embed/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -28,20 +28,28 @@
       overwritePaginationLast: (n) => n === 9 ? 9999 : n
     },
     containerSelector: () => [...document.querySelectorAll("ul:has(> li[data-video-vkey])")].filter((e) => e.children.length > 0 && e.checkVisibility()).pop(),
-    dataHomogenity: { id: true, className: true },
+    containerHomogenity: { id: true, className: true },
     thumbs: { selector: "li[data-video-vkey]" },
     thumb: {
       selectors: {
         title: "span.title",
         uploader: ".usernameWrap",
-        duration: ".duration"
+        duration: ".duration",
+        views: { selector: ".views", type: "float" }
       }
     },
     thumbImg: {
       selector: ["data-mediumthumb", "data-image"]
     },
     gropeStrategy: "all-in-all",
-    schemeOptions: ["Text Filter", "Duration Filter", "Badge", "Advanced"]
+    schemeOptions: [
+      "Title Filter",
+      "Uploader Filter",
+      "Duration Filter",
+      "Sort By",
+      "Badge",
+      "Advanced"
+    ]
   });
   function bypassAgeVerification() {
     cookieStore.set({

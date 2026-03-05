@@ -4,7 +4,7 @@ import { parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'NHentai PervertMonkey',
-  version: '4.0.4',
+  version: '4.0.6',
   description: 'Infinite scroll [optional], Filter by Title',
   match: ['https://*.nhentai.net/*', 'https://*.nhentai.*/*'],
 };
@@ -14,18 +14,10 @@ const IS_SEARCH_PAGE = /^\/search\//.test(location.pathname);
 
 const nhentaiRules = new Rules({
   thumbs: { selector: '.gallery' },
-  thumb: {
-    selectors: {
-      title: '.caption'
-    }
-  },
-  thumbImg: {
-    strategy: 'auto',
-    remove: 'auto'
-  },
+  thumb: { selectors: { title: '.caption' } },
+  thumbImg: { strategy: 'auto', remove: 'auto' },
   containerSelectorLast: '.index-container, .container',
-  customDataSelectorFns: ['filterInclude', 'filterExclude'],
-  schemeOptions: ['Text Filter', 'Badge', 'Advanced'],
+  schemeOptions: ['Title Filter', 'Badge', 'Advanced'],
   gropeStrategy: 'all-in-all',
 });
 
@@ -57,7 +49,8 @@ function filtersUI() {
     const btns = parseHtml(`<div class="sort-type"></div>`);
     groupOfButtons.forEach((k) => {
       const btn = parseHtml(
-        `<a href="#" ${state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''
+        `<a href="#" ${
+          state.custom[k] ? 'style="background: rgba(59, 49, 70, 1)"' : ''
         }>${filterDescriptors[k as keyof typeof filterDescriptors].name}</a>`,
       );
       btn.addEventListener('click', (e) => {

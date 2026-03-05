@@ -1,1 +1,1 @@
-import './scripts/motherless'
+import './scripts/ebalka';

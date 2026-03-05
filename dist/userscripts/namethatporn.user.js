@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         NameThatPorn PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.4
+// @version      3.0.6
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title and Un/Solved
+// @description  Infinite scroll [optional], Filter by Title, Uploader and Solved/Unsolved
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=namethatporn.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://namethatporn.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -30,24 +30,17 @@
       selectors: {
         title: ".item_title, .nsw_r_tit",
         uploader: ".item_answer b, .nsw_r_desc",
-        solved: {
-          type: "boolean",
-          selector: ".item_solved, .nsw_r_slvd"
-        }
+        solved: { selector: ".item_solved, .nsw_r_slvd", type: "boolean" }
       }
     },
     thumbImg: {
-      selector: (img) => {
-        return img.getAttribute("data-dyn")?.concat(".webp") || img.getAttribute("src");
-      }
+      selector: (img) => img.getAttribute("data-dyn")?.concat(".webp") || img.getAttribute("src")
     },
     paginationStrategyOptions: {
       paginationSelector: "#smi_wrp, #nsw_p"
     },
     gropeStrategy: "all-in-all",
-    customDataSelectorFns: [
-      "filterInclude",
-      "filterExclude",
+    customDataFilterFns: [
       {
         filterSolved: (el, state) => state.filterSolved && el.solved
       },
@@ -56,7 +49,8 @@
       }
     ],
     schemeOptions: [
-      "Text Filter",
+      "Title Filter",
+      "Uploader Filter",
       {
         title: "Filter Status",
         content: [

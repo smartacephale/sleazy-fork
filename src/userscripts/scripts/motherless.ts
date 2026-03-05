@@ -5,8 +5,8 @@ import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.5',
-  description: 'Infinite scroll [optional], Filter by Title and Duration',
+  version: '5.0.7',
+  description: 'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
   match: ['https://motherless.com/*'],
   grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],
 };
@@ -31,7 +31,14 @@ const rules = new Rules({
   },
   animatePreview,
   gropeStrategy: 'all-in-all',
-  schemeOptions: ['Text Filter', 'Sort By', 'Duration Filter', 'Badge', 'Advanced'],
+  schemeOptions: [
+    'Title Filter',
+    'Uploader Filter',
+    'Duration Filter',
+    'Sort By',
+    'Badge',
+    'Advanced',
+  ],
 });
 
 function animatePreview(_: HTMLElement) {
@@ -174,9 +181,7 @@ function applySearchFilters() {
   let pathname = window.location.pathname;
 
   const wordsToFilter =
-    (rules.store.state.filterExcludeWords as string)
-      .replace(/f:/g, '')
-      .match(/(?<!user:)\b\w+\b(?!\s*:)/g) || [];
+    (rules.store.state.filterExcludeWords as string).match(/\w+/g) || [];
 
   wordsToFilter
     .filter((w) => !pathname.includes(w))

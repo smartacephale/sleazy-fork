@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         E-Hentai PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.3
+// @version      1.0.5
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.e-hentai.org/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -33,8 +33,7 @@
     },
     containerSelectorLast: ".itg.gld",
     paginationStrategyOptions: createPaginationStrategyOptions(),
-    customDataSelectorFns: ["filterInclude", "filterExclude"],
-    schemeOptions: ["Text Filter", "Badge", "Advanced"]
+    schemeOptions: ["Title Filter", "Badge", "Advanced"]
   });
   function createPaginationStrategyOptions() {
     let nextLink;

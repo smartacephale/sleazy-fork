@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         SpankBang.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.4
+// @version      4.0.6
 // @author       violent-orangutan
-// @description  Infinite scroll [optional]. Filter by Title and Duration
+// @description  Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=spankbang.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.spankbang.com/*
 // @match        https://*.spankbang.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -22,7 +22,7 @@
 (function (core) {
   'use strict';
 
-  new core.Rules({
+  const rules = new core.Rules({
     containerSelector: ".main-container .js-media-list, .main_content_container .video-list",
     paginationStrategyOptions: {
       paginationSelector: ".paginate-bar, .pagination"
@@ -31,13 +31,34 @@
     thumb: {
       selectors: {
         title: "[title]",
-        tags: { selector: '[data-testid="title"]', type: "string" },
-        duration: '[data-testid="video-item-length"]'
+        duration: '[data-testid="video-item-length"]',
+views: { selector: '[data-testid="views"]', type: "float" },
+        quality: { selector: '[data-testid="video-item-resolution"]', type: "string" }
       }
     },
     thumbImg: { strategy: "auto" },
     gropeStrategy: "all-in-all",
-    schemeOptions: ["Text Filter", "Duration Filter", "Badge", "Advanced"]
+    customDataFilterFns: [
+      { qualityLow: (el, state) => !!state.qualityLow && el.quality !== "" },
+      { qualityHD: (el, state) => !!state.qualityHD && el.quality !== "HD" },
+      { quality4k: (el, state) => !!state.quality4k && el.quality !== "4K" }
+    ],
+    schemeOptions: [
+      "Title Filter",
+      "Duration Filter",
+      {
+        title: "Quality Filter",
+        content: [
+          { qualityLow: false, label: "Low" },
+          { qualityHD: false, label: "HD" },
+          { quality4k: false, label: "4K" }
+        ]
+      },
+      "Sort By",
+      "Badge",
+      "Advanced"
+    ]
   });
+  console.log(rules.dataManager.data.values().toArray());
 
 })(core);

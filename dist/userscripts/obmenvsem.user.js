@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Obmensvem PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.4
+// @version      1.0.6
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title and Duration
+// @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=obmenvsem.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.obmenvsem.com/*
 // @match        https://*.obmenvsem.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.13/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -77,7 +77,13 @@
         return img.src;
       }
     },
-    schemeOptions: ["Text Filter", "Duration Filter", "Badge", "Advanced"]
+    schemeOptions: [
+      "Title Filter",
+      "Duration Filter",
+      "Sort By Duration",
+      "Badge",
+      "Advanced"
+    ]
   });
 
 })(core, utils);
