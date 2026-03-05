@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Erome PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.6
+// @version      5.0.8
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views
+// @description  Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer.
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        *://*.erome.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -41,12 +41,8 @@
     },
     storeOptions: { showPhotos: true },
     customDataFilterFns: [
-      {
-        filterPhotoAlbums: (el, state) => state.filterPhotoAlbums && !el.videoAlbum
-      },
-      {
-        filterVideoAlbums: (el, state) => state.filterVideoAlbums && el.videoAlbum
-      }
+      { filterPhotoAlbums: (el, state) => !!state.filterPhotoAlbums && !el.videoAlbum },
+      { filterVideoAlbums: (el, state) => !!state.filterVideoAlbums && !!el.videoAlbum }
     ],
     schemeOptions: [
       "Title Filter",
@@ -56,11 +52,11 @@
         content: [
           {
             filterVideoAlbums: false,
-            label: "video albums"
+            label: "photo"
           },
           {
             filterPhotoAlbums: false,
-            label: "photo albums"
+            label: "video"
           }
         ]
       },

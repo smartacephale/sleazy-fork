@@ -80,7 +80,7 @@ export function removeClassesAndDataAttributes(
 
 export function getCommonParents(elements: HTMLCollection | HTMLElement[]): HTMLElement[] {
   const parents = Array.from(elements)
-    .map((el) => el.parentElement)
+    .map((e) => e.parentElement)
     .filter((parent): parent is HTMLElement => parent !== null);
 
   return [...new Set(parents)];

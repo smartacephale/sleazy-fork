@@ -7,13 +7,15 @@ import {
 } from '../../utils';
 
 type Primitive = string | number | boolean;
-type PrimitiveString = 'boolean' | 'string' | 'number' | 'float' | 'duration';
+
 type ThumbData = Record<string, Primitive>;
+
 type ThumbDataSelector = {
   name: string;
   selector: string;
-  type: PrimitiveString;
+  type: 'boolean' | 'string' | 'number' | 'float' | 'duration';
 };
+
 type ThumbDataSelectorsRaw = Record<
   string,
   string | Pick<ThumbDataSelector, 'selector' | 'type'>
@@ -21,8 +23,13 @@ type ThumbDataSelectorsRaw = Record<
 
 export class ThumbDataParser {
   private autoParseText(thumb: HTMLElement): ThumbData {
-    const title = sanitizeStr(thumb.innerText);
-    const duration = timeToSeconds(title.match(/\d+m|\d+:\d+/)?.[0] || '');
+    let title = sanitizeStr(thumb.innerText);
+
+    const durationStr = title.match(/(\d+:\d+:?\d+?)|\d+m/)?.[0] || '';
+    const duration = timeToSeconds(durationStr);
+
+    title = title.replaceAll(durationStr, '');
+
     return { title, duration };
   }
 

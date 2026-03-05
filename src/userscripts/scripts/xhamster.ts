@@ -14,7 +14,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster Improved',
-  version: '5.0.7',
+  version: '5.0.8',
   description:
     'Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
@@ -104,10 +104,10 @@ const rules = new Rules({
   gropeStrategy: 'all-in-all',
   customDataFilterFns: [
     {
-      filterWatched: (el, state) => !!(state.filterWatched && el.watched),
+      filterWatched: (e, state) => !!(state.filterWatched && e.watched),
     },
     {
-      filterUnwatched: (el, state) => !!(state.filterUnwatched && !el.watched),
+      filterUnwatched: (e, state) => !!(state.filterUnwatched && !e.watched),
     },
   ],
   schemeOptions: [
@@ -158,11 +158,11 @@ function animatePreview() {
 
 function expandMoreVideoPage() {
   watchElementChildrenCount(rules.container, () => setTimeout(rules.gropeInit, 1800));
-  waitForElementToAppear(document.body, 'button[data-role="show-more-next"]', (el) => {
+  waitForElementToAppear(document.body, 'button[data-role="show-more-next"]', (e) => {
     const observer = new Observer((target) => {
       (target as HTMLButtonElement).click();
     });
-    observer.observe(el);
+    observer.observe(e);
   });
 }
 

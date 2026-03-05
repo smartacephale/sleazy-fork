@@ -22,7 +22,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'ThisVid.com Improved',
-  version: '8.0.6',
+  version: '8.0.7',
   description:
     'Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
   match: ['https://*.thisvid.com/*'],
@@ -175,8 +175,8 @@ async function getMemberFriends(
   return g();
 }
 
-function getMembers(el: HTMLElement) {
-  const friendsList = el.querySelector('#list_members_friends_items') || el;
+function getMembers(e: HTMLElement) {
+  const friendsList = e.querySelector('#list_members_friends_items') || e;
   return Array.from(friendsList.querySelectorAll<HTMLAnchorElement>('.tumbpu') || [])
     .map((e) => e.href.match(/\d+/)?.[0] as string)
     .filter((_) => _);

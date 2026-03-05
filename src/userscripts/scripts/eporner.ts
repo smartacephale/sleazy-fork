@@ -5,7 +5,7 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.7',
+  version: '2.0.9',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
@@ -37,6 +37,7 @@ const rules = new Rules({
     { quality480: (el, state) => !!state.quality480 && el.quality !== 480 },
     { quality720: (el, state) => !!state.quality720 && el.quality !== 720 },
     { quality1080: (el, state) => !!state.quality1080 && el.quality !== 1080 },
+    { quality2k: (el, state) => !!state.quality2k && el.quality !== 2 },
     { quality4k: (el, state) => !!state.quality4k && el.quality !== 4 },
   ],
   schemeOptions: [
@@ -50,6 +51,7 @@ const rules = new Rules({
         { quality480: false },
         { quality720: false },
         { quality1080: false },
+        { quality2k: false },
         { quality4k: false },
       ],
     },
@@ -57,6 +59,7 @@ const rules = new Rules({
     'Badge',
     'Advanced',
   ],
+  gropeStrategy: 'all-in-all',
   animatePreview,
 });
 

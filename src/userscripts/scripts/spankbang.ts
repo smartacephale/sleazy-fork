@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'SpankBang.com PervertMonkey',
-  version: '4.0.6',
+  version: '4.0.7',
   description:
     'Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views',
   match: ['https://*.spankbang.com/*', 'https://*.spankbang.*/*'],
@@ -27,9 +27,9 @@ const rules = new Rules({
   thumbImg: { strategy: 'auto' },
   gropeStrategy: 'all-in-all',
   customDataFilterFns: [
-    { qualityLow: (el, state) => !!state.qualityLow && el.quality !== '' },
-    { qualityHD: (el, state) => !!state.qualityHD && el.quality !== 'HD' },
-    { quality4k: (el, state) => !!state.quality4k && el.quality !== '4K' },
+    { qualityLow: (e, state) => !!state.qualityLow && e.quality !== '' },
+    { qualityHD: (e, state) => !!state.qualityHD && e.quality !== 'HD' },
+    { quality4k: (e, state) => !!state.quality4k && e.quality !== '4K' },
   ],
   schemeOptions: [
     'Title Filter',

@@ -4,10 +4,10 @@ export function waitForElementToAppear(
   callback: (el: Element) => void,
 ) {
   const observer = new MutationObserver((_mutations) => {
-    const el = parent.querySelector(selector);
-    if (el) {
+    const e = parent.querySelector(selector);
+    if (e) {
       observer.disconnect();
-      callback(el);
+      callback(e);
     }
   });
 

@@ -5,8 +5,9 @@ import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.7',
-  description: 'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
+  version: '5.0.8',
+  description:
+    'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
   match: ['https://motherless.com/*'],
   grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],
 };
@@ -159,7 +160,7 @@ async function desktopAddMobGalleries() {
 const overwrite1 = (x: string) => `@media only screen and (max-width: 1280px) {
   #categories-page.inner ${x} }`;
 
-rules.dataManager.dataFilter.applyCSSFilters(overwrite1);
+rules.dataManager.dataFilter.createCssFilters(overwrite1);
 
 GM_addStyle(`
 .img-container, .desktop-thumb { min-height: 150px; max-height: 150px; }

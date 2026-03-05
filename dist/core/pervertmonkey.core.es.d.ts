@@ -26,13 +26,13 @@ export declare type DataElement = {
 export declare class DataFilter {
     private rules;
     filters: Map<string, () => DataFilterFnRendered>;
+    filterMapping: Record<string, string>;
     constructor(rules: Rules);
-    static isFiltered(el: HTMLElement): boolean;
-    applyCSSFilters(wrapper?: (cssRule: string) => string): void;
+    static isFiltered(e: HTMLElement): boolean;
+    createCssFilters(wrapper?: (cssRule: string) => string): void;
     customDataFilterFns: Record<string, DataFilterFnFrom<any>>;
     registerFilters(customFilters: (Record<string, DataFilterFnFrom<any>> | string)[]): void;
     registerFilter(customSelectorName: string): void;
-    filterMapping: Record<string, string>;
     selectFilters(filters: {
         [key: string]: boolean;
     }): (() => DataFilterFnRendered)[];
@@ -43,7 +43,8 @@ declare class DataFilterFn<R> {
     deps: string[];
     name: string;
     $preDefine?: ((state: StoreState) => R) | undefined;
-    private tag;
+    static prefix: string;
+    static setPrefix(name: string): string;
     constructor(handle: DataFilterFnHandle<R>, deps: string[] | undefined, name: string, $preDefine?: ((state: StoreState) => R) | undefined);
     static from<R>(options: DataFilterFnFrom<R>, name: string): DataFilterFn<R>;
     renderFn(state: StoreState): () => DataFilterFnRendered;
@@ -56,7 +57,7 @@ declare type DataFilterFnHandle<R> = (el: DataElement, state: StoreState, $preDe
 declare type DataFilterFnRendered = (v: DataElement) => DataFilterFnRenderedResult;
 
 declare type DataFilterFnRenderedResult = {
-    tag: string;
+    name: string;
     condition: boolean;
 };
 
@@ -68,6 +69,8 @@ export declare class DataManager {
     dataFilter: DataFilter;
     constructor(rules: Rules, containerHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
     applyFilters: (filters?: Record<string, boolean>, offset?: number) => Promise<void>;
+    layoutStylePaintEnabled: boolean;
+    private layoutStylePaint;
     filterAll: (offset?: number) => Promise<void>;
     parseData: (html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean) => void;
     sortBy<K extends keyof DataElement>(key: K, direction?: boolean): void;
@@ -380,8 +383,6 @@ export declare function parseUrl(s: HTMLAnchorElement | Location | URL | string)
 
 declare type Primitive = string | number | boolean;
 
-declare type PrimitiveString = 'boolean' | 'string' | 'number' | 'float' | 'duration';
-
 export declare function querySelectorLast<T extends Element = HTMLElement>(root: ParentNode | undefined, selector: string): T | undefined;
 
 export declare function querySelectorLastNumber(selector: string, e?: ParentNode): number;
@@ -472,7 +473,7 @@ export declare class ThumbDataParser {
 declare type ThumbDataSelector = {
     name: string;
     selector: string;
-    type: PrimitiveString;
+    type: 'boolean' | 'string' | 'number' | 'float' | 'duration';
 };
 
 declare type ThumbDataSelectorsRaw = Record<string, string | Pick<ThumbDataSelector, 'selector' | 'type'>>;

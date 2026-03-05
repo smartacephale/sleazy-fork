@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NHentai PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.6
+// @version      4.0.7
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.nhentai.net/*
 // @match        https://*.nhentai.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow

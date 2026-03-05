@@ -4,7 +4,7 @@ import { fetchHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'E-Hentai PervertMonkey',
-  version: '1.0.5',
+  version: '1.0.7',
   description: 'Infinite scroll [optional], Filter by Title',
   match: ['https://*.e-hentai.org/*'],
 };
@@ -27,12 +27,12 @@ const rules = new Rules({
 function createPaginationStrategyOptions(): Rules['paginationStrategyOptions'] {
   let nextLink: string;
 
-  function getPaginationUrlGenerator() {
-    function getNextLink(doc: Document | HTMLElement = document) {
-      return [...doc.querySelectorAll<HTMLAnchorElement>('a#dnext[href]')].pop()
-        ?.href as string;
-    }
+  function getNextLink(doc: Document | HTMLElement = document) {
+    return [...doc.querySelectorAll<HTMLAnchorElement>('a#dnext[href]')].pop()
+      ?.href as string;
+  }
 
+  function getPaginationUrlGenerator() {
     const paginationUrlGenerator = async (_: number) => {
       if (!nextLink) {
         nextLink = getNextLink();
@@ -46,9 +46,11 @@ function createPaginationStrategyOptions(): Rules['paginationStrategyOptions'] {
     return paginationUrlGenerator;
   }
 
+  const totalTitles = Number.parseInt(getNextLink()?.match(/\d+$/)?.[0] || '0');
+
   return {
     paginationSelector: '.searchnav + div + .searchnav',
-    overwritePaginationLast: () => 9999999,
+    overwritePaginationLast: () => totalTitles,
     getPaginationUrlGenerator,
   };
 }

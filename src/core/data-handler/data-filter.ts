@@ -9,19 +9,21 @@ import { defaultDataFilterFns } from './data-filter-fn-defaults';
 
 export class DataFilter {
   public filters = new Map<string, () => DataFilterFnRendered>();
+  public filterMapping: Record<string, string> = {};
 
   constructor(private rules: Rules) {
     this.registerFilters(rules.customDataFilterFns);
-    this.applyCSSFilters();
+    this.createCssFilters();
   }
 
-  public static isFiltered(el: HTMLElement): boolean {
-    return el.className.includes('filter-');
+  public static isFiltered(e: HTMLElement): boolean {
+    return e.className.includes(DataFilterFn.prefix);
   }
 
-  public applyCSSFilters(wrapper?: (cssRule: string) => string) {
+  public createCssFilters(wrapper?: (cssRule: string) => string) {
     this.filters.forEach((_, name) => {
-      const cssRule = `.filter-${name} { display: none !important; }`;
+      const className = DataFilterFn.setPrefix(name);
+      const cssRule = `.${className} { display: none !important; }`;
       GM_addStyle(wrapper ? wrapper(cssRule) : cssRule);
     });
   }
@@ -46,14 +48,14 @@ export class DataFilter {
       customSelectorName,
     );
 
-    [customSelectorName, ...dataFilterFn.deps]?.forEach((name) => {
+    dataFilterFn.deps.push(customSelectorName);
+
+    dataFilterFn.deps.forEach((name) => {
       Object.assign(this.filterMapping, { [name]: customSelectorName });
     });
 
     this.filters.set(customSelectorName, dataFilterFn.renderFn(this.rules.store.state));
   }
-
-  public filterMapping: Record<string, string> = {};
 
   public selectFilters(filters: { [key: string]: boolean }) {
     const selectedFilters = Object.keys(filters)

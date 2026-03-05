@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eporner PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.7
+// @version      2.0.9
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.eporner.com/*
 // @match        https://*.eporner.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -49,6 +49,7 @@
       { quality480: (el, state) => !!state.quality480 && el.quality !== 480 },
       { quality720: (el, state) => !!state.quality720 && el.quality !== 720 },
       { quality1080: (el, state) => !!state.quality1080 && el.quality !== 1080 },
+      { quality2k: (el, state) => !!state.quality2k && el.quality !== 2 },
       { quality4k: (el, state) => !!state.quality4k && el.quality !== 4 }
     ],
     schemeOptions: [
@@ -62,6 +63,7 @@
           { quality480: false },
           { quality720: false },
           { quality1080: false },
+          { quality2k: false },
           { quality4k: false }
         ]
       },
@@ -69,6 +71,7 @@
       "Badge",
       "Advanced"
     ],
+    gropeStrategy: "all-in-all",
     animatePreview
   });
   function animatePreview(doc) {

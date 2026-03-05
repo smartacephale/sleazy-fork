@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xhamster Improved
 // @namespace    pervertmonkey
-// @version      5.0.7
+// @version      5.0.8
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views
 // @license      MIT
@@ -13,7 +13,7 @@
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.*/*
 // @exclude      https://*.xhamster.com/embed*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -91,10 +91,10 @@
     gropeStrategy: "all-in-all",
     customDataFilterFns: [
       {
-        filterWatched: (el, state) => !!(state.filterWatched && el.watched)
+        filterWatched: (e, state) => !!(state.filterWatched && e.watched)
       },
       {
-        filterUnwatched: (el, state) => !!(state.filterUnwatched && !el.watched)
+        filterUnwatched: (e, state) => !!(state.filterUnwatched && !e.watched)
       }
     ],
     schemeOptions: [
@@ -139,11 +139,11 @@
   }
   function expandMoreVideoPage() {
     utils.watchElementChildrenCount(rules.container, () => setTimeout(rules.gropeInit, 1800));
-    utils.waitForElementToAppear(document.body, 'button[data-role="show-more-next"]', (el) => {
+    utils.waitForElementToAppear(document.body, 'button[data-role="show-more-next"]', (e) => {
       const observer = new utils.Observer((target) => {
         target.click();
       });
-      observer.observe(el);
+      observer.observe(e);
     });
   }
   if (IS_VIDEO_PAGE) {

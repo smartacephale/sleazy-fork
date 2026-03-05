@@ -8,9 +8,9 @@ function createTextFilter(
 ): DataFilterFnFrom<(_: string) => boolean> {
   const filterNameValue = `${filterName}Words`;
   return {
-    handle(el, state, searchFilter) {
+    handle(e, state, searchFilter) {
       if (!Object.hasOwn(state, filterName) || !state[filterName]) return false;
-      return !searchFilter?.(el[dataPropName] as string);
+      return !searchFilter?.(e[dataPropName] as string);
     },
     $preDefine: (state) => {
       const r = new RegexFilter(state[filterNameValue] as string);
@@ -22,9 +22,9 @@ function createTextFilter(
 }
 
 const filterDuration: DataFilterFnFrom<(_: number) => boolean> = {
-  handle(el, state, notInRange) {
+  handle(e, state, notInRange) {
     if (!state.filterDuration) return false;
-    return !!notInRange?.(el.duration as number);
+    return !!notInRange?.(e.duration as number);
   },
   $preDefine: (state) => {
     const from = state.filterDurationFrom as number;
@@ -45,8 +45,8 @@ export const defaultDataFilterFns: Record<string, DataFilterFnFrom<any>> = {
   filterUploaderExclude: createTextFilter('filterUploaderExclude', 'uploader', false),
   filterUploaderInclude: createTextFilter('filterUploaderInclude', 'uploader', true),
 
-  filterHD: (el, state) => (state.filterHD && !el.hd) as boolean,
-  filterNonHD: (el, state) => (state.filterNonHD && el.hd) as boolean,
-  filterPrivate: (el, state) => (state.filterPrivate && el.private) as boolean,
-  filterPublic: (el, state) => (state.filterPublic && !el.private) as boolean,
+  filterHD: (e, state) => (state.filterHD && !e.hd) as boolean,
+  filterNonHD: (e, state) => (state.filterNonHD && e.hd) as boolean,
+  filterPrivate: (e, state) => (state.filterPrivate && e.private) as boolean,
+  filterPublic: (e, state) => (state.filterPublic && !e.private) as boolean,
 };

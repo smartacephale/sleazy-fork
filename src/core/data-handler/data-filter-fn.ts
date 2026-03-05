@@ -10,14 +10,18 @@ export type DataFilterFnHandle<R> = (
 export type DataFilterFnFrom<R> = Partial<DataFilterFn<R>> | DataFilterFnHandle<R>;
 
 export type DataFilterFnRenderedResult = {
-  tag: string;
+  name: string;
   condition: boolean;
 };
 
 export type DataFilterFnRendered = (v: DataElement) => DataFilterFnRenderedResult;
 
 export class DataFilterFn<R> {
-  private tag: string;
+  public static prefix = 'filter-';
+
+  public static setPrefix(name: string) {
+    return `${DataFilterFn.prefix}${name}`;
+  }
 
   constructor(
     public handle: DataFilterFnHandle<R>,
@@ -25,7 +29,7 @@ export class DataFilterFn<R> {
     public name: string,
     public $preDefine?: (state: StoreState) => R,
   ) {
-    this.tag = `filter-${name}`;
+    this.name = DataFilterFn.setPrefix(name);
   }
 
   public static from<R>(options: DataFilterFnFrom<R>, name: string) {
@@ -33,6 +37,7 @@ export class DataFilterFn<R> {
       const deps = [name];
       return new DataFilterFn(options, deps, name);
     }
+    
     return new DataFilterFn(
       options.handle as DataFilterFnHandle<R>,
       options.deps,
@@ -42,7 +47,7 @@ export class DataFilterFn<R> {
   }
 
   public renderFn(state: StoreState) {
-    const tag = this.tag;
+    const name = this.name;
 
     return (): DataFilterFnRendered => {
       const preDefined = this.$preDefine?.(state);
@@ -50,10 +55,7 @@ export class DataFilterFn<R> {
       return (a: DataElement) => {
         const condition = this.handle(a, state, preDefined);
 
-        return {
-          condition,
-          tag,
-        };
+        return ({ condition, name });
       };
     };
   }

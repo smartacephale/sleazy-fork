@@ -4,7 +4,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'NameThatPorn PervertMonkey',
-  version: '3.0.6',
+  version: '3.0.7',
   description: 'Infinite scroll [optional], Filter by Title, Uploader and Solved/Unsolved',
   match: ['https://namethatporn.com/*'],
 };
@@ -29,10 +29,10 @@ const rules = new Rules({
   gropeStrategy: 'all-in-all',
   customDataFilterFns: [
     {
-      filterSolved: (el, state) => (state.filterSolved && el.solved) as boolean,
+      filterSolved: (e, state) => (state.filterSolved && e.solved) as boolean,
     },
     {
-      filterUnsolved: (el, state) => (state.filterUnsolved && !el.solved) as boolean,
+      filterUnsolved: (e, state) => (state.filterUnsolved && !e.solved) as boolean,
     },
   ],
   schemeOptions: [

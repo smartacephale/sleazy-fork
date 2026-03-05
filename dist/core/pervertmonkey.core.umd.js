@@ -14,21 +14,23 @@ var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 
   var _i2, _n2, _t, _e2, _s2, _l2, _o2, _d, _p2, _g, _C_instances, r_fn, R_fn, b_fn, u_fn, m_fn, a_fn, P_fn, E_fn, S_fn, O_fn, k_fn, x_fn, h_fn, f_fn, T_fn, A_fn, y_fn, w_fn, c_fn, C_fn, _a2, _i3, _n3, _t2, _e3, _s3, _l3, _b;
-  class DataFilterFn {
+  const _DataFilterFn = class _DataFilterFn {
     constructor(handle, deps = [], name, $preDefine) {
-      __publicField(this, "tag");
       this.handle = handle;
       this.deps = deps;
       this.name = name;
       this.$preDefine = $preDefine;
-      this.tag = `filter-${name}`;
+      this.name = _DataFilterFn.setPrefix(name);
+    }
+    static setPrefix(name) {
+      return `${_DataFilterFn.prefix}${name}`;
     }
     static from(options, name) {
       if (typeof options === "function") {
         const deps = [name];
-        return new DataFilterFn(options, deps, name);
+        return new _DataFilterFn(options, deps, name);
       }
-      return new DataFilterFn(
+      return new _DataFilterFn(
         options.handle,
         options.deps,
         name,
@@ -36,20 +38,19 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       );
     }
     renderFn(state) {
-      const tag = this.tag;
+      const name = this.name;
       return () => {
         var _a3;
         const preDefined = (_a3 = this.$preDefine) == null ? void 0 : _a3.call(this, state);
         return (a2) => {
           const condition = this.handle(a2, state, preDefined);
-          return {
-            condition,
-            tag
-          };
+          return { condition, name };
         };
       };
     }
-  }
+  };
+  __publicField(_DataFilterFn, "prefix", "filter-");
+  let DataFilterFn = _DataFilterFn;
   function chunks(arr, size) {
     return Array.from(
       { length: Math.ceil(arr.length / size) },
@@ -120,10 +121,10 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   }
   function waitForElementToAppear(parent, selector, callback) {
     const observer = new MutationObserver((_mutations) => {
-      const el2 = parent.querySelector(selector);
-      if (el2) {
+      const e = parent.querySelector(selector);
+      if (e) {
         observer.disconnect();
-        callback(el2);
+        callback(e);
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
@@ -222,7 +223,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     });
   }
   function getCommonParents(elements) {
-    const parents = Array.from(elements).map((el2) => el2.parentElement).filter((parent) => parent !== null);
+    const parents = Array.from(elements).map((e) => e.parentElement).filter((parent) => parent !== null);
     return [...new Set(parents)];
   }
   function findNextSibling(e) {
@@ -471,9 +472,9 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   function createTextFilter(filterName, dataPropName, positive) {
     const filterNameValue = `${filterName}Words`;
     return {
-      handle(el2, state, searchFilter) {
+      handle(e, state, searchFilter) {
         if (!Object.hasOwn(state, filterName) || !state[filterName]) return false;
-        return !(searchFilter == null ? void 0 : searchFilter(el2[dataPropName]));
+        return !(searchFilter == null ? void 0 : searchFilter(e[dataPropName]));
       },
       $preDefine: (state) => {
         const r = new RegexFilter(state[filterNameValue]);
@@ -484,9 +485,9 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     };
   }
   const filterDuration = {
-    handle(el2, state, notInRange) {
+    handle(e, state, notInRange) {
       if (!state.filterDuration) return false;
-      return !!(notInRange == null ? void 0 : notInRange(el2.duration));
+      return !!(notInRange == null ? void 0 : notInRange(e.duration));
     },
     $preDefine: (state) => {
       const from = state.filterDurationFrom;
@@ -504,26 +505,27 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     filterInclude: createTextFilter("filterInclude", "title", true),
     filterUploaderExclude: createTextFilter("filterUploaderExclude", "uploader", false),
     filterUploaderInclude: createTextFilter("filterUploaderInclude", "uploader", true),
-    filterHD: (el2, state) => state.filterHD && !el2.hd,
-    filterNonHD: (el2, state) => state.filterNonHD && el2.hd,
-    filterPrivate: (el2, state) => state.filterPrivate && el2.private,
-    filterPublic: (el2, state) => state.filterPublic && !el2.private
+    filterHD: (e, state) => state.filterHD && !e.hd,
+    filterNonHD: (e, state) => state.filterNonHD && e.hd,
+    filterPrivate: (e, state) => state.filterPrivate && e.private,
+    filterPublic: (e, state) => state.filterPublic && !e.private
   };
   class DataFilter {
     constructor(rules) {
       __publicField(this, "filters", /* @__PURE__ */ new Map());
-      __publicField(this, "customDataFilterFns", {});
       __publicField(this, "filterMapping", {});
+      __publicField(this, "customDataFilterFns", {});
       this.rules = rules;
       this.registerFilters(rules.customDataFilterFns);
-      this.applyCSSFilters();
+      this.createCssFilters();
     }
-    static isFiltered(el2) {
-      return el2.className.includes("filter-");
+    static isFiltered(e) {
+      return e.className.includes(DataFilterFn.prefix);
     }
-    applyCSSFilters(wrapper) {
+    createCssFilters(wrapper) {
       this.filters.forEach((_2, name) => {
-        const cssRule = `.filter-${name} { display: none !important; }`;
+        const className = DataFilterFn.setPrefix(name);
+        const cssRule = `.${className} { display: none !important; }`;
         client.GM_addStyle(wrapper ? wrapper(cssRule) : cssRule);
       });
     }
@@ -536,12 +538,12 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       });
     }
     registerFilter(customSelectorName) {
-      var _a3;
       const dataFilterFn = DataFilterFn.from(
         this.customDataFilterFns[customSelectorName],
         customSelectorName
       );
-      (_a3 = [customSelectorName, ...dataFilterFn.deps]) == null ? void 0 : _a3.forEach((name) => {
+      dataFilterFn.deps.push(customSelectorName);
+      dataFilterFn.deps.forEach((name) => {
         Object.assign(this.filterMapping, { [name]: customSelectorName });
       });
       this.filters.set(customSelectorName, dataFilterFn.renderFn(this.rules.store.state));
@@ -571,8 +573,8 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
               finished = !!done;
               if (done) break;
               for (const f of filtersToApply) {
-                const { tag, condition } = f()(value);
-                updates.push({ e: value.element, tag, condition });
+                const { name, condition } = f()(value);
+                updates.push({ e: value.element, name, condition });
               }
             }
             if (!finished) {
@@ -583,13 +585,14 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
           }
           requestIdleCallback(runBatch);
         });
-        const parents = new Set(updates.map((u) => u.e.parentElement));
+        const parents = [...new Set(updates.map((u) => u.e.parentElement))].filter(
+          (_2) => _2 !== null
+        );
         requestAnimationFrame(() => {
-          const revertDisplayStyle = [...parents].map((p) => {
-            const display = p == null ? void 0 : p.style.display;
-            if (!display) return void 0;
+          const revertDisplayStyle = parents.map((p) => {
+            const display = p.style.display;
             p.style.display = "none";
-            p.style.contain = "layout style paint";
+            this.layoutStylePaint(p);
             p.style.willChange = "contents";
             return () => {
               p.style.display = display;
@@ -599,13 +602,14 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
             };
           });
           updates.forEach((u) => {
-            u.e.classList.toggle(u.tag, u.condition);
+            u.e.classList.toggle(u.name, u.condition);
           });
           revertDisplayStyle.forEach((f) => {
             f == null ? void 0 : f();
           });
         });
       });
+      __publicField(this, "layoutStylePaintEnabled", false);
       __publicField(this, "filterAll", async (offset) => {
         const keys = Array.from(this.dataFilter.filters.keys());
         const filters = Object.fromEntries(
@@ -619,10 +623,6 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
         const fragment = document.createDocumentFragment();
         const parent = container || this.rules.container;
         const homogenity = !!this.containerHomogenity;
-        if (parent) {
-          parent.style.contain = "layout style paint";
-          parent.style.willChange = "contents";
-        }
         for (const thumbElement of thumbs) {
           const url = this.rules.thumbDataParser.getUrl(thumbElement);
           if (!url || this.data.has(url) || parent !== container && (parent == null ? void 0 : parent.contains(thumbElement)) || homogenity && !checkHomogenity(
@@ -642,8 +642,13 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
           fragment.append(thumbElement);
         }
         this.filterAll(dataOffset).then(() => {
+          if (!parent) return;
+          parent.style.willChange = "contents";
           requestAnimationFrame(() => {
             parent == null ? void 0 : parent.appendChild(fragment);
+            requestAnimationFrame(() => {
+              parent.style.willChange = "auto";
+            });
           });
         });
       });
@@ -651,12 +656,16 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       this.containerHomogenity = containerHomogenity;
       this.dataFilter = new DataFilter(this.rules);
     }
+    layoutStylePaint(e) {
+      if (!this.layoutStylePaintEnabled) return;
+      e.style.contain = "layout style paint";
+    }
     sortBy(key, direction = true) {
       if (this.data.size < 2) return;
       const elements = this.data.values().toArray().filter((e) => e.element.parentElement !== null).map((e) => e);
       const containers = new Set(elements.map((e) => e.element.parentElement));
       containers.forEach((c) => {
-        c.style.contain = "layout style paint";
+        this.layoutStylePaint(c);
         c.style.willChange = "contents";
       });
       const elementsByContainers = /* @__PURE__ */ new Map();
@@ -3078,8 +3087,10 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     }
     autoParseText(thumb) {
       var _a3;
-      const title = sanitizeStr(thumb.innerText);
-      const duration = timeToSeconds(((_a3 = title.match(/\d+m|\d+:\d+/)) == null ? void 0 : _a3[0]) || "");
+      let title = sanitizeStr(thumb.innerText);
+      const durationStr = ((_a3 = title.match(/(\d+:\d+:?\d+?)|\d+m/)) == null ? void 0 : _a3[0]) || "";
+      const duration = timeToSeconds(durationStr);
+      title = title.replaceAll(durationStr, "");
       return { title, duration };
     }
     getUrl(thumb) {

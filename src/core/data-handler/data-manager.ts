@@ -32,7 +32,7 @@ export class DataManager {
     const iterator = this.data.values().drop(offset);
     let finished = false;
 
-    const updates: { e: HTMLElement; tag: string; condition: boolean }[] = [];
+    const updates: { e: HTMLElement; name: string; condition: boolean }[] = [];
 
     await new Promise((resolve) => {
       function runBatch(deadline: IdleDeadline) {
@@ -42,8 +42,8 @@ export class DataManager {
           if (done) break;
 
           for (const f of filtersToApply) {
-            const { tag, condition } = f()(value);
-            updates.push({ e: value.element as HTMLElement, tag, condition });
+            const { name, condition } = f()(value);
+            updates.push({ e: value.element as HTMLElement, name, condition });
           }
         }
 
@@ -57,14 +57,15 @@ export class DataManager {
       requestIdleCallback(runBatch);
     });
 
-    const parents = new Set(updates.map((u) => u.e.parentElement));
+    const parents = [...new Set(updates.map((u) => u.e.parentElement))].filter(
+      (_) => _ !== null,
+    );
 
     requestAnimationFrame(() => {
-      const revertDisplayStyle = [...parents].map((p) => {
-        const display = p?.style.display;
-        if (!display) return undefined;
+      const revertDisplayStyle = parents.map((p) => {
+        const display = p.style.display;
         p.style.display = 'none';
-        p.style.contain = 'layout style paint';
+        this.layoutStylePaint(p);
         p.style.willChange = 'contents';
         return () => {
           p.style.display = display;
@@ -75,7 +76,7 @@ export class DataManager {
       });
 
       updates.forEach((u) => {
-        u.e.classList.toggle(u.tag, u.condition);
+        u.e.classList.toggle(u.name, u.condition);
       });
 
       revertDisplayStyle.forEach((f) => {
@@ -83,6 +84,13 @@ export class DataManager {
       });
     });
   };
+
+  public layoutStylePaintEnabled = false;
+
+  private layoutStylePaint(e: HTMLElement) {
+    if (!this.layoutStylePaintEnabled) return;
+    e.style.contain = 'layout style paint';
+  }
 
   public filterAll = async (offset?: number): Promise<void> => {
     const keys = Array.from(this.dataFilter.filters.keys());
@@ -104,11 +112,6 @@ export class DataManager {
     const fragment = document.createDocumentFragment();
     const parent = container || this.rules.container;
     const homogenity = !!this.containerHomogenity;
-
-    if (parent) {
-      parent.style.contain = 'layout style paint';
-      parent.style.willChange = 'contents';
-    }
 
     for (const thumbElement of thumbs) {
       const url = this.rules.thumbDataParser.getUrl(thumbElement);
@@ -139,8 +142,19 @@ export class DataManager {
     }
 
     this.filterAll(dataOffset).then(() => {
+      if (!parent) return;
+      //
+      // THIS LINE BRAKES RENDERING, EVERYTHING DISAPPEARS
+      //
+      // this.layoutStylePaint(parent)
+      //
+      parent.style.willChange = 'contents';
       requestAnimationFrame(() => {
+        // parent.style.contain = 'layout style paint';
         parent?.appendChild(fragment);
+        requestAnimationFrame(() => {
+          parent.style.willChange = 'auto';
+        });
       });
     });
   };
@@ -156,7 +170,7 @@ export class DataManager {
 
     const containers = new Set(elements.map((e) => e.element.parentElement as HTMLElement));
     containers.forEach((c) => {
-      c.style.contain = 'layout style paint';
+      this.layoutStylePaint(c);
       c.style.willChange = 'contents';
     });
 

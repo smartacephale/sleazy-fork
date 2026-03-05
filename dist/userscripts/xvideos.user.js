@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos Improved
 // @namespace    pervertmonkey
-// @version      4.0.7
+// @version      4.0.8
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xvideos.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -47,12 +47,12 @@
       }
     },
     customDataFilterFns: [
-      { qualityLow: (el, state) => !!state.qualityLow && el.quality !== "" },
-      { quality360: (el, state) => !!state.quality360 && el.quality !== "360p" },
-      { quality720: (el, state) => !!state.quality720 && el.quality !== "720p" },
-      { quality1080: (el, state) => !!state.quality1080 && el.quality !== "1080p" },
-      { quality1440: (el, state) => !!state.quality1440 && el.quality !== "1440p" },
-      { quality4k: (el, state) => !!state.quality4k && el.quality !== "4k" }
+      { qualityLow: (e, state) => !!state.qualityLow && e.quality !== "" },
+      { quality360: (e, state) => !!state.quality360 && e.quality !== "360p" },
+      { quality720: (e, state) => !!state.quality720 && e.quality !== "720p" },
+      { quality1080: (e, state) => !!state.quality1080 && e.quality !== "1080p" },
+      { quality1440: (e, state) => !!state.quality1440 && e.quality !== "1440p" },
+      { quality4k: (e, state) => !!state.quality4k && e.quality !== "4k" }
     ],
     schemeOptions: [
       "Title Filter",

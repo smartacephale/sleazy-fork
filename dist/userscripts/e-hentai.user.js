@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         E-Hentai PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.5
+// @version      1.0.7
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.e-hentai.org/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -37,10 +37,10 @@
   });
   function createPaginationStrategyOptions() {
     let nextLink;
+    function getNextLink(doc = document) {
+      return [...doc.querySelectorAll("a#dnext[href]")].pop()?.href;
+    }
     function getPaginationUrlGenerator() {
-      function getNextLink(doc = document) {
-        return [...doc.querySelectorAll("a#dnext[href]")].pop()?.href;
-      }
       const paginationUrlGenerator = async (_) => {
         if (!nextLink) {
           nextLink = getNextLink();
@@ -52,9 +52,10 @@
       };
       return paginationUrlGenerator;
     }
+    const totalTitles = Number.parseInt(getNextLink()?.match(/\d+$/)?.[0] || "0");
     return {
       paginationSelector: ".searchnav + div + .searchnav",
-      overwritePaginationLast: () => 9999999,
+      overwritePaginationLast: () => totalTitles,
       getPaginationUrlGenerator
     };
   }

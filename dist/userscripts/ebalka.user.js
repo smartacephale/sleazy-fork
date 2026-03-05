@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ebalka PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.6
+// @version      3.0.7
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration
 // @license      MIT
@@ -15,7 +15,7 @@
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
 // @match        https://*.fuckingbear*.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -52,14 +52,14 @@
   });
   function animatePreview(container) {
     function animateThumb(thumb) {
-      const el = thumb.querySelector(".card__thumb_video");
-      el.classList.toggle("video-on");
-      const src = el.querySelector(".card__image")?.getAttribute("data-preview");
+      const e = thumb.querySelector(".card__thumb_video");
+      e.classList.toggle("video-on");
+      const src = e.querySelector(".card__image")?.getAttribute("data-preview");
       const videoElem = utils.parseHtml(`<video style="position: absolute; left: 0px; top: 0px; visibility: visible; margin-top: -1px;"
       autoplay="" loop="" playsinline="true" webkit-playsinline="true" src="${src}"></video>`);
-      el.appendChild(videoElem);
+      e.appendChild(videoElem);
       return () => {
-        el.classList.toggle("video-on");
+        e.classList.toggle("video-on");
         utils.exterminateVideo(videoElem);
       };
     }

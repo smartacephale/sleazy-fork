@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.7
+// @version      5.0.8
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://motherless.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -142,7 +142,7 @@
   }
   const overwrite1 = (x) => `@media only screen and (max-width: 1280px) {
   #categories-page.inner ${x} }`;
-  rules.dataManager.dataFilter.applyCSSFilters(overwrite1);
+  rules.dataManager.dataFilter.createCssFilters(overwrite1);
   _GM_addStyle(`
 .img-container, .desktop-thumb { min-height: 150px; max-height: 150px; }
 

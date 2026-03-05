@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com Improved
 // @namespace    pervertmonkey
-// @version      8.0.6
+// @version      8.0.7
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.thisvid.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.15/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -995,9 +995,9 @@ function takeWhile(predicate) {
     }
     return g();
   }
-  function getMembers(el) {
-    const friendsList = el.querySelector("#list_members_friends_items") || el;
-    return Array.from(friendsList.querySelectorAll(".tumbpu") || []).map((e) => e.href.match(/\d+/)?.[0]).filter((_) => _);
+  function getMembers(e) {
+    const friendsList = e.querySelector("#list_members_friends_items") || e;
+    return Array.from(friendsList.querySelectorAll(".tumbpu") || []).map((e2) => e2.href.match(/\d+/)?.[0]).filter((_) => _);
   }
   async function friendMemberFriends(orientationFilter) {
     const memberId = window.location.pathname.match(/\d+/)?.[0];
