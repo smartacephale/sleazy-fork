@@ -17,7 +17,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'CamWhores PervertMonkey',
-  version: '3.0.10',
+  version: '3.0.11',
   description:
     'Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Sort by Duration and Views. Mass friend request button. Download button',
   match: ['https://*.camwhores.tv', 'https://*.camwhores.*/*'],
@@ -122,10 +122,9 @@ function animatePreview(container: HTMLElement) {
 const createDownloadButton = () =>
   downloader({
     append: '.tabs-menu > ul',
-    after: '',
-    button:
+    buttonHtml:
       '<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>',
-    cbBefore: () => $('.fp-ui').click(),
+    doBefore: () => $('.fp-ui').click(),
   });
 
 //====================================================================================================

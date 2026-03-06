@@ -1,5 +1,5 @@
 import type { StoreState } from 'jabroni-outfit';
-import { checkHomogenity, LazyImgLoader } from '../../utils';
+import { checkHomogenity, containMutation, LazyImgLoader, runIdleJob } from '../../utils';
 import type { Rules } from '../rules';
 import { DataFilter } from './data-filter';
 
@@ -22,91 +22,58 @@ export class DataManager {
     this.dataFilter = new DataFilter(this.rules);
   }
 
-  public applyFilters = async (
+  public async applyFilters(
     filters: Record<string, boolean> = {},
     offset = 0,
-  ): Promise<void> => {
+  ): Promise<void> {
     const filtersToApply = this.dataFilter.selectFilters(filters);
     if (filtersToApply.length === 0) return;
 
     const iterator = this.data.values().drop(offset);
-    let finished = false;
 
     const updates: { e: HTMLElement; name: string; condition: boolean }[] = [];
 
-    await new Promise((resolve) => {
-      function runBatch(deadline: IdleDeadline) {
-        while (deadline.timeRemaining() > 0) {
-          const { value, done } = iterator.next();
-          finished = !!done;
-          if (done) break;
-
-          for (const f of filtersToApply) {
-            const { name, condition } = f()(value);
-            updates.push({ e: value.element as HTMLElement, name, condition });
-          }
-        }
-
-        if (!finished) {
-          requestIdleCallback(runBatch);
-        } else {
-          resolve(true);
-        }
+    await runIdleJob(iterator, (v) => {
+      for (const f of filtersToApply) {
+        const { name, condition } = f()(v);
+        updates.push({ e: v.element as HTMLElement, name, condition });
       }
-
-      requestIdleCallback(runBatch);
     });
 
-    const parents = [...new Set(updates.map((u) => u.e.parentElement))].filter(
-      (_) => _ !== null,
-    );
+    const parents = Map.groupBy(updates, (u) => u.e.parentElement);
 
-    requestAnimationFrame(() => {
-      const revertDisplayStyle = parents.map((p) => {
-        const display = p.style.display;
-        p.style.display = 'none';
-        this.layoutStylePaint(p);
-        p.style.willChange = 'contents';
-        return () => {
-          p.style.display = display;
-          requestAnimationFrame(() => {
-            p.style.willChange = 'auto';
-          });
-        };
-      });
+    parents.forEach((v, parent) => {
+      const f = () => {
+        v.forEach((u) => {
+          u.e.classList.toggle(u.name, u.condition);
+        });
+      };
 
-      updates.forEach((u) => {
-        u.e.classList.toggle(u.name, u.condition);
-      });
-
-      revertDisplayStyle.forEach((f) => {
-        f?.();
-      });
+      if (!parent) {
+        f();
+      } else {
+        requestAnimationFrame(() => {
+          containMutation(parent, f);
+        });
+      }
     });
-  };
-
-  public layoutStylePaintEnabled = false;
-
-  private layoutStylePaint(e: HTMLElement) {
-    if (!this.layoutStylePaintEnabled) return;
-    e.style.contain = 'layout style paint';
   }
 
-  public filterAll = async (offset?: number): Promise<void> => {
+  public async filterAll(offset?: number): Promise<void> {
     const keys = Array.from(this.dataFilter.filters.keys());
     const filters = Object.fromEntries(
       keys.map((k) => [k, this.rules.store.state[k as keyof StoreState]]),
     ) as Record<string, boolean>;
 
     await this.applyFilters(filters, offset);
-  };
+  }
 
-  public parseData = (
+  public async parseData(
     html: HTMLElement,
     container?: HTMLElement,
     removeDuplicates = false,
     shouldLazify = true,
-  ): void => {
+  ) {
     const thumbs = this.rules.thumbsParser.getThumbs(html);
     const dataOffset = this.data.size;
     const fragment = document.createDocumentFragment();
@@ -115,16 +82,20 @@ export class DataManager {
 
     for (const thumbElement of thumbs) {
       const url = this.rules.thumbDataParser.getUrl(thumbElement);
+
+      const isHomogenic =
+        homogenity &&
+        !checkHomogenity(
+          parent,
+          thumbElement.parentElement as HTMLElement,
+          this.containerHomogenity as object,
+        );
+
       if (
         !url ||
         this.data.has(url) ||
         (parent !== container && parent?.contains(thumbElement)) ||
-        (homogenity &&
-          !checkHomogenity(
-            parent,
-            thumbElement.parentElement as HTMLElement,
-            this.containerHomogenity as object,
-          ))
+        isHomogenic
       ) {
         if (removeDuplicates) thumbElement.remove();
         continue;
@@ -141,67 +112,28 @@ export class DataManager {
       fragment.append(thumbElement);
     }
 
-    this.filterAll(dataOffset).then(() => {
-      if (!parent) return;
-      //
-      // THIS LINE BRAKES RENDERING, EVERYTHING DISAPPEARS
-      //
-      // this.layoutStylePaint(parent)
-      //
-      parent.style.willChange = 'contents';
-      requestAnimationFrame(() => {
-        // parent.style.contain = 'layout style paint';
-        parent?.appendChild(fragment);
-        requestAnimationFrame(() => {
-          parent.style.willChange = 'auto';
-        });
-      });
-    });
-  };
+    await this.filterAll(dataOffset);
+
+    if (!parent) return;
+    containMutation(parent, () => parent?.appendChild(fragment));
+  }
 
   public sortBy<K extends keyof DataElement>(key: K, direction = true): void {
     if (this.data.size < 2) return;
 
-    const elements = this.data
+    const ds = this.data
       .values()
       .toArray()
-      .filter((e) => e.element.parentElement !== null)
-      .map((e) => e);
+      .filter((e) => e.element.parentElement !== null);
 
-    const containers = new Set(elements.map((e) => e.element.parentElement as HTMLElement));
-    containers.forEach((c) => {
-      this.layoutStylePaint(c);
-      c.style.willChange = 'contents';
-    });
-
-    const elementsByContainers = new Map<HTMLElement, DataElement[]>();
-    containers.forEach((c) => {
-      elementsByContainers.set(c, []);
-    });
-
-    elements.forEach((e) => {
-      const parent = e.element.parentElement as HTMLElement;
-      const container = elementsByContainers.get(parent);
-      container?.push(e);
-    });
+    const byContainers = Map.groupBy(ds, (e) => e.element.parentElement as HTMLElement);
 
     const dir = direction ? -1 : 1;
 
-    for (const [container, items] of elementsByContainers) {
+    for (const [container, items] of byContainers) {
       items.sort((a, b) => ((a[key] as number) - (b[key] as number)) * dir);
-      const domNodes = items.map((e) => e.element);
-
-      const display = container.style.display;
-      container.style.display = 'none';
-
-      container.replaceChildren(...domNodes);
-
-      requestAnimationFrame(() => {
-        container.style.display = display;
-        requestAnimationFrame(() => {
-          container.style.willChange = 'auto';
-        });
-      });
+      const children = items.map((e) => e.element);
+      containMutation(container, () => container.replaceChildren(...children));
     }
   }
 }

@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Eroprofile PervertMonkey',
-  version: '2.0.7',
+  version: '2.0.8',
   description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
   match: ['https://*.eroprofile.com/*'],
 };

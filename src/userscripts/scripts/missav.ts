@@ -20,12 +20,7 @@ const rules = new Rules({
   },
   containerSelector: '.grid[x-data]',
   thumbs: { selector: 'div:has(> .thumbnail.group)' },
-  thumb: {
-    selectors: {
-      title: 'div > div > a.text-secondary',
-      duration: 'div > a > span.text-xs',
-    },
-  },
+  thumb: { strategy: 'auto-text' },
   thumbImg: { strategy: 'auto' },
   schemeOptions: [
     'Title Filter',

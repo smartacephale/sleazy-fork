@@ -146,18 +146,21 @@ export function exterminateVideo(video: HTMLVideoElement) {
   video.remove();
 }
 
-export function downloader(
-  options = { append: '', after: '', button: '', cbBefore: () => {} },
-) {
-  const btn = parseHtml(options.button);
+export function downloader(options: {
+  append?: string;
+  after?: string;
+  buttonHtml: string;
+  doBefore?: () => void;
+}) {
+  const btn = parseHtml(options.buttonHtml);
 
   if (options.append) document.querySelector(options.append)?.append(btn);
   if (options.after) document.querySelector(options.after)?.after(btn);
 
-  btn.addEventListener('click', (e) => {
+  btn?.addEventListener('click', (e) => {
     e.preventDefault();
 
-    if (options.cbBefore) options.cbBefore();
+    options.doBefore?.();
 
     waitForElementToAppear(document.body, 'video', (video: Element) => {
       window.location.href = video.getAttribute('src') as string;

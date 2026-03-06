@@ -73,7 +73,7 @@ export class InfiniteScroller {
 
     const { value, done } = await this.paginationGenerator.next();
     if (done) return false;
-    
+
     const { url, offset } = value;
     await this.doScroll(url, offset);
     return true;
@@ -85,10 +85,8 @@ export class InfiniteScroller {
 
   async doScroll(url: string, offset: number) {
     const page = await this.getPaginationData(url);
-    const prevScrollPos = document.documentElement.scrollTop;
     this.paginationOffset = Math.max(this.paginationOffset, offset);
     this.subject.next({ type: 'scroll', scroller: this, page });
-    window.scrollTo(0, prevScrollPos);
     if (this.rules.store.state.writeHistory) {
       history.replaceState({}, '', url);
     }
@@ -119,7 +117,11 @@ export class InfiniteScroller {
     infiniteScroller.subject.subscribe((x) => {
       if (x.type === 'scroll') {
         rules.store.state.$paginationOffset = x.scroller.paginationOffset;
-        rules.dataManager.parseData(x.page);
+
+        const prevScrollPos = document.documentElement.scrollTop;
+        rules.dataManager.parseData(x.page).then(() => {
+          window.scrollTo(0, prevScrollPos);
+        });
       }
     });
 

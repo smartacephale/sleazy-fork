@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.7
+// @version      4.0.8
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.spankbang.com/*
 // @match        https://*.spankbang.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.18/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -22,7 +22,7 @@
 (function (core) {
   'use strict';
 
-  const rules = new core.Rules({
+  new core.Rules({
     containerSelector: ".main-container .js-media-list, .main_content_container .video-list",
     paginationStrategyOptions: {
       paginationSelector: ".paginate-bar, .pagination"
@@ -59,6 +59,5 @@ views: { selector: '[data-testid="views"]', type: "float" },
       "Advanced"
     ]
   });
-  console.log(rules.dataManager.data.values().toArray());
 
 })(core);

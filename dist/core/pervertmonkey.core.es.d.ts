@@ -16,6 +16,8 @@ export declare function chunks<T>(arr: T[], size: number): T[][];
 
 export declare function circularShift(n: number, c?: number, s?: number): number;
 
+export declare function containMutation(container: HTMLElement, callback: () => void): void;
+
 export declare function copyAttributes<T extends Element = HTMLElement>(target: T, source: T): void;
 
 export declare type DataElement = {
@@ -68,11 +70,9 @@ export declare class DataManager {
     private lazyImgLoader;
     dataFilter: DataFilter;
     constructor(rules: Rules, containerHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
-    applyFilters: (filters?: Record<string, boolean>, offset?: number) => Promise<void>;
-    layoutStylePaintEnabled: boolean;
-    private layoutStylePaint;
-    filterAll: (offset?: number) => Promise<void>;
-    parseData: (html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean) => void;
+    applyFilters(filters?: Record<string, boolean>, offset?: number): Promise<void>;
+    filterAll(offset?: number): Promise<void>;
+    parseData(html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean): Promise<void>;
     sortBy<K extends keyof DataElement>(key: K, direction?: boolean): void;
 }
 
@@ -200,11 +200,11 @@ declare const DefaultScheme: [{
     }];
 }];
 
-export declare function downloader(options?: {
-    append: string;
-    after: string;
-    button: string;
-    cbBefore: () => void;
+export declare function downloader(options: {
+    append?: string;
+    after?: string;
+    buttonHtml: string;
+    doBefore?: () => void;
 }): void;
 
 export declare function exterminateVideo(video: HTMLVideoElement): void;
@@ -222,6 +222,8 @@ export declare function fetchWith<T extends JSON | string | HTMLElement>(input: 
 }): Promise<T>;
 
 export declare function findNextSibling<T extends Element = HTMLElement>(e: T): Element | null;
+
+export declare function findSelfOrChild<T extends HTMLElement>(element: T, selector: string): T | null;
 
 /**
  * Converts a duration string (e.g., "1h 22min 3sec") to HH:MM:SS format.
@@ -260,6 +262,8 @@ export declare class InfiniteScroller {
 declare type InfiniteScrollerOptions = Pick<InfiniteScroller, 'rules'> & Partial<InfiniteScroller>;
 
 export declare function instantiateTemplate(sourceSelector: string, attributeUpdates: Record<string, string>, contentUpdates: Record<string, string>): string;
+
+export declare function irange(start?: number, step?: number): Generator<number, void, unknown>;
 
 declare type IScrollerSubject = {
     type: 'scroll';
@@ -444,6 +448,8 @@ export declare class Rules {
     private reset;
     constructor(options: Partial<Rules>);
 }
+
+export declare function runIdleJob<T>(iterator: Iterator<T>, job: (v: T) => void): Promise<unknown>;
 
 export declare function sanitizeStr(s: string): string;
 

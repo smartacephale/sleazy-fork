@@ -175,6 +175,12 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     observer.observe(element, options);
     return observer;
   }
+  function findSelfOrChild(element, selector) {
+    if (element.matches(selector)) {
+      return element;
+    }
+    return element.querySelector(selector);
+  }
   function querySelectorLast(root = document, selector) {
     const nodes = root.querySelectorAll(selector);
     return nodes.length > 0 ? nodes[nodes.length - 1] : void 0;
@@ -267,15 +273,15 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     video.load();
     video.remove();
   }
-  function downloader(options = { append: "", after: "", button: "", cbBefore: () => {
-  } }) {
+  function downloader(options) {
     var _a3, _b2;
-    const btn = parseHtml(options.button);
+    const btn = parseHtml(options.buttonHtml);
     if (options.append) (_a3 = document.querySelector(options.append)) == null ? void 0 : _a3.append(btn);
     if (options.after) (_b2 = document.querySelector(options.after)) == null ? void 0 : _b2.after(btn);
-    btn.addEventListener("click", (e) => {
+    btn == null ? void 0 : btn.addEventListener("click", (e) => {
+      var _a4;
       e.preventDefault();
-      if (options.cbBefore) options.cbBefore();
+      (_a4 = options.doBefore) == null ? void 0 : _a4.call(options);
       waitForElementToAppear(document.body, "video", (video) => {
         window.location.href = video.getAttribute("src");
       });
@@ -469,6 +475,42 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   function parseCssUrl(s) {
     return s.replace(/url\("|"\).*/g, "");
   }
+  function runIdleJob(iterator2, job) {
+    return new Promise((resolve) => {
+      const scheduler = window.requestIdleCallback || ((cb) => {
+        return setTimeout(() => {
+          cb({
+            didTimeout: true,
+            timeRemaining: () => 50
+          });
+        }, 1);
+      });
+      function runBatch(deadline) {
+        while (deadline.timeRemaining() > 0) {
+          const { value, done } = iterator2.next();
+          if (done) {
+            resolve(true);
+            return;
+          }
+          job(value);
+        }
+        scheduler(runBatch);
+      }
+      scheduler(runBatch);
+    });
+  }
+  function containMutation(container, callback) {
+    container.style.contain = "content";
+    try {
+      callback();
+    } finally {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          container.style.contain = "none";
+        });
+      });
+    }
+  }
   function createTextFilter(filterName, dataPropName, positive) {
     const filterNameValue = `${filterName}Words`;
     return {
@@ -560,136 +602,82 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
         (target) => !DataFilter.isFiltered(target)
       ));
       __publicField(this, "dataFilter");
-      __publicField(this, "applyFilters", async (filters = {}, offset = 0) => {
-        const filtersToApply = this.dataFilter.selectFilters(filters);
-        if (filtersToApply.length === 0) return;
-        const iterator2 = this.data.values().drop(offset);
-        let finished = false;
-        const updates = [];
-        await new Promise((resolve) => {
-          function runBatch(deadline) {
-            while (deadline.timeRemaining() > 0) {
-              const { value, done } = iterator2.next();
-              finished = !!done;
-              if (done) break;
-              for (const f of filtersToApply) {
-                const { name, condition } = f()(value);
-                updates.push({ e: value.element, name, condition });
-              }
-            }
-            if (!finished) {
-              requestIdleCallback(runBatch);
-            } else {
-              resolve(true);
-            }
-          }
-          requestIdleCallback(runBatch);
-        });
-        const parents = [...new Set(updates.map((u) => u.e.parentElement))].filter(
-          (_2) => _2 !== null
-        );
-        requestAnimationFrame(() => {
-          const revertDisplayStyle = parents.map((p) => {
-            const display = p.style.display;
-            p.style.display = "none";
-            this.layoutStylePaint(p);
-            p.style.willChange = "contents";
-            return () => {
-              p.style.display = display;
-              requestAnimationFrame(() => {
-                p.style.willChange = "auto";
-              });
-            };
-          });
-          updates.forEach((u) => {
-            u.e.classList.toggle(u.name, u.condition);
-          });
-          revertDisplayStyle.forEach((f) => {
-            f == null ? void 0 : f();
-          });
-        });
-      });
-      __publicField(this, "layoutStylePaintEnabled", false);
-      __publicField(this, "filterAll", async (offset) => {
-        const keys = Array.from(this.dataFilter.filters.keys());
-        const filters = Object.fromEntries(
-          keys.map((k2) => [k2, this.rules.store.state[k2]])
-        );
-        await this.applyFilters(filters, offset);
-      });
-      __publicField(this, "parseData", (html, container, removeDuplicates = false, shouldLazify = true) => {
-        const thumbs = this.rules.thumbsParser.getThumbs(html);
-        const dataOffset = this.data.size;
-        const fragment = document.createDocumentFragment();
-        const parent = container || this.rules.container;
-        const homogenity = !!this.containerHomogenity;
-        for (const thumbElement of thumbs) {
-          const url = this.rules.thumbDataParser.getUrl(thumbElement);
-          if (!url || this.data.has(url) || parent !== container && (parent == null ? void 0 : parent.contains(thumbElement)) || homogenity && !checkHomogenity(
-            parent,
-            thumbElement.parentElement,
-            this.containerHomogenity
-          )) {
-            if (removeDuplicates) thumbElement.remove();
-            continue;
-          }
-          const data = this.rules.thumbDataParser.getThumbData(thumbElement);
-          this.data.set(url, { element: thumbElement, ...data });
-          if (shouldLazify) {
-            const { img, imgSrc } = this.rules.thumbImgParser.getImgData(thumbElement);
-            this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
-          }
-          fragment.append(thumbElement);
-        }
-        this.filterAll(dataOffset).then(() => {
-          if (!parent) return;
-          parent.style.willChange = "contents";
-          requestAnimationFrame(() => {
-            parent == null ? void 0 : parent.appendChild(fragment);
-            requestAnimationFrame(() => {
-              parent.style.willChange = "auto";
-            });
-          });
-        });
-      });
       this.rules = rules;
       this.containerHomogenity = containerHomogenity;
       this.dataFilter = new DataFilter(this.rules);
     }
-    layoutStylePaint(e) {
-      if (!this.layoutStylePaintEnabled) return;
-      e.style.contain = "layout style paint";
+    async applyFilters(filters = {}, offset = 0) {
+      const filtersToApply = this.dataFilter.selectFilters(filters);
+      if (filtersToApply.length === 0) return;
+      const iterator2 = this.data.values().drop(offset);
+      const updates = [];
+      await runIdleJob(iterator2, (v2) => {
+        for (const f of filtersToApply) {
+          const { name, condition } = f()(v2);
+          updates.push({ e: v2.element, name, condition });
+        }
+      });
+      const parents = Map.groupBy(updates, (u) => u.e.parentElement);
+      parents.forEach((v2, parent) => {
+        const f = () => {
+          v2.forEach((u) => {
+            u.e.classList.toggle(u.name, u.condition);
+          });
+        };
+        if (!parent) {
+          f();
+        } else {
+          requestAnimationFrame(() => {
+            containMutation(parent, f);
+          });
+        }
+      });
+    }
+    async filterAll(offset) {
+      const keys = Array.from(this.dataFilter.filters.keys());
+      const filters = Object.fromEntries(
+        keys.map((k2) => [k2, this.rules.store.state[k2]])
+      );
+      await this.applyFilters(filters, offset);
+    }
+    async parseData(html, container, removeDuplicates = false, shouldLazify = true) {
+      const thumbs = this.rules.thumbsParser.getThumbs(html);
+      const dataOffset = this.data.size;
+      const fragment = document.createDocumentFragment();
+      const parent = container || this.rules.container;
+      const homogenity = !!this.containerHomogenity;
+      for (const thumbElement of thumbs) {
+        const url = this.rules.thumbDataParser.getUrl(thumbElement);
+        const isHomogenic = homogenity && !checkHomogenity(
+          parent,
+          thumbElement.parentElement,
+          this.containerHomogenity
+        );
+        if (!url || this.data.has(url) || parent !== container && (parent == null ? void 0 : parent.contains(thumbElement)) || isHomogenic) {
+          if (removeDuplicates) thumbElement.remove();
+          continue;
+        }
+        const data = this.rules.thumbDataParser.getThumbData(thumbElement);
+        this.data.set(url, { element: thumbElement, ...data });
+        if (shouldLazify) {
+          const { img, imgSrc } = this.rules.thumbImgParser.getImgData(thumbElement);
+          this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
+        }
+        fragment.append(thumbElement);
+      }
+      await this.filterAll(dataOffset);
+      if (!parent) return;
+      containMutation(parent, () => parent == null ? void 0 : parent.appendChild(fragment));
     }
     sortBy(key, direction = true) {
       if (this.data.size < 2) return;
-      const elements = this.data.values().toArray().filter((e) => e.element.parentElement !== null).map((e) => e);
-      const containers = new Set(elements.map((e) => e.element.parentElement));
-      containers.forEach((c) => {
-        this.layoutStylePaint(c);
-        c.style.willChange = "contents";
-      });
-      const elementsByContainers = /* @__PURE__ */ new Map();
-      containers.forEach((c) => {
-        elementsByContainers.set(c, []);
-      });
-      elements.forEach((e) => {
-        const parent = e.element.parentElement;
-        const container = elementsByContainers.get(parent);
-        container == null ? void 0 : container.push(e);
-      });
+      const ds2 = this.data.values().toArray().filter((e) => e.element.parentElement !== null);
+      const byContainers = Map.groupBy(ds2, (e) => e.element.parentElement);
       const dir = direction ? -1 : 1;
-      for (const [container, items] of elementsByContainers) {
+      for (const [container, items] of byContainers) {
         items.sort((a2, b2) => (a2[key] - b2[key]) * dir);
-        const domNodes = items.map((e) => e.element);
-        const display = container.style.display;
-        container.style.display = "none";
-        container.replaceChildren(...domNodes);
-        requestAnimationFrame(() => {
-          container.style.display = display;
-          requestAnimationFrame(() => {
-            container.style.willChange = "auto";
-          });
-        });
+        const children = items.map((e) => e.element);
+        containMutation(container, () => container.replaceChildren(...children));
       }
     }
   }
@@ -2026,10 +2014,8 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     }
     async doScroll(url, offset) {
       const page = await this.getPaginationData(url);
-      const prevScrollPos = document.documentElement.scrollTop;
       this.paginationOffset = Math.max(this.paginationOffset, offset);
       this.subject.next({ type: "scroll", scroller: this, page });
-      window.scrollTo(0, prevScrollPos);
       if (this.rules.store.state.writeHistory) {
         history.replaceState({}, "", url);
       }
@@ -2051,7 +2037,10 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       infiniteScroller.subject.subscribe((x2) => {
         if (x2.type === "scroll") {
           rules.store.state.$paginationOffset = x2.scroller.paginationOffset;
-          rules.dataManager.parseData(x2.page);
+          const prevScrollPos = document.documentElement.scrollTop;
+          rules.dataManager.parseData(x2.page).then(() => {
+            window.scrollTo(0, prevScrollPos);
+          });
         }
       });
       rules.store.stateSubject.subscribe(() => {
@@ -10026,6 +10015,7 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.checkHomogenity = checkHomogenity;
   exports2.chunks = chunks;
   exports2.circularShift = circularShift;
+  exports2.containMutation = containMutation;
   exports2.copyAttributes = copyAttributes;
   exports2.downloader = downloader;
   exports2.exterminateVideo = exterminateVideo;
@@ -10034,10 +10024,12 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.fetchText = fetchText;
   exports2.fetchWith = fetchWith;
   exports2.findNextSibling = findNextSibling;
+  exports2.findSelfOrChild = findSelfOrChild;
   exports2.formatTimeToHHMMSS = formatTimeToHHMMSS;
   exports2.getCommonParents = getCommonParents;
   exports2.getPaginationStrategy = getPaginationStrategy;
   exports2.instantiateTemplate = instantiateTemplate;
+  exports2.irange = irange;
   exports2.memoize = memoize;
   exports2.objectToFormData = objectToFormData;
   exports2.parseCssUrl = parseCssUrl;
@@ -10052,6 +10044,7 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.range = range;
   exports2.removeClassesAndDataAttributes = removeClassesAndDataAttributes;
   exports2.replaceElementTag = replaceElementTag;
+  exports2.runIdleJob = runIdleJob;
   exports2.sanitizeStr = sanitizeStr;
   exports2.splitWith = splitWith;
   exports2.timeToSeconds = timeToSeconds;

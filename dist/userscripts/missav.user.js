@@ -15,7 +15,7 @@
 // @match        https://*.missav.ws/*
 // @match        https://*.missav.to/*
 // @match        https://*.missav.live/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.18/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -31,12 +31,7 @@
     },
     containerSelector: ".grid[x-data]",
     thumbs: { selector: "div:has(> .thumbnail.group)" },
-    thumb: {
-      selectors: {
-        title: "div > div > a.text-secondary",
-        duration: "div > a > span.text-xs"
-      }
-    },
+    thumb: { strategy: "auto-text" },
     thumbImg: { strategy: "auto" },
     schemeOptions: [
       "Title Filter",

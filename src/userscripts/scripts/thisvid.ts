@@ -22,7 +22,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'ThisVid.com Improved',
-  version: '8.0.7',
+  version: '8.0.8',
   description:
     'Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
   match: ['https://*.thisvid.com/*'],
@@ -354,10 +354,10 @@ async function requestAccess() {
 
 const createDownloadButton = () =>
   downloader({
-    append: '',
     after: '.share_btn',
-    button: '<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>',
-    cbBefore: () => $('.fp-ui').click(),
+    buttonHtml:
+      '<li><a href="#" style="text-decoration: none;font-size: 2rem;">📼</a></li>',
+    doBefore: () => $('.fp-ui').click(),
   });
 
 //====================================================================================================

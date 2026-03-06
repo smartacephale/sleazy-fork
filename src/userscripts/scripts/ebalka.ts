@@ -1,11 +1,12 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { Rules } from '../../core';
-import { exterminateVideo, OnHover, parseHtml } from '../../utils';
+import { downloader, exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Ebalka PervertMonkey',
-  version: '3.0.7',
-  description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
+  version: '3.0.8',
+  description:
+    'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration, Download button.',
   match: [
     'https://b.ebalka.zip/*',
     'https://a.ebalka.love/*',
@@ -63,3 +64,9 @@ function animatePreview(container: HTMLElement) {
     return animateThumb(thumb);
   });
 }
+
+document.querySelector('.tooltip-container') &&
+  downloader({
+    append: '.tooltip-container',
+    buttonHtml: '<a class="button button_regular button_list root__link">Download ⤓</a>',
+  });

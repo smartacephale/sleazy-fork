@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.10
+// @version      3.0.11
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Sort by Duration and Views. Mass friend request button. Download button
 // @license      MIT
@@ -13,7 +13,7 @@
 // @match        https://*.camwhores.tv
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.17/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.18/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -163,9 +163,8 @@
   }
   const createDownloadButton = () => utils.downloader({
     append: ".tabs-menu > ul",
-    after: "",
-    button: '<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>',
-    cbBefore: () => $(".fp-ui").click()
+    buttonHtml: '<li><a href="#tab_comments" class="toggle-button" style="text-decoration: none;">download 📼</a></li>',
+    doBefore: () => $(".fp-ui").click()
   });
   const DEFAULT_FRIEND_REQUEST_FORMDATA = utils.objectToFormData({
     message: "",
