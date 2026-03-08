@@ -4,7 +4,7 @@ import { parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'NHentai PervertMonkey',
-  version: '4.0.8',
+  version: '4.0.12',
   description: 'Infinite scroll [optional], Filter by Title',
   match: ['https://*.nhentai.net/*', 'https://*.nhentai.*/*'],
 };
@@ -21,7 +21,6 @@ const nhentaiRules = new Rules({
   gropeStrategy: 'all-in-all',
 });
 
-// 2026: now only one language works, problem in nhentai.net itself
 const filterDescriptors = {
   english: { query: 'english', name: '🇬🇧' },
   japanese: { query: 'japanese', name: '🇯🇵' },

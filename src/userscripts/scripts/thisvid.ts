@@ -13,7 +13,6 @@ import {
   objectToFormData,
   parseCssUrl,
   parseHtml,
-  querySelectorLast,
   querySelectorLastNumber,
   range,
   replaceElementTag,
@@ -21,8 +20,8 @@ import {
 } from '../../utils';
 
 export const meta: MonkeyUserScript = {
-  name: 'ThisVid.com Improved',
-  version: '8.0.8',
+  name: 'ThisVid.com PervertMonkey',
+  version: '8.0.13',
   description:
     'Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
   match: ['https://*.thisvid.com/*'],
@@ -52,8 +51,44 @@ const IS_MEMBER_FRIEND =
     'is in your friends',
   );
 
+function fixContainersDuplication() {
+  const containers = document.querySelectorAll<HTMLElement>(
+    'div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder)',
+  );
+
+  if (containers.length < 2 || getCommonParents(containers).length > 1) return;
+
+  const mainContainer = containers.values().find((e) => e.id);
+  const badContainers = containers.values().filter((e) => !e.id);
+
+  badContainers.forEach((e) => {
+    mainContainer?.append(...e.children);
+    mainContainer && e.remove();
+  });
+}
+
+fixContainersDuplication();
+
 function fixPlaylistThumbUrl(src: string) {
   return src.replace(/playlist\/\d+\/video/, () => 'videos');
+}
+
+function getImgData(thumb: HTMLElement) {
+  const img = thumb.querySelector('img') as HTMLImageElement;
+  const privateThumb = thumb.querySelector('.private') as HTMLElement;
+
+  let imgSrc = img?.getAttribute('data-original') as string;
+
+  if (privateThumb) {
+    imgSrc = parseCssUrl(privateThumb.style.background);
+    privateThumb.removeAttribute('style');
+  }
+
+  img.removeAttribute('data-original');
+  img.removeAttribute('data-cnt');
+  img.classList.remove('lazy-load');
+
+  return { img, imgSrc };
 }
 
 const defaultRulesConfig: RulesConfig = {
@@ -70,30 +105,9 @@ const defaultRulesConfig: RulesConfig = {
       views: { selector: '.view', type: 'number' },
     },
   },
-  thumbImg: {
-    getImgData(thumb: HTMLElement) {
-      const img = thumb.querySelector('img') as HTMLImageElement;
-      const privateThumb = thumb.querySelector('.private') as HTMLElement;
-
-      let imgSrc = img?.getAttribute('data-original') as string;
-
-      if (privateThumb) {
-        imgSrc = parseCssUrl(privateThumb.style.background);
-        privateThumb.removeAttribute('style');
-      }
-
-      img.removeAttribute('data-original');
-      img.removeAttribute('data-cnt');
-      img.classList.remove('lazy-load');
-
-      return { img, imgSrc };
-    },
-  },
-  containerSelector: () =>
-    (querySelectorLast(
-      document,
-      'div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder)',
-    ) as HTMLElement) || document.querySelector<HTMLElement>('.thumbs-items'),
+  thumbImg: { getImgData },
+  containerSelectorLast:
+    'div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder), .thumbs-items',
   animatePreview,
   schemeOptions: [
     'Title Filter',
@@ -107,14 +121,7 @@ const defaultRulesConfig: RulesConfig = {
       content: [{ autoRequestAccess: false, label: 'check access sends friend requests' }],
     },
   ],
-  gropeStrategy:
-    getCommonParents([
-      ...document.querySelectorAll<HTMLElement>(
-        'div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder',
-      ),
-    ]).length < 2
-      ? 'all-in-one'
-      : 'all-in-all',
+  gropeStrategy: 'all-in-all',
 };
 
 const config: RulesConfig =
@@ -552,6 +559,7 @@ async function createPrivateFeed() {
   const hideMemberVideos = (e: PointerEvent, ignore = true) => {
     const container = (e.target as HTMLElement)?.closest('div') as HTMLElement;
     let id = container.id;
+    feedGenerator.skip(1);
 
     const videosCount = querySelectorLastNumber(`#${id}`);
     document

@@ -8,11 +8,11 @@ export {
   watchElementChildrenCount,
 } from './dom-observers';
 
-export function findSelfOrChild<T extends HTMLElement>(
+export function querySelectorOrSelf<T extends Element = HTMLElement>(
   element: T,
   selector: string,
 ): T | null {
-  if (element.matches(selector)) {
+  if (element.matches?.(selector)) {
     return element as T;
   }
   return element.querySelector<T>(selector);
@@ -23,7 +23,10 @@ export function querySelectorLast<T extends Element = HTMLElement>(
   selector: string,
 ): T | undefined {
   const nodes = root.querySelectorAll<T>(selector);
-  return nodes.length > 0 ? nodes[nodes.length - 1] : undefined;
+  if (nodes.length < 1) {
+    return querySelectorOrSelf<T>(root as T, selector) || undefined;
+  }
+  return nodes[nodes.length - 1];
 }
 
 export function querySelectorLastNumber(selector: string, e: ParentNode = document) {
@@ -33,7 +36,7 @@ export function querySelectorLastNumber(selector: string, e: ParentNode = docume
 
 export function querySelectorText(e: ParentNode, selector?: string): string {
   if (typeof selector !== 'string') return '';
-  const text = e.querySelector<HTMLElement>(selector)?.innerText || '';
+  const text = querySelectorOrSelf(e as HTMLElement, selector)?.innerText || '';
   return sanitizeStr(text);
 }
 
@@ -78,12 +81,13 @@ export function removeClassesAndDataAttributes(
   });
 }
 
-export function getCommonParents(elements: HTMLCollection | HTMLElement[]): HTMLElement[] {
-  const parents = Array.from(elements)
-    .map((e) => e.parentElement)
-    .filter((parent): parent is HTMLElement => parent !== null);
-
-  return [...new Set(parents)];
+export function getCommonParents<T extends HTMLElement>(
+  elements: Iterable<T>,
+): HTMLElement[] {
+  return Map.groupBy(elements, (e) => e.parentElement)
+    .keys()
+    .filter((e) => e !== null)
+    .toArray();
 }
 
 export function findNextSibling<T extends Element = HTMLElement>(e: T) {

@@ -9,7 +9,7 @@ import { defaultDataFilterFns } from './data-filter-fn-defaults';
 
 export class DataFilter {
   public filters = new Map<string, () => DataFilterFnRendered>();
-  public filterMapping: Record<string, string> = {};
+  public filterDepsMapping: Record<string, string> = {};
 
   constructor(private rules: Rules) {
     this.registerFilters(rules.customDataFilterFns);
@@ -51,7 +51,7 @@ export class DataFilter {
     dataFilterFn.deps.push(customSelectorName);
 
     dataFilterFn.deps.forEach((name) => {
-      Object.assign(this.filterMapping, { [name]: customSelectorName });
+      Object.assign(this.filterDepsMapping, { [name]: customSelectorName });
     });
 
     this.filters.set(customSelectorName, dataFilterFn.renderFn(this.rules.store.state));
@@ -59,8 +59,8 @@ export class DataFilter {
 
   public selectFilters(filters: { [key: string]: boolean }) {
     const selectedFilters = Object.keys(filters)
-      .filter((k) => k in this.filterMapping)
-      .map((k) => this.filterMapping[k])
+      .filter((k) => k in this.filterDepsMapping)
+      .map((k) => this.filterDepsMapping[k])
       .map((k) => this.filters.get(k) as () => DataFilterFnRendered);
     return selectedFilters;
   }

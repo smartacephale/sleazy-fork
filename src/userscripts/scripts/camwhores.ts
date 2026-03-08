@@ -17,7 +17,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'CamWhores PervertMonkey',
-  version: '3.0.11',
+  version: '3.0.15',
   description:
     'Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Sort by Duration and Views. Mass friend request button. Download button',
   match: ['https://*.camwhores.tv', 'https://*.camwhores.*/*'],

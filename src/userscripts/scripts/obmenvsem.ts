@@ -4,8 +4,8 @@ import { Rules } from '../../core';
 import { fetchHtml, parseUrl } from '../../utils';
 
 export const meta: MonkeyUserScript = {
-  name: 'Obmensvem PervertMonkey',
-  version: '1.0.9',
+  name: 'Obmenvsem PervertMonkey',
+  version: '1.0.14',
   description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
   match: [
     'https://*.obmenvsem.com/*',

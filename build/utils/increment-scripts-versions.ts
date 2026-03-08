@@ -40,7 +40,7 @@ function processDirectory(dir: string): void {
 
       const newContent: string = content.replace(
         versionRegex,
-        (match, prefix, major, minor, patch, suffix) => {
+        (_, prefix, major, minor, patch, suffix) => {
           hasChanges = true;
           const newVersion = incrementVersion(major, minor, patch);
           return `${prefix}${newVersion}${suffix}`;
@@ -54,4 +54,6 @@ function processDirectory(dir: string): void {
   }
 }
 
-processDirectory(FOLDER);
+export function incrementUserscriptsVersions() {
+  processDirectory(FOLDER);
+}

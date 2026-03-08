@@ -28,7 +28,7 @@ export declare type DataElement = {
 export declare class DataFilter {
     private rules;
     filters: Map<string, () => DataFilterFnRendered>;
-    filterMapping: Record<string, string>;
+    filterDepsMapping: Record<string, string>;
     constructor(rules: Rules);
     static isFiltered(e: HTMLElement): boolean;
     createCssFilters(wrapper?: (cssRule: string) => string): void;
@@ -223,8 +223,6 @@ export declare function fetchWith<T extends JSON | string | HTMLElement>(input: 
 
 export declare function findNextSibling<T extends Element = HTMLElement>(e: T): Element | null;
 
-export declare function findSelfOrChild<T extends HTMLElement>(element: T, selector: string): T | null;
-
 /**
  * Converts a duration string (e.g., "1h 22min 3sec") to HH:MM:SS format.
  * @param timeStr - The duration string to format.
@@ -237,12 +235,11 @@ declare type GeneratorResult = {
     offset: number;
 };
 
-export declare function getCommonParents(elements: HTMLCollection | HTMLElement[]): HTMLElement[];
+export declare function getCommonParents<T extends HTMLElement>(elements: Iterable<T>): HTMLElement[];
 
 export declare function getPaginationStrategy(options: Partial<PaginationStrategy>): PaginationStrategy;
 
 export declare class InfiniteScroller {
-    enabled: boolean;
     paginationOffset: number;
     rules: Rules;
     private observer?;
@@ -381,7 +378,7 @@ export declare function parseHtml(html: string): HTMLElement;
 
 export declare function parseIntegerOr(n: string | number, or: number): number;
 
-export declare function parseNumberWithLetter(str: string): number;
+export declare function parseNumericAbbreviation(str: string): number;
 
 export declare function parseUrl(s: HTMLAnchorElement | Location | URL | string): URL;
 
@@ -390,6 +387,8 @@ declare type Primitive = string | number | boolean;
 export declare function querySelectorLast<T extends Element = HTMLElement>(root: ParentNode | undefined, selector: string): T | undefined;
 
 export declare function querySelectorLastNumber(selector: string, e?: ParentNode): number;
+
+export declare function querySelectorOrSelf<T extends Element = HTMLElement>(element: T, selector: string): T | null;
 
 export declare function querySelectorText(e: ParentNode, selector?: string): string;
 
@@ -418,7 +417,7 @@ export declare class Rules {
     containerSelectorLast?: string;
     get container(): HTMLElement;
     intersectionObservableSelector?: string;
-    get intersectionObservable(): "" | Element | null | undefined;
+    get intersectionObservable(): HTMLElement | null | undefined;
     get observable(): HTMLElement;
     paginationStrategyOptions: Partial<PaginationStrategy>;
     paginationStrategy: PaginationStrategy;
@@ -501,13 +500,11 @@ export declare class ThumbImgParser {
 }
 
 export declare class ThumbsParser {
-    containerSelector: string;
     selector: string;
     strategy: 'default' | 'auto';
     transform?: (thumb: HTMLElement) => void;
-    static create(options: Partial<Pick<ThumbsParser, "selector" | "strategy" | "transform">> | undefined, containerSelector: string): ThumbsParser & Partial<Pick<ThumbsParser, "selector" | "strategy" | "transform">>;
-    constructor(containerSelector: string);
-    getThumbs(html: HTMLElement): HTMLElement[];
+    static create(options?: Partial<Pick<ThumbsParser, 'selector' | 'strategy' | 'transform'>>): ThumbsParser & Partial<Pick<ThumbsParser, "selector" | "strategy" | "transform">>;
+    getThumbs(container: HTMLElement): HTMLElement[];
 }
 
 export declare class Tick {

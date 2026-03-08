@@ -175,15 +175,19 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     observer.observe(element, options);
     return observer;
   }
-  function findSelfOrChild(element, selector) {
-    if (element.matches(selector)) {
+  function querySelectorOrSelf(element, selector) {
+    var _a3;
+    if ((_a3 = element.matches) == null ? void 0 : _a3.call(element, selector)) {
       return element;
     }
     return element.querySelector(selector);
   }
   function querySelectorLast(root = document, selector) {
     const nodes = root.querySelectorAll(selector);
-    return nodes.length > 0 ? nodes[nodes.length - 1] : void 0;
+    if (nodes.length < 1) {
+      return querySelectorOrSelf(root, selector) || void 0;
+    }
+    return nodes[nodes.length - 1];
   }
   function querySelectorLastNumber(selector, e = document) {
     var _a3;
@@ -193,7 +197,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   function querySelectorText(e, selector) {
     var _a3;
     if (typeof selector !== "string") return "";
-    const text = ((_a3 = e.querySelector(selector)) == null ? void 0 : _a3.innerText) || "";
+    const text = ((_a3 = querySelectorOrSelf(e, selector)) == null ? void 0 : _a3.innerText) || "";
     return sanitizeStr(text);
   }
   function parseHtml(html) {
@@ -229,8 +233,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     });
   }
   function getCommonParents(elements) {
-    const parents = Array.from(elements).map((e) => e.parentElement).filter((parent) => parent !== null);
-    return [...new Set(parents)];
+    return Map.groupBy(elements, (e) => e.parentElement).keys().filter((e) => e !== null).toArray();
   }
   function findNextSibling(e) {
     if (e.nextElementSibling) return e.nextElementSibling;
@@ -440,7 +443,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     const num = Number(n);
     return Number.isSafeInteger(num) ? num : or2;
   }
-  function parseNumberWithLetter(str) {
+  function parseNumericAbbreviation(str) {
     var _a3;
     const multipliers = { k: 1e3, m: 1e6 };
     const match = str.trim().match(/([\d., ]+)(\w)?/);
@@ -555,7 +558,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   class DataFilter {
     constructor(rules) {
       __publicField(this, "filters", /* @__PURE__ */ new Map());
-      __publicField(this, "filterMapping", {});
+      __publicField(this, "filterDepsMapping", {});
       __publicField(this, "customDataFilterFns", {});
       this.rules = rules;
       this.registerFilters(rules.customDataFilterFns);
@@ -586,12 +589,12 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       );
       dataFilterFn.deps.push(customSelectorName);
       dataFilterFn.deps.forEach((name) => {
-        Object.assign(this.filterMapping, { [name]: customSelectorName });
+        Object.assign(this.filterDepsMapping, { [name]: customSelectorName });
       });
       this.filters.set(customSelectorName, dataFilterFn.renderFn(this.rules.store.state));
     }
     selectFilters(filters) {
-      const selectedFilters = Object.keys(filters).filter((k2) => k2 in this.filterMapping).map((k2) => this.filterMapping[k2]).map((k2) => this.filters.get(k2));
+      const selectedFilters = Object.keys(filters).filter((k2) => k2 in this.filterDepsMapping).map((k2) => this.filterDepsMapping[k2]).map((k2) => this.filters.get(k2));
       return selectedFilters;
     }
   }
@@ -1957,14 +1960,13 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
   }
   class InfiniteScroller {
     constructor(options) {
-      __publicField(this, "enabled", true);
       __publicField(this, "paginationOffset", 1);
       __publicField(this, "rules");
       __publicField(this, "observer");
       __publicField(this, "paginationGenerator");
       __publicField(this, "subject", new Subject());
       __publicField(this, "generatorConsumer", async () => {
-        if (!this.enabled) return false;
+        if (!this.rules.store.state.infiniteScrollEnabled) return true;
         const { value, done } = await this.paginationGenerator.next();
         if (done) return false;
         const { url, offset } = value;
@@ -2030,9 +2032,8 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       }
     }
     static create(rules) {
-      const enabled = rules.store.state.infiniteScrollEnabled;
       rules.store.state.$paginationLast = rules.paginationStrategy.getPaginationLast();
-      const infiniteScroller = new InfiniteScroller({ enabled, rules });
+      const infiniteScroller = new InfiniteScroller({ rules });
       rules.store.state.$paginationOffset = infiniteScroller.paginationOffset;
       infiniteScroller.subject.subscribe((x2) => {
         if (x2.type === "scroll") {
@@ -2042,9 +2043,6 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
             window.scrollTo(0, prevScrollPos);
           });
         }
-      });
-      rules.store.stateSubject.subscribe(() => {
-        infiniteScroller.enabled = rules.store.state.infiniteScrollEnabled;
       });
       return infiniteScroller;
     }
@@ -3104,7 +3102,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     getThumbDataWith(thumb, { type, selector }) {
       var _a3;
       if (type === "boolean") {
-        return !!thumb.querySelector(selector);
+        return !!querySelectorOrSelf(thumb, selector);
       }
       if (type === "string") {
         return sanitizeStr(((_a3 = querySelectorLast(thumb, selector)) == null ? void 0 : _a3.innerText) || "");
@@ -3114,7 +3112,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       }
       if (type === "float") {
         const value = querySelectorText(thumb, selector);
-        return parseNumberWithLetter(value);
+        return parseNumericAbbreviation(value);
       }
       return Number.parseInt(querySelectorText(thumb, selector));
     }
@@ -3183,24 +3181,21 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     }
   }
   class ThumbsParser {
-    constructor(containerSelector) {
+    constructor() {
       __publicField(this, "selector", ".thumb");
       __publicField(this, "strategy", "default");
       __publicField(this, "transform");
-      this.containerSelector = containerSelector;
     }
-    static create(options = {}, containerSelector) {
-      return Object.assign(new ThumbsParser(containerSelector), options);
+    static create(options = {}) {
+      return Object.assign(new ThumbsParser(), options);
     }
-    getThumbs(html) {
-      if (!html) return [];
-      let thumbs;
+    getThumbs(container) {
+      if (!container) return [];
       if (this.strategy === "auto") {
         if (typeof this.selector !== "string") return [];
-        const container = html.querySelector(this.containerSelector);
-        thumbs = [...(container == null ? void 0 : container.children) || []];
+        return [...(container == null ? void 0 : container.children) || []];
       }
-      thumbs = Array.from(html.querySelectorAll(this.selector));
+      const thumbs = Array.from(container.querySelectorAll(this.selector));
       if (typeof this.transform === "function") {
         thumbs.forEach(this.transform);
       }
@@ -9900,7 +9895,7 @@ Expected function or array of functions, received type ${typeof t}.`
       Object.assign(this, options);
       this.thumbDataParser = ThumbDataParser.create(this.thumb);
       this.thumbImgParser = ThumbImgParser.create(this.thumbImg);
-      this.thumbsParser = ThumbsParser.create(this.thumbs, this.containerSelector);
+      this.thumbsParser = ThumbsParser.create(this.thumbs);
       this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
       this.store = this.createStore();
       this.gui = this.createGui();
@@ -9911,15 +9906,16 @@ Expected function or array of functions, received type ${typeof t}.`
     }
     get container() {
       if (typeof this.containerSelectorLast === "string") {
-        return querySelectorLast(document, this.containerSelectorLast);
+        return querySelectorLast(document.body, this.containerSelectorLast);
       }
       if (typeof this.containerSelector === "string") {
-        return document.querySelector(this.containerSelector);
+        return querySelectorOrSelf(document.body, this.containerSelector);
       }
       return this.containerSelector();
     }
     get intersectionObservable() {
-      return this.intersectionObservableSelector && document.querySelector(this.intersectionObservableSelector);
+      if (!this.intersectionObservableSelector) return void 0;
+      return document.querySelector(this.intersectionObservableSelector);
     }
     get observable() {
       return this.intersectionObservable || this.paginationStrategy.getPaginationElement();
@@ -10024,7 +10020,6 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.fetchText = fetchText;
   exports2.fetchWith = fetchWith;
   exports2.findNextSibling = findNextSibling;
-  exports2.findSelfOrChild = findSelfOrChild;
   exports2.formatTimeToHHMMSS = formatTimeToHHMMSS;
   exports2.getCommonParents = getCommonParents;
   exports2.getPaginationStrategy = getPaginationStrategy;
@@ -10036,10 +10031,11 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.parseDataParams = parseDataParams;
   exports2.parseHtml = parseHtml;
   exports2.parseIntegerOr = parseIntegerOr;
-  exports2.parseNumberWithLetter = parseNumberWithLetter;
+  exports2.parseNumericAbbreviation = parseNumericAbbreviation;
   exports2.parseUrl = parseUrl;
   exports2.querySelectorLast = querySelectorLast;
   exports2.querySelectorLastNumber = querySelectorLastNumber;
+  exports2.querySelectorOrSelf = querySelectorOrSelf;
   exports2.querySelectorText = querySelectorText;
   exports2.range = range;
   exports2.removeClassesAndDataAttributes = removeClassesAndDataAttributes;

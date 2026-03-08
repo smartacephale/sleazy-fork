@@ -2,6 +2,7 @@ import { JabronioGUI, JabronioStore, type JabroniTypes, setupScheme } from 'jabr
 import {
   getCommonParents,
   querySelectorLast,
+  querySelectorOrSelf,
   waitForElementToDisappear,
 } from '../../utils';
 import { DataManager } from '../data-handler';
@@ -37,10 +38,10 @@ export class Rules {
 
   get container() {
     if (typeof this.containerSelectorLast === 'string') {
-      return querySelectorLast(document, this.containerSelectorLast) as HTMLElement;
+      return querySelectorLast(document.body, this.containerSelectorLast) as HTMLElement;
     }
     if (typeof this.containerSelector === 'string') {
-      return document.querySelector<HTMLElement>(this.containerSelector) as HTMLElement;
+      return querySelectorOrSelf(document.body, this.containerSelector) as HTMLElement;
     }
     return this.containerSelector();
   }
@@ -48,10 +49,8 @@ export class Rules {
   public intersectionObservableSelector?: string;
 
   public get intersectionObservable() {
-    return (
-      this.intersectionObservableSelector &&
-      document.querySelector(this.intersectionObservableSelector)
-    );
+    if (!this.intersectionObservableSelector) return undefined;
+    return document.querySelector<HTMLElement>(this.intersectionObservableSelector);
   }
 
   public get observable(): HTMLElement {
@@ -179,7 +178,7 @@ export class Rules {
 
     this.thumbDataParser = ThumbDataParser.create(this.thumb);
     this.thumbImgParser = ThumbImgParser.create(this.thumbImg);
-    this.thumbsParser = ThumbsParser.create(this.thumbs, this.containerSelector as string);
+    this.thumbsParser = ThumbsParser.create(this.thumbs);
 
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
 

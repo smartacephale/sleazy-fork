@@ -10,7 +10,6 @@ export type OffsetGenerator<T = GeneratorResult> = Generator<T> | AsyncGenerator
 type IScrollerSubject = { type: 'scroll'; scroller: InfiniteScroller; page: HTMLElement };
 
 export class InfiniteScroller {
-  public enabled = true;
   public paginationOffset = 1;
   public rules: Rules;
 
@@ -69,7 +68,7 @@ export class InfiniteScroller {
   }
 
   generatorConsumer = async () => {
-    if (!this.enabled) return false;
+    if (!this.rules.store.state.infiniteScrollEnabled) return true;
 
     const { value, done } = await this.paginationGenerator.next();
     if (done) return false;
@@ -106,11 +105,9 @@ export class InfiniteScroller {
   }
 
   static create(rules: Rules) {
-    const enabled = rules.store.state.infiniteScrollEnabled as boolean;
-
     rules.store.state.$paginationLast = rules.paginationStrategy.getPaginationLast();
 
-    const infiniteScroller = new InfiniteScroller({ enabled, rules });
+    const infiniteScroller = new InfiniteScroller({ rules });
 
     rules.store.state.$paginationOffset = infiniteScroller.paginationOffset;
 
@@ -123,10 +120,6 @@ export class InfiniteScroller {
           window.scrollTo(0, prevScrollPos);
         });
       }
-    });
-
-    rules.store.stateSubject.subscribe(() => {
-      infiniteScroller.enabled = rules.store.state.infiniteScrollEnabled as boolean;
     });
 
     return infiniteScroller;

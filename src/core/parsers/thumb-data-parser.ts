@@ -1,6 +1,7 @@
 import {
-  parseNumberWithLetter,
+  parseNumericAbbreviation,
   querySelectorLast,
+  querySelectorOrSelf,
   querySelectorText,
   sanitizeStr,
   timeToSeconds,
@@ -71,7 +72,7 @@ export class ThumbDataParser {
     { type, selector }: ThumbDataSelector,
   ): Primitive {
     if (type === 'boolean') {
-      return !!thumb.querySelector(selector);
+      return !!querySelectorOrSelf(thumb, selector);
     }
     if (type === 'string') {
       return sanitizeStr(querySelectorLast(thumb, selector)?.innerText || '');
@@ -81,7 +82,7 @@ export class ThumbDataParser {
     }
     if (type === 'float') {
       const value = querySelectorText(thumb, selector);
-      return parseNumberWithLetter(value);
+      return parseNumericAbbreviation(value);
     }
     return Number.parseInt(querySelectorText(thumb, selector));
   }

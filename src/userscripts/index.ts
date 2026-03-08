@@ -1,1 +1,1 @@
-import './scripts/spankbang';
+import './scripts/camwhores';

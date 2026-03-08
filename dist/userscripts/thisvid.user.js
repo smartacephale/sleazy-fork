@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         ThisVid.com Improved
+// @name         ThisVid.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      8.0.8
+// @version      8.0.13
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.thisvid.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.18/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.19/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -898,8 +898,34 @@ function takeWhile(predicate) {
   const IS_MEMBER_FRIEND = IS_OTHER_MEMBER_PAGE && document.querySelector(".case-left")?.innerText.includes(
     "is in your friends"
   );
+  function fixContainersDuplication() {
+    const containers = document.querySelectorAll(
+      "div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder)"
+    );
+    if (containers.length < 2 || utils.getCommonParents(containers).length > 1) return;
+    const mainContainer = containers.values().find((e) => e.id);
+    const badContainers = containers.values().filter((e) => !e.id);
+    badContainers.forEach((e) => {
+      mainContainer?.append(...e.children);
+      mainContainer && e.remove();
+    });
+  }
+  fixContainersDuplication();
   function fixPlaylistThumbUrl(src) {
     return src.replace(/playlist\/\d+\/video/, () => "videos");
+  }
+  function getImgData(thumb) {
+    const img = thumb.querySelector("img");
+    const privateThumb = thumb.querySelector(".private");
+    let imgSrc = img?.getAttribute("data-original");
+    if (privateThumb) {
+      imgSrc = utils.parseCssUrl(privateThumb.style.background);
+      privateThumb.removeAttribute("style");
+    }
+    img.removeAttribute("data-original");
+    img.removeAttribute("data-cnt");
+    img.classList.remove("lazy-load");
+    return { img, imgSrc };
   }
   const defaultRulesConfig = {
     thumbs: {
@@ -914,25 +940,8 @@ function takeWhile(predicate) {
         views: { selector: ".view", type: "number" }
       }
     },
-    thumbImg: {
-      getImgData(thumb) {
-        const img = thumb.querySelector("img");
-        const privateThumb = thumb.querySelector(".private");
-        let imgSrc = img?.getAttribute("data-original");
-        if (privateThumb) {
-          imgSrc = utils.parseCssUrl(privateThumb.style.background);
-          privateThumb.removeAttribute("style");
-        }
-        img.removeAttribute("data-original");
-        img.removeAttribute("data-cnt");
-        img.classList.remove("lazy-load");
-        return { img, imgSrc };
-      }
-    },
-    containerSelector: () => utils.querySelectorLast(
-      document,
-      "div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder)"
-    ) || document.querySelector(".thumbs-items"),
+    thumbImg: { getImgData },
+    containerSelectorLast: "div:has(> .tumbpu[title]):not(.thumbs-photo), div:has(> .thumb-holder), .thumbs-items",
     animatePreview,
     schemeOptions: [
       "Title Filter",
@@ -946,11 +955,7 @@ function takeWhile(predicate) {
         content: [{ autoRequestAccess: false, label: "check access sends friend requests" }]
       }
     ],
-    gropeStrategy: utils.getCommonParents([
-      ...document.querySelectorAll(
-        "div:has(> .tumbpu[title]):not(.thumbs-photo) > .tumbpu[title], .thumb-holder"
-      )
-    ]).length < 2 ? "all-in-one" : "all-in-all"
+    gropeStrategy: "all-in-all"
   };
   const config = IS_MY_MEMBER_PAGE || IS_MY_WALL ? await( createPrivateFeed()) : defaultRulesConfig;
   const rules = new core.Rules(config);
@@ -1271,6 +1276,7 @@ function takeWhile(predicate) {
     const hideMemberVideos = (e, ignore = true) => {
       const container2 = e.target?.closest("div");
       let id = container2.id;
+      feedGenerator.skip(1);
       const videosCount = utils.querySelectorLastNumber(`#${id}`);
       document.querySelectorAll(`#${id}~a`).values().take(videosCount).forEach((e2) => {
         e2.remove();

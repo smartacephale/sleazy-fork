@@ -9,7 +9,7 @@ export function parseIntegerOr(n: string | number, or: number): number {
   return Number.isSafeInteger(num) ? num : or;
 }
 
-export function parseNumberWithLetter(str: string): number {
+export function parseNumericAbbreviation(str: string): number {
   const multipliers = { k: 1e3, m: 1e6 } as const;
   const match = str.trim().match(/([\d., ]+)(\w)?/);
 
