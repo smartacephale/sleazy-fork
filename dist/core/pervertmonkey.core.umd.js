@@ -240,11 +240,9 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     if (e.parentElement) return findNextSibling(e.parentElement);
     return null;
   }
-  function checkHomogenity(a2, b2, options) {
+  function areElementsAlike(a2, b2, options) {
     if (!a2 || !b2) return false;
-    if (options.id) {
-      if (a2.id !== b2.id) return false;
-    }
+    if (options.id && a2.id !== b2.id) return false;
     if (options.className) {
       const ca2 = a2.className;
       const cb = b2.className;
@@ -651,12 +649,12 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       const homogenity = !!this.containerHomogenity;
       for (const thumbElement of thumbs) {
         const url = this.rules.thumbDataParser.getUrl(thumbElement);
-        const isHomogenic = homogenity && !checkHomogenity(
+        const isNotHomogenic = homogenity && !areElementsAlike(
           parent,
           thumbElement.parentElement,
           this.containerHomogenity
         );
-        if (!url || this.data.has(url) || parent !== container && (parent == null ? void 0 : parent.contains(thumbElement)) || isHomogenic) {
+        if (!url || this.data.has(url) || parent !== container && (parent == null ? void 0 : parent.contains(thumbElement)) || isNotHomogenic) {
           if (removeDuplicates) thumbElement.remove();
           continue;
         }
@@ -3081,7 +3079,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       return { title, duration };
     }
     getUrl(thumb) {
-      return (thumb.querySelector("a[href]") || thumb).href;
+      return querySelectorOrSelf(thumb, "a[href]").href;
     }
     preprocessCustomThumbDataSelectors() {
       if (!this.selectors) return;
@@ -9864,12 +9862,12 @@ Expected function or array of functions, received type ${typeof t}.`
   }
   class Rules {
     constructor(options) {
+      __publicField(this, "thumbs", {});
+      __publicField(this, "thumbsParser");
       __publicField(this, "thumb", {});
       __publicField(this, "thumbDataParser");
       __publicField(this, "thumbImg", {});
       __publicField(this, "thumbImgParser");
-      __publicField(this, "thumbs", {});
-      __publicField(this, "thumbsParser");
       __publicField(this, "containerSelector", ".container");
       __publicField(this, "containerSelectorLast");
       __publicField(this, "intersectionObservableSelector");
@@ -9893,9 +9891,9 @@ Expected function or array of functions, received type ${typeof t}.`
       __publicField(this, "onResetCallback");
       if (this.isEmbedded) throw Error("Embedded is not supported");
       Object.assign(this, options);
+      this.thumbsParser = ThumbsParser.create(this.thumbs);
       this.thumbDataParser = ThumbDataParser.create(this.thumb);
       this.thumbImgParser = ThumbImgParser.create(this.thumbImg);
-      this.thumbsParser = ThumbsParser.create(this.thumbs);
       this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
       this.store = this.createStore();
       this.gui = this.createGui();
@@ -10008,7 +10006,7 @@ Expected function or array of functions, received type ${typeof t}.`
   exports2.ThumbImgParser = ThumbImgParser;
   exports2.ThumbsParser = ThumbsParser;
   exports2.Tick = Tick;
-  exports2.checkHomogenity = checkHomogenity;
+  exports2.areElementsAlike = areElementsAlike;
   exports2.chunks = chunks;
   exports2.circularShift = circularShift;
   exports2.containMutation = containMutation;

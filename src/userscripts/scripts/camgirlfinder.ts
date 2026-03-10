@@ -2,7 +2,7 @@ import type { MonkeyUserScript } from 'vite-plugin-monkey';
 
 export const meta: MonkeyUserScript = {
   name: 'CamGirlFinder PervertMonkey',
-  version: '1.6.11',
+  version: '1.6.12',
   description:
     'Adds model links for CamWhores, webcamrecordings, recu.me, camvideos, privat-zapisi',
   match: ['https://camgirlfinder.net/*'],

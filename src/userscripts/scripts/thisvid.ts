@@ -21,7 +21,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'ThisVid.com PervertMonkey',
-  version: '8.0.13',
+  version: '8.0.14',
   description:
     'Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼',
   match: ['https://*.thisvid.com/*'],

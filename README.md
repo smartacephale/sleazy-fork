@@ -7,14 +7,14 @@
 
 ## Userscripts
 ```shell
-src/userscripts/scripts # dev
-dist/userscripts        # build
+src/userscripts/scripts  # dev
+dist/userscripts         # build
 ```
 
 ## Build
 ```shell
-npm run build             # build core
-npm run build:userscripts # build userscripts
+npm run build    # build core
+npm run build:u  # build userscripts
 ```
 
 ## Dev

@@ -96,16 +96,14 @@ export function findNextSibling<T extends Element = HTMLElement>(e: T) {
   return null;
 }
 
-export function checkHomogenity<T extends HTMLElement>(
+export function areElementsAlike<T extends HTMLElement>(
   a: T,
   b: T,
   options: { id?: boolean; className?: boolean },
 ) {
   if (!a || !b) return false;
 
-  if (options.id) {
-    if (a.id !== b.id) return false;
-  }
+  if (options.id && a.id !== b.id) return false;
 
   if (options.className) {
     const ca = a.className;
@@ -114,7 +112,7 @@ export function checkHomogenity<T extends HTMLElement>(
       return false;
     }
   }
-
+  
   return true;
 }
 

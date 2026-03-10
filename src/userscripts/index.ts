@@ -1,1 +1,1 @@
-import './scripts/camwhores';
+import './scripts/thisvid';

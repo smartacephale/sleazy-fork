@@ -1,5 +1,5 @@
 import type { StoreState } from 'jabroni-outfit';
-import { checkHomogenity, containMutation, LazyImgLoader, runIdleJob } from '../../utils';
+import { areElementsAlike, containMutation, LazyImgLoader, runIdleJob } from '../../utils';
 import type { Rules } from '../rules';
 import { DataFilter } from './data-filter';
 
@@ -17,7 +17,7 @@ export class DataManager {
 
   constructor(
     private rules: Rules,
-    private containerHomogenity?: Parameters<typeof checkHomogenity>[2],
+    private containerHomogenity?: Parameters<typeof areElementsAlike>[2],
   ) {
     this.dataFilter = new DataFilter(this.rules);
   }
@@ -83,9 +83,9 @@ export class DataManager {
     for (const thumbElement of thumbs) {
       const url = this.rules.thumbDataParser.getUrl(thumbElement);
 
-      const isHomogenic =
+      const isNotHomogenic =
         homogenity &&
-        !checkHomogenity(
+        !areElementsAlike(
           parent,
           thumbElement.parentElement as HTMLElement,
           this.containerHomogenity as object,
@@ -95,7 +95,7 @@ export class DataManager {
         !url ||
         this.data.has(url) ||
         (parent !== container && parent?.contains(thumbElement)) ||
-        isHomogenic
+        isNotHomogenic
       ) {
         if (removeDuplicates) thumbElement.remove();
         continue;

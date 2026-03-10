@@ -24,14 +24,14 @@ import {
 } from '../parsers';
 
 export class Rules {
+  public thumbs: Parameters<typeof ThumbsParser.create>[0] = {};
+  public thumbsParser: ThumbsParser;
+
   public thumb: Parameters<typeof ThumbDataParser.create>[0] = {};
   public thumbDataParser: ThumbDataParser;
 
   public thumbImg: Parameters<typeof ThumbImgParser.create>[0] = {};
   public thumbImgParser: ThumbImgParser;
-
-  public thumbs: Parameters<typeof ThumbsParser.create>[0] = {};
-  public thumbsParser: ThumbsParser;
 
   public containerSelector: string | (() => HTMLElement) = '.container';
   public containerSelectorLast?: string;
@@ -176,9 +176,9 @@ export class Rules {
 
     Object.assign(this, options);
 
+    this.thumbsParser = ThumbsParser.create(this.thumbs);
     this.thumbDataParser = ThumbDataParser.create(this.thumb);
     this.thumbImgParser = ThumbImgParser.create(this.thumbImg);
-    this.thumbsParser = ThumbsParser.create(this.thumbs);
 
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
 

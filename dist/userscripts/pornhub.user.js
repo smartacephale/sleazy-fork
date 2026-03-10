@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.12
+// @version      4.0.13
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Uploader and Duration. Sort by Duration and Views
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.pornhub.com/*
 // @exclude      https://*.pornhub.com/embed/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.19/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.20/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -27,7 +27,7 @@
       paginationSelector: ".paginationGated",
       overwritePaginationLast: (n) => n === 9 ? 9999 : n
     },
-    containerSelector: () => [...document.querySelectorAll("ul:has(> li[data-video-vkey])")].filter((e) => e.children.length > 0 && e.checkVisibility()).pop(),
+    containerSelector: () => [...document.querySelectorAll("ul:has(> li[data-video-vkey])")].filter((e) => e.children.length > 0 && e.checkVisibility()).sort((a, b) => b.children.length - a.children.length)?.[0],
     containerHomogenity: { id: true, className: true },
     thumbs: { selector: "li[data-video-vkey]" },
     thumb: {

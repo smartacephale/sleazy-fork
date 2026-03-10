@@ -7,7 +7,7 @@ import { Subject } from 'rxjs';
 
 declare type AnyFunction = (...args: any[]) => any;
 
-export declare function checkHomogenity<T extends HTMLElement>(a: T, b: T, options: {
+export declare function areElementsAlike<T extends HTMLElement>(a: T, b: T, options: {
     id?: boolean;
     className?: boolean;
 }): boolean;
@@ -69,7 +69,7 @@ export declare class DataManager {
     data: Map<string, DataElement>;
     private lazyImgLoader;
     dataFilter: DataFilter;
-    constructor(rules: Rules, containerHomogenity?: Parameters<typeof checkHomogenity>[2] | undefined);
+    constructor(rules: Rules, containerHomogenity?: Parameters<typeof areElementsAlike>[2] | undefined);
     applyFilters(filters?: Record<string, boolean>, offset?: number): Promise<void>;
     filterAll(offset?: number): Promise<void>;
     parseData(html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean): Promise<void>;
@@ -407,12 +407,12 @@ export declare function removeClassesAndDataAttributes(element: HTMLElement, key
 export declare function replaceElementTag(e: HTMLElement, tagName: string): HTMLElement;
 
 export declare class Rules {
+    thumbs: Parameters<typeof ThumbsParser.create>[0];
+    thumbsParser: ThumbsParser;
     thumb: Parameters<typeof ThumbDataParser.create>[0];
     thumbDataParser: ThumbDataParser;
     thumbImg: Parameters<typeof ThumbImgParser.create>[0];
     thumbImgParser: ThumbImgParser;
-    thumbs: Parameters<typeof ThumbsParser.create>[0];
-    thumbsParser: ThumbsParser;
     containerSelector: string | (() => HTMLElement);
     containerSelectorLast?: string;
     get container(): HTMLElement;

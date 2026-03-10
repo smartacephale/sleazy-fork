@@ -35,7 +35,7 @@ export class ThumbDataParser {
   }
 
   public getUrl(thumb: HTMLElement | HTMLAnchorElement) {
-    return ((thumb.querySelector('a[href]') || thumb) as HTMLAnchorElement).href;
+    return (querySelectorOrSelf(thumb, 'a[href]') as HTMLAnchorElement).href;
   }
 
   private preprocessCustomThumbDataSelectors() {
