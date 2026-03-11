@@ -73,6 +73,7 @@ export declare class DataManager {
     applyFilters(filters?: Record<string, boolean>, offset?: number): Promise<void>;
     filterAll(offset?: number): Promise<void>;
     parseData(html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean): Promise<void>;
+    private optimize;
     sortBy<K extends keyof DataElement>(key: K, direction?: boolean): void;
 }
 
@@ -440,6 +441,7 @@ export declare class Rules {
     gropeStrategy: 'all-in-one' | 'all-in-all';
     gropeInit(): void;
     get isEmbedded(): boolean;
+    containMutationEnabled: boolean;
     private mutationObservers;
     resetOnPaginationOrContainerDeath: boolean;
     private resetOn;

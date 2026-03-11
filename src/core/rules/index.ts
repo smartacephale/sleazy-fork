@@ -123,6 +123,8 @@ export class Rules {
     return window.self !== window.top;
   }
 
+  public containMutationEnabled = true;
+
   private mutationObservers: MutationObserver[] = [];
 
   public resetOnPaginationOrContainerDeath = true;

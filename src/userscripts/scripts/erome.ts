@@ -4,14 +4,13 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Erome PervertMonkey',
-  version: '5.0.14',
+  version: '5.0.15',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer.',
   match: ['*://*.erome.com/*'],
 };
 
 const $ = (unsafeWindow as any).$;
-declare var LazyLoad: ObjectConstructor;
 
 const rules = new Rules({
   containerSelector: '#albums',
@@ -52,10 +51,7 @@ const rules = new Rules({
     'Badge',
     'Advanced',
   ],
-});
-
-rules.infiniteScroller?.subject.subscribe(() => {
-  setTimeout(() => new LazyLoad(), 100);
+  containMutationEnabled: false
 });
 
 GM_addStyle(`

@@ -53,7 +53,7 @@ export class DataManager {
         f();
       } else {
         requestAnimationFrame(() => {
-          containMutation(parent, f);
+          this.optimize(parent, f);
         });
       }
     });
@@ -115,7 +115,15 @@ export class DataManager {
     await this.filterAll(dataOffset);
 
     if (!parent) return;
-    containMutation(parent, () => parent?.appendChild(fragment));
+    this.optimize(parent, () => parent?.appendChild(fragment));
+  }
+
+  private optimize(container: HTMLElement, mutation: () => void) {
+    if (this.rules.containMutationEnabled) {
+      containMutation(container, mutation);
+    } else {
+      mutation();
+    }
   }
 
   public sortBy<K extends keyof DataElement>(key: K, direction = true): void {
@@ -133,7 +141,7 @@ export class DataManager {
     for (const [container, items] of byContainers) {
       items.sort((a, b) => ((a[key] as number) - (b[key] as number)) * dir);
       const children = items.map((e) => e.element);
-      containMutation(container, () => container.replaceChildren(...children));
+      this.optimize(container, () => container.replaceChildren(...children));
     }
   }
 }

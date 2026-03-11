@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'SpankBang.com PervertMonkey',
-  version: '4.0.13',
+  version: '4.0.14',
   description:
     'Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views',
   match: ['https://*.spankbang.com/*', 'https://*.spankbang.*/*'],

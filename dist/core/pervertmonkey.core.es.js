@@ -626,7 +626,7 @@ class DataManager {
         f();
       } else {
         requestAnimationFrame(() => {
-          containMutation(parent, f);
+          this.optimize(parent, f);
         });
       }
     });
@@ -665,7 +665,14 @@ class DataManager {
     }
     await this.filterAll(dataOffset);
     if (!parent) return;
-    containMutation(parent, () => parent == null ? void 0 : parent.appendChild(fragment));
+    this.optimize(parent, () => parent == null ? void 0 : parent.appendChild(fragment));
+  }
+  optimize(container, mutation) {
+    if (this.rules.containMutationEnabled) {
+      containMutation(container, mutation);
+    } else {
+      mutation();
+    }
   }
   sortBy(key, direction = true) {
     if (this.data.size < 2) return;
@@ -675,7 +682,7 @@ class DataManager {
     for (const [container, items] of byContainers) {
       items.sort((a2, b2) => (a2[key] - b2[key]) * dir);
       const children = items.map((e) => e.element);
-      containMutation(container, () => container.replaceChildren(...children));
+      this.optimize(container, () => container.replaceChildren(...children));
     }
   }
 }
@@ -9883,6 +9890,7 @@ class Rules {
     __publicField(this, "infiniteScroller");
     __publicField(this, "getPaginationData");
     __publicField(this, "gropeStrategy", "all-in-one");
+    __publicField(this, "containMutationEnabled", true);
     __publicField(this, "mutationObservers", []);
     __publicField(this, "resetOnPaginationOrContainerDeath", true);
     __publicField(this, "onResetCallback");
