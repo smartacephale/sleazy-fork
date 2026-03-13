@@ -500,10 +500,10 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       scheduler(runBatch);
     });
   }
-  function containMutation(container, callback) {
+  function containMutation(container, mutation) {
     container.style.contain = "content";
     try {
-      callback();
+      mutation();
     } finally {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {

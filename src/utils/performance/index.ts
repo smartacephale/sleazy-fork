@@ -30,10 +30,10 @@ export function runIdleJob<T>(iterator: Iterator<T>, job: (v: T) => void) {
   });
 }
 
-export function containMutation(container: HTMLElement, callback: () => void) {
+export function containMutation(container: HTMLElement, mutation: () => void) {
   container.style.contain = 'content';
   try {
-    callback();
+    mutation();
   } finally {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {

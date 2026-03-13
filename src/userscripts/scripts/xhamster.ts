@@ -14,7 +14,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster PervertMonkey',
-  version: '5.0.16',
+  version: '5.0.17',
   description:
     'Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],

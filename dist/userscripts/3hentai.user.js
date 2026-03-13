@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         3Hentai PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.14
+// @version      1.0.15
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, thumb preview
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.3hentai.net/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.21/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.22/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow

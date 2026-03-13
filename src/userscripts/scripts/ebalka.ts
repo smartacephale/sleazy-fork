@@ -4,7 +4,7 @@ import { downloader, exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Ebalka PervertMonkey',
-  version: '3.0.14',
+  version: '3.0.16',
   description:
     'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration, Download button.',
   match: [
@@ -65,8 +65,10 @@ function animatePreview(container: HTMLElement) {
   });
 }
 
-document.querySelector('.tooltip-container') &&
+document.querySelector('.tabs-menu') &&
   downloader({
-    append: '.tooltip-container',
-    buttonHtml: '<a class="button button_regular button_list root__link">Download ⤓</a>',
+    append: '.tabs-menu',
+    doBefore: () => document.querySelector('video')?.click(),
+    buttonHtml:
+      '<li class="ml-20"><a class="button button_regular button_list root__link">Download ⤓</a></li>',
   });

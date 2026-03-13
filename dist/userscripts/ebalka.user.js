@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ebalka PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.14
+// @version      3.0.16
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration, Download button.
 // @license      MIT
@@ -15,7 +15,7 @@
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
 // @match        https://*.fuckingbear*.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.21/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.22/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -68,9 +68,10 @@
       return animateThumb(thumb);
     });
   }
-  document.querySelector(".tooltip-container") && utils.downloader({
-    append: ".tooltip-container",
-    buttonHtml: '<a class="button button_regular button_list root__link">Download ⤓</a>'
+  document.querySelector(".tabs-menu") && utils.downloader({
+    append: ".tabs-menu",
+    doBefore: () => document.querySelector("video")?.click(),
+    buttonHtml: '<li class="ml-20"><a class="button button_regular button_list root__link">Download ⤓</a></li>'
   });
 
 })(core, utils);

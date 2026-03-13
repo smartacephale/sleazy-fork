@@ -16,7 +16,7 @@ export declare function chunks<T>(arr: T[], size: number): T[][];
 
 export declare function circularShift(n: number, c?: number, s?: number): number;
 
-export declare function containMutation(container: HTMLElement, callback: () => void): void;
+export declare function containMutation(container: HTMLElement, mutation: () => void): void;
 
 export declare function copyAttributes<T extends Element = HTMLElement>(target: T, source: T): void;
 

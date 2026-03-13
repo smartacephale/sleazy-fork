@@ -497,10 +497,10 @@ function runIdleJob(iterator2, job) {
     scheduler(runBatch);
   });
 }
-function containMutation(container, callback) {
+function containMutation(container, mutation) {
   container.style.contain = "content";
   try {
-    callback();
+    mutation();
   } finally {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
