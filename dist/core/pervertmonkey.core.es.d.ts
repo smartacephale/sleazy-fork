@@ -16,7 +16,7 @@ export declare function chunks<T>(arr: T[], size: number): T[][];
 
 export declare function circularShift(n: number, c?: number, s?: number): number;
 
-export declare function containMutation(container: HTMLElement, mutation: () => void): void;
+export declare function containMutation(container: HTMLElement, mutation: () => void): Promise<void>;
 
 export declare function copyAttributes<T extends Element = HTMLElement>(target: T, source: T): void;
 
@@ -74,7 +74,7 @@ export declare class DataManager {
     filterAll(offset?: number): Promise<void>;
     parseData(html: HTMLElement, container?: HTMLElement, removeDuplicates?: boolean, shouldLazify?: boolean): Promise<void>;
     private optimize;
-    sortBy<K extends keyof DataElement>(key: K, direction?: boolean): void;
+    sortBy<K extends keyof DataElement>(key: K, direction?: boolean): Promise<void>;
 }
 
 declare const DefaultScheme: [{
@@ -281,12 +281,12 @@ declare class JabronioGuiController {
     private setupStoreListeners;
 }
 
-export declare class LazyImgLoader {
-    lazyImgObserver: Observer;
+export declare class LazyImgLoader<T extends Element = HTMLElement> {
     private attributeName;
-    constructor(shouldDelazify: (target: Element) => boolean);
-    lazify(_target: Element, img?: HTMLImageElement, imgSrc?: string): void;
-    delazify: (target: HTMLImageElement) => void;
+    private lazyImgObserver;
+    constructor(shouldDelazify: (target: T) => boolean, attributeName?: string);
+    lazify(img?: HTMLImageElement, imgSrc?: string): void;
+    private unlazify;
 }
 
 export declare function memoize<T extends AnyFunction>(fn: T): MemoizedFunction<T>;
@@ -302,16 +302,17 @@ export declare const MOBILE_UA: {
 
 export declare function objectToFormData<T extends {}>(obj: T): FormData;
 
-export declare class Observer {
+export declare class Observer<T extends Element = HTMLElement> {
     private callback;
-    observer: IntersectionObserver;
     private timeout?;
-    constructor(callback: (entry: Element) => void);
-    observe(target: Element): void;
-    throttle(target: Element, throttleTime: number): void;
-    handleIntersection(entries: Iterable<IntersectionObserverEntry>): void;
+    private observer;
+    constructor(callback: (entry: T) => void);
+    observe(target: T): void;
+    unobserve(target: T): void;
+    private throttle;
+    private handleIntersection;
     dispose(): void;
-    static observeWhile(target: Element, callback: () => Promise<boolean> | boolean, throttleTime: number): Observer;
+    static observeWhile<T extends Element = HTMLElement>(target: T, callback: () => Promise<boolean> | boolean, throttleTime: number): Observer<T>;
 }
 
 export declare type OffsetGenerator<T = GeneratorResult> = Generator<T> | AsyncGenerator<T>;

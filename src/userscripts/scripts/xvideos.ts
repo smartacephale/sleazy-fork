@@ -5,7 +5,7 @@ import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'XVideos PervertMonkey',
-  version: '4.0.17',
+  version: '4.0.18',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.',
   match: 'https://*.xvideos.com/*',

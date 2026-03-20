@@ -42,21 +42,15 @@ export class DataManager {
 
     const parents = Map.groupBy(updates, (u) => u.e.parentElement);
 
-    parents.forEach((v, parent) => {
+    for (const [parent, mutations] of parents) {
       const f = () => {
-        v.forEach((u) => {
+        mutations.forEach((u) => {
           u.e.classList.toggle(u.name, u.condition);
         });
       };
 
-      if (!parent) {
-        f();
-      } else {
-        requestAnimationFrame(() => {
-          this.optimize(parent, f);
-        });
-      }
-    });
+      parent ? await this.optimize(parent, f) : f();
+    }
   }
 
   public async filterAll(offset?: number): Promise<void> {
@@ -106,7 +100,7 @@ export class DataManager {
 
       if (shouldLazify) {
         const { img, imgSrc } = this.rules.thumbImgParser.getImgData(thumbElement);
-        this.lazyImgLoader.lazify(thumbElement, img, imgSrc);
+        this.lazyImgLoader.lazify(img, imgSrc);
       }
 
       fragment.append(thumbElement);
@@ -115,18 +109,21 @@ export class DataManager {
     await this.filterAll(dataOffset);
 
     if (!parent) return;
-    this.optimize(parent, () => parent?.appendChild(fragment));
+    await this.optimize(parent, () => parent?.appendChild(fragment));
   }
 
-  private optimize(container: HTMLElement, mutation: () => void) {
+  private async optimize(container: HTMLElement, mutation: () => void) {
     if (this.rules.containMutationEnabled) {
-      containMutation(container, mutation);
+      await containMutation(container, mutation);
     } else {
       mutation();
     }
   }
 
-  public sortBy<K extends keyof DataElement>(key: K, direction = true): void {
+  public async sortBy<K extends keyof DataElement>(
+    key: K,
+    direction = true,
+  ): Promise<void> {
     if (this.data.size < 2) return;
 
     const ds = this.data
@@ -141,7 +138,7 @@ export class DataManager {
     for (const [container, items] of byContainers) {
       items.sort((a, b) => ((a[key] as number) - (b[key] as number)) * dir);
       const children = items.map((e) => e.element);
-      this.optimize(container, () => container.replaceChildren(...children));
+      await this.optimize(container, () => container.replaceChildren(...children));
     }
   }
 }

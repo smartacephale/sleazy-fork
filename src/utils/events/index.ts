@@ -1,2 +1,2 @@
-export { OnHover } from './on-hover';
-export { Tick } from './tick';
+export * from './on-hover';
+export * from './tick';

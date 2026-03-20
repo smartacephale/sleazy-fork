@@ -4,9 +4,9 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Erome PervertMonkey',
-  version: '5.0.16',
+  version: '5.0.17',
   description:
-    'Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer.',
+    'Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer. Restore Search Bar',
   match: ['*://*.erome.com/*'],
 };
 
@@ -51,7 +51,7 @@ const rules = new Rules({
     'Badge',
     'Advanced',
   ],
-  containMutationEnabled: false
+  containMutationEnabled: false,
 });
 
 GM_addStyle(`
@@ -95,3 +95,8 @@ function setupAlbumPage() {
 if (IS_ALBUM_PAGE) {
   setupAlbumPage();
 }
+
+(function restoreSearchBar() {
+  $('[aria-label="Search"]').click(() => $('#searchModal').show());
+  $('#searchModal .close').click(() => $('#searchModal').hide());
+})();

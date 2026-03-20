@@ -1,27 +1,29 @@
-import { Observer } from ".";
+import { Observer } from '.';
 
-export class LazyImgLoader {
-  public lazyImgObserver: Observer;
-  private attributeName = 'data-lazy-load';
+export class LazyImgLoader<T extends Element = HTMLElement> {
+  private lazyImgObserver: Observer;
 
-  constructor(shouldDelazify: (target: Element) => boolean) {
+  constructor(
+    shouldDelazify: (target: T) => boolean,
+    private attributeName = 'data-lazy-orangutan',
+  ) {
     this.lazyImgObserver = new Observer((target: Element) => {
-      if (shouldDelazify(target)) {
-        this.delazify(target as HTMLImageElement);
+      if (shouldDelazify(target as T)) {
+        this.unlazify(target as HTMLImageElement);
       }
     });
   }
 
-  lazify(_target: Element, img?: HTMLImageElement, imgSrc?: string) {
+  public lazify(img?: HTMLImageElement, imgSrc?: string) {
     if (!img || !imgSrc) return;
     img.setAttribute(this.attributeName, imgSrc);
     img.src = '';
     this.lazyImgObserver.observe(img);
   }
 
-  delazify = (target: HTMLImageElement) => {
-    this.lazyImgObserver.observer.unobserve(target);
+  private unlazify(target: HTMLImageElement) {
+    this.lazyImgObserver.unobserve(target);
     target.src = target.getAttribute(this.attributeName) as string;
     target.removeAttribute(this.attributeName);
-  };
+  }
 }

@@ -14,7 +14,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster PervertMonkey',
-  version: '5.0.17',
+  version: '5.0.18',
   description:
     'Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
@@ -162,7 +162,7 @@ function expandMoreVideoPage() {
     const observer = new Observer((target) => {
       (target as HTMLButtonElement).click();
     });
-    observer.observe(e);
+    observer.observe(e as HTMLElement);
   });
 }
 

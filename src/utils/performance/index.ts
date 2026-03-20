@@ -30,15 +30,21 @@ export function runIdleJob<T>(iterator: Iterator<T>, job: (v: T) => void) {
   });
 }
 
-export function containMutation(container: HTMLElement, mutation: () => void) {
+export async function containMutation(container: HTMLElement, mutation: () => void) {
+  const originalContain = container.style.contain;
   container.style.contain = 'content';
+
   try {
     mutation();
-  } finally {
-    requestAnimationFrame(() => {
+
+    await new Promise<void>((resolve) => {
       requestAnimationFrame(() => {
-        container.style.contain = 'none';
+        requestAnimationFrame(() => {
+          resolve();
+        });
       });
     });
+  } finally {
+    container.style.contain = originalContain;
   }
 }

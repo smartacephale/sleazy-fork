@@ -4,7 +4,7 @@ import { downloader, exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Ebalka PervertMonkey',
-  version: '3.0.16',
+  version: '3.0.17',
   description:
     'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration, Download button.',
   match: [

@@ -1,1 +1,1 @@
-import './scripts/ebalka';
+import './scripts/erome';

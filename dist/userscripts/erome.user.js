@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Erome PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.16
+// @version      5.0.17
 // @author       violent-orangutan
-// @description  Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer.
+// @description  Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer. Restore Search Bar
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=erome.com
 // @homepage     https://github.com/smartacephale/sleazy-fork
@@ -11,7 +11,7 @@
 // @source       github:smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        *://*.erome.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.22/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.23/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -97,5 +97,9 @@
   if (IS_ALBUM_PAGE) {
     setupAlbumPage();
   }
+  (function restoreSearchBar() {
+    $('[aria-label="Search"]').click(() => $("#searchModal").show());
+    $("#searchModal .close").click(() => $("#searchModal").hide());
+  })();
 
 })(core);
