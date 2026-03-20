@@ -1,19 +1,19 @@
 // ==UserScript==
 // @name         CamWhores PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.19
+// @version      3.0.21
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Sort by Duration and Views. Mass friend request button. Download button
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=camwhores.tv
-// @homepage     https://github.com/smartacephale/sleazy-fork
-// @homepageURL  https://github.com/smartacephale/sleazy-fork
-// @source       github:smartacephale/sleazy-fork
+// @homepage     https://github.com/smartacephale/sleazy-fork#readme
+// @homepageURL  https://sleazyfork.org/en/users/1253342-smartacephale
+// @source       https://github.com/smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.camwhores.tv
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.23/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.24/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow

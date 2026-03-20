@@ -2964,9 +2964,9 @@ class PaginationStrategyPathnameParams extends PaginationStrategy {
   }
   getPaginationUrlGenerator(url_ = this.url) {
     const url = new URL(url_.href);
-    const pathnameSelectorPlaceholder = this.pathnameSelector.toString().replace(/[/|\\|$|?|(|)]+/g, "/");
+    const pathnameSelectorPlaceholder = this.pathnameSelector.toString().replace(/\\{1,}/g, "").replace(/[$?()]+/g, "").replace(/\/{1,}/g, "/");
     if (!this.pathnameSelector.test(url.pathname)) {
-      url.pathname = url.pathname.concat(pathnameSelectorPlaceholder.replace(/d\+/, this.offsetMin.toString())).replace(/\/{2,}/g, "/");
+      url.pathname = url.pathname.concat(pathnameSelectorPlaceholder.replace(/d\+/, this.offsetMin.toString())).replace(/\/{1,}/g, "/");
     }
     const paginationUrlGenerator = (offset) => {
       url.pathname = url.pathname.replace(

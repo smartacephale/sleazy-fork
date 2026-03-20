@@ -4,8 +4,7 @@
   "license": "MIT",
   "run-at": "document-idle",
   "grant": ["unsafeWindow", "GM_addStyle"],
-  "homepage": "https://github.com/smartacephale/sleazy-fork",
-  "homepageURL": "https://github.com/smartacephale/sleazy-fork",
-  "source": "github:smartacephale/sleazy-fork",
-  "supportURL": "https://github.com/smartacephale/sleazy-fork/issues"
+  "homepageURL": "https://sleazyfork.org/en/users/1253342-smartacephale",
+  "supportURL": "https://github.com/smartacephale/sleazy-fork/issues",
+  "source": "https://github.com/smartacephale"
 }

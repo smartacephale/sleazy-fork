@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         NameThatPorn PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.16
+// @version      3.0.18
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Solved/Unsolved
 // @license      MIT
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=namethatporn.com
-// @homepage     https://github.com/smartacephale/sleazy-fork
-// @homepageURL  https://github.com/smartacephale/sleazy-fork
-// @source       github:smartacephale/sleazy-fork
+// @homepage     https://github.com/smartacephale/sleazy-fork#readme
+// @homepageURL  https://sleazyfork.org/en/users/1253342-smartacephale
+// @source       https://github.com/smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://namethatporn.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.23/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.24/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow

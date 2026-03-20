@@ -57,12 +57,14 @@ export class PaginationStrategyPathnameParams extends PaginationStrategy {
 
     const pathnameSelectorPlaceholder = this.pathnameSelector
       .toString()
-      .replace(/[/|\\|$|?|(|)]+/g, '/');
+      .replace(/\\{1,}/g, '')
+      .replace(/[$?()]+/g, '')
+      .replace(/\/{1,}/g, '/');
 
     if (!this.pathnameSelector.test(url.pathname)) {
       url.pathname = url.pathname
         .concat(pathnameSelectorPlaceholder.replace(/d\+/, this.offsetMin.toString()))
-        .replace(/\/{2,}/g, '/');
+        .replace(/\/{1,}/g, '/');
     }
 
     const paginationUrlGenerator = (offset: number) => {
