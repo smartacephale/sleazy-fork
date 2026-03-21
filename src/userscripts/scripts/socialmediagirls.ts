@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Socialmediagirls PervertMonkey',
-  version: '1.0.2',
+  version: '1.0.3',
   description: 'Infinite scroll [optional], Filter by Title',
   match: 'https://forums.socialmediagirls.com/threads/*',
   'run-at': 'document-end',
@@ -12,8 +12,8 @@ export const meta: MonkeyUserScript = {
 const rules = new Rules({
   containerSelector: '.js-replyNewMessageContainer',
   paginationStrategyOptions: {
-    paginationSelector: '.pageNavWrapper',
-    pathnameSelector: /\d+/,
+    paginationSelector: '.block-container + * .pageNav',
+    pathnameSelector: /\/page-(\d+)\/?$/,
   },
   thumbs: {
     selector: 'article.message',

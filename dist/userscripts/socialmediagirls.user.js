@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Socialmediagirls PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.2
+// @version      1.0.3
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT
@@ -24,8 +24,8 @@
   new core.Rules({
     containerSelector: ".js-replyNewMessageContainer",
     paginationStrategyOptions: {
-      paginationSelector: ".pageNavWrapper",
-      pathnameSelector: /\d+/
+      paginationSelector: ".block-container + * .pageNav",
+      pathnameSelector: /\/page-(\d+)\/?$/
     },
     thumbs: {
       selector: "article.message"
