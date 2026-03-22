@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Missav PervertMonkey',
-  version: '3.0.17',
+  version: '3.0.18',
   description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
   match: [
     'https://*.missav123.com/*',

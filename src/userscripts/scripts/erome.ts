@@ -4,7 +4,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Erome PervertMonkey',
-  version: '5.0.19',
+  version: '5.0.20',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer. Restore Search Bar',
   match: ['*://*.erome.com/*'],

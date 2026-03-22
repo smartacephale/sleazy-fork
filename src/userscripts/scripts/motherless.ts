@@ -5,7 +5,7 @@ import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.19',
+  version: '5.0.20',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
   match: ['https://motherless.com/*'],
@@ -38,7 +38,12 @@ const rules = new Rules({
     'Duration Filter',
     'Sort By',
     'Badge',
-    'Advanced',
+    {
+      title: 'Advanced',
+      content: [
+        { applyTitleFiltersToSearch: false, label: 'apply title filters to search' },
+      ],
+    },
   ],
 });
 
@@ -47,7 +52,8 @@ function animatePreview(_: HTMLElement) {
 
   function onOver(target: HTMLElement) {
     $('.video').off();
-    const container = target.querySelector('.desktop-thumb.video') as HTMLElement;
+    const container = target.querySelector('.video') as HTMLElement;
+    if (!container) return;
     const img = container.querySelector('img.static') as HTMLImageElement;
     const stripSrc = img.getAttribute('data-strip-src');
 
@@ -93,8 +99,6 @@ function animatePreview(_: HTMLElement) {
   OnHover.create(document.body, '.thumb-container, .mobile-thumb', onOver);
 }
 
-//====================================================================================================
-
 function fixURLs() {
   document.querySelectorAll<HTMLElement>('.gallery-container').forEach((g) => {
     const x = (g.innerText as string).match(/([\d|.]+)k? videos/gi)?.[0];
@@ -108,12 +112,11 @@ function fixURLs() {
   });
 
   document
-    .querySelectorAll<HTMLAnchorElement>('a[href^="/term/"]:not([href^="/term/videos/"])')
+    .querySelectorAll<HTMLAnchorElement>(
+      'a[href^="/term/"]:not([href^="/term/videos/"]):not(.pop):not([rel])',
+    )
     .forEach((a) => {
-      a.href = a.href.replace(
-        /[\w|+]+$/,
-        (v) => `videos/${v}?term=${v}&range=0&size=0&sort=date`,
-      );
+      a.href = a.href.replace(/[\w|+]+$/, (v) => `videos/${v}?term=${v}`);
     });
 
   document
@@ -122,8 +125,6 @@ function fixURLs() {
       a.href = a.href.replace(/\/g\//, '/gv/');
     });
 }
-
-//====================================================================================================
 
 function mobileGalleryToDesktop(e: HTMLElement) {
   e.querySelector('.clear-left')?.remove();
@@ -155,8 +156,6 @@ async function desktopAddMobGalleries() {
   }
 }
 
-//====================================================================================================
-
 const overwrite1 = (x: string) => `@media only screen and (max-width: 1280px) {
   #categories-page.inner ${x} }`;
 
@@ -176,8 +175,6 @@ document
   .querySelector('.ml-pagination')
   ?.before(GM_addElement('div', { class: 'clear-left' }));
 
-//====================================================================================================
-
 function applySearchFilters() {
   let pathname = window.location.pathname;
 
@@ -195,11 +192,10 @@ function applySearchFilters() {
   }
 }
 
-//====================================================================================================
-
 desktopAddMobGalleries().then(() => fixURLs());
 
 const IS_SEARCH = /^\/term\//.test(location.pathname);
-if (IS_SEARCH) {
+
+if (IS_SEARCH && rules.store.state.applyTitleFiltersToSearch) {
   applySearchFilters();
 }

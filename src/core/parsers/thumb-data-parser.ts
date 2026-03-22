@@ -35,7 +35,7 @@ export class ThumbDataParser {
   }
 
   public getUrl(thumb: HTMLElement | HTMLAnchorElement) {
-    return (querySelectorOrSelf(thumb, 'a[href]') as HTMLAnchorElement).href;
+    return (querySelectorOrSelf(thumb, this.getUrlSelector) as HTMLAnchorElement).href;
   }
 
   private preprocessCustomThumbDataSelectors() {
@@ -56,6 +56,7 @@ export class ThumbDataParser {
   }
 
   private thumbDataSelectors: ThumbDataSelector[] = [];
+
   private readonly defaultThumbDataSelectors: ThumbDataSelector[] = [
     { name: 'title', type: 'string', selector: '[class *= title],[title]' },
     {
@@ -91,14 +92,17 @@ export class ThumbDataParser {
     public strategy: 'manual' | 'auto-select' | 'auto-text' = 'manual',
     public selectors: ThumbDataSelectorsRaw = {},
     public callback?: (thumb: HTMLElement, thumbData: ThumbData) => void,
+    public getUrlSelector = 'a[href]',
   ) {
     this.preprocessCustomThumbDataSelectors();
   }
 
   public static create(
-    o: Partial<Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback'>> = {},
+    o: Partial<
+      Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback' | 'getUrlSelector'>
+    > = {},
   ) {
-    return new ThumbDataParser(o.strategy, o.selectors, o.callback);
+    return new ThumbDataParser(o.strategy, o.selectors, o.callback, o.getUrlSelector);
   }
 
   public getThumbData(thumb: HTMLElement): ThumbData {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      8.0.19
+// @version      8.0.20
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       https://github.com/smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.thisvid.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.24/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow

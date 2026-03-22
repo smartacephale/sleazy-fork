@@ -52,7 +52,5 @@ export function getPaginationStrategy(
   const PaginationStrategyConstructor = selectStrategy();
   const paginationStrategy = new PaginationStrategyConstructor(options);
 
-  // console.log({ [PaginationStrategyConstructor.name]: paginationStrategy });
-
   return paginationStrategy;
 }

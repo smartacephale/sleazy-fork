@@ -3061,7 +3061,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
     return paginationStrategy;
   }
   class ThumbDataParser {
-    constructor(strategy = "manual", selectors = {}, callback) {
+    constructor(strategy = "manual", selectors = {}, callback, getUrlSelector = "a[href]") {
       __publicField(this, "thumbDataSelectors", []);
       __publicField(this, "defaultThumbDataSelectors", [
         { name: "title", type: "string", selector: "[class *= title],[title]" },
@@ -3076,6 +3076,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       this.strategy = strategy;
       this.selectors = selectors;
       this.callback = callback;
+      this.getUrlSelector = getUrlSelector;
       this.preprocessCustomThumbDataSelectors();
     }
     autoParseText(thumb) {
@@ -3087,7 +3088,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       return { title, duration };
     }
     getUrl(thumb) {
-      return querySelectorOrSelf(thumb, "a[href]").href;
+      return querySelectorOrSelf(thumb, this.getUrlSelector).href;
     }
     preprocessCustomThumbDataSelectors() {
       if (!this.selectors) return;
@@ -3123,7 +3124,7 @@ var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "acce
       return Number.parseInt(querySelectorText(thumb, selector));
     }
     static create(o = {}) {
-      return new ThumbDataParser(o.strategy, o.selectors, o.callback);
+      return new ThumbDataParser(o.strategy, o.selectors, o.callback, o.getUrlSelector);
     }
     getThumbData(thumb) {
       var _a3;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.19
+// @version      5.0.20
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views
 // @license      MIT
@@ -11,7 +11,7 @@
 // @source       https://github.com/smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://motherless.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.24/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
@@ -51,14 +51,20 @@
       "Duration Filter",
       "Sort By",
       "Badge",
-      "Advanced"
+      {
+        title: "Advanced",
+        content: [
+          { applyTitleFiltersToSearch: false, label: "apply title filters to search" }
+        ]
+      }
     ]
   });
   function animatePreview(_) {
     const tick = new utils.Tick(500);
     function onOver(target) {
       $(".video").off();
-      const container = target.querySelector(".desktop-thumb.video");
+      const container = target.querySelector(".video");
+      if (!container) return;
       const img = container.querySelector("img.static");
       const stripSrc = img.getAttribute("data-strip-src");
       container.classList.toggle("animating");
@@ -105,11 +111,10 @@
         a.href = a.href.replace(/\/G/, () => header);
       });
     });
-    document.querySelectorAll('a[href^="/term/"]:not([href^="/term/videos/"])').forEach((a) => {
-      a.href = a.href.replace(
-        /[\w|+]+$/,
-        (v) => `videos/${v}?term=${v}&range=0&size=0&sort=date`
-      );
+    document.querySelectorAll(
+      'a[href^="/term/"]:not([href^="/term/videos/"]):not(.pop):not([rel])'
+    ).forEach((a) => {
+      a.href = a.href.replace(/[\w|+]+$/, (v) => `videos/${v}?term=${v}`);
     });
     document.querySelectorAll('#media-groups-container a[href^="/g/"]').forEach((a) => {
       a.href = a.href.replace(/\/g\//, "/gv/");
@@ -165,7 +170,7 @@
   }
   desktopAddMobGalleries().then(() => fixURLs());
   const IS_SEARCH = /^\/term\//.test(location.pathname);
-  if (IS_SEARCH) {
+  if (IS_SEARCH && rules.store.state.applyTitleFiltersToSearch) {
     applySearchFilters();
   }
 

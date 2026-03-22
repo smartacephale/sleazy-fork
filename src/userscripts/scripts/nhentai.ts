@@ -4,7 +4,7 @@ import { parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'NHentai PervertMonkey',
-  version: '4.0.18',
+  version: '4.0.19',
   description: 'Infinite scroll [optional], Filter by Title',
   match: ['https://*.nhentai.net/*', 'https://*.nhentai.*/*'],
 };

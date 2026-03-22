@@ -467,14 +467,15 @@ export declare class ThumbDataParser {
     strategy: 'manual' | 'auto-select' | 'auto-text';
     selectors: ThumbDataSelectorsRaw;
     callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined;
+    getUrlSelector: string;
     private autoParseText;
     getUrl(thumb: HTMLElement | HTMLAnchorElement): string;
     private preprocessCustomThumbDataSelectors;
     private thumbDataSelectors;
     private readonly defaultThumbDataSelectors;
     private getThumbDataWith;
-    constructor(strategy?: 'manual' | 'auto-select' | 'auto-text', selectors?: ThumbDataSelectorsRaw, callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined);
-    static create(o?: Partial<Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback'>>): ThumbDataParser;
+    constructor(strategy?: 'manual' | 'auto-select' | 'auto-text', selectors?: ThumbDataSelectorsRaw, callback?: ((thumb: HTMLElement, thumbData: ThumbData) => void) | undefined, getUrlSelector?: string);
+    static create(o?: Partial<Pick<ThumbDataParser, 'strategy' | 'selectors' | 'callback' | 'getUrlSelector'>>): ThumbDataParser;
     getThumbData(thumb: HTMLElement): ThumbData;
 }
 

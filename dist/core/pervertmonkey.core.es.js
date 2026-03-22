@@ -3058,7 +3058,7 @@ function getPaginationStrategy(options) {
   return paginationStrategy;
 }
 class ThumbDataParser {
-  constructor(strategy = "manual", selectors = {}, callback) {
+  constructor(strategy = "manual", selectors = {}, callback, getUrlSelector = "a[href]") {
     __publicField(this, "thumbDataSelectors", []);
     __publicField(this, "defaultThumbDataSelectors", [
       { name: "title", type: "string", selector: "[class *= title],[title]" },
@@ -3073,6 +3073,7 @@ class ThumbDataParser {
     this.strategy = strategy;
     this.selectors = selectors;
     this.callback = callback;
+    this.getUrlSelector = getUrlSelector;
     this.preprocessCustomThumbDataSelectors();
   }
   autoParseText(thumb) {
@@ -3084,7 +3085,7 @@ class ThumbDataParser {
     return { title, duration };
   }
   getUrl(thumb) {
-    return querySelectorOrSelf(thumb, "a[href]").href;
+    return querySelectorOrSelf(thumb, this.getUrlSelector).href;
   }
   preprocessCustomThumbDataSelectors() {
     if (!this.selectors) return;
@@ -3120,7 +3121,7 @@ class ThumbDataParser {
     return Number.parseInt(querySelectorText(thumb, selector));
   }
   static create(o = {}) {
-    return new ThumbDataParser(o.strategy, o.selectors, o.callback);
+    return new ThumbDataParser(o.strategy, o.selectors, o.callback, o.getUrlSelector);
   }
   getThumbData(thumb) {
     var _a3;

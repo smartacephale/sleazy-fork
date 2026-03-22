@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Socialmediagirls PervertMonkey',
-  version: '1.0.3',
+  version: '1.0.4',
   description: 'Infinite scroll [optional], Filter by Title',
   match: 'https://forums.socialmediagirls.com/threads/*',
   'run-at': 'document-end',
@@ -20,6 +20,7 @@ const rules = new Rules({
   },
   thumb: {
     strategy: 'auto-text',
+    getUrlSelector: 'a[href*=threads]',
   },
   gropeStrategy: 'all-in-all',
   schemeOptions: ['Title Filter', 'Badge', 'Advanced'],
