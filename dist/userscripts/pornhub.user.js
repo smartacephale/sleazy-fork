@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.19
+// @version      4.0.20
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Uploader and Duration. Sort by Duration and Views
 // @license      MIT

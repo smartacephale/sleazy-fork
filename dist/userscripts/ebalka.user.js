@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Ebalka PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.20
+// @version      3.0.21
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration, Download button.
 // @license      MIT

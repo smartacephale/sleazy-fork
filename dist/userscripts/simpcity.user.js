@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simpcity PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.1
+// @version      1.0.2
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title
 // @license      MIT

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eporner PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.21
+// @version      2.0.22
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration
 // @license      MIT

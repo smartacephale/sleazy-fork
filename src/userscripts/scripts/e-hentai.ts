@@ -4,7 +4,7 @@ import { fetchHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'E-Hentai PervertMonkey',
-  version: '1.0.19',
+  version: '1.0.20',
   description: 'Infinite scroll [optional], Filter by Title',
   match: ['https://*.e-hentai.org/*'],
 };

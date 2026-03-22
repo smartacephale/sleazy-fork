@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.20
+// @version      5.0.21
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views
 // @license      MIT

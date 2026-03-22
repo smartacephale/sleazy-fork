@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.21
+// @version      4.0.22
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.
 // @license      MIT

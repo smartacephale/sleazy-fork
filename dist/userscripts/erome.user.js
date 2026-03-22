@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Erome PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.20
+// @version      5.0.21
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Video/Photo albums, Sort by Views. Show/Hide Photos in album. Remove disclaimer. Restore Search Bar
 // @license      MIT

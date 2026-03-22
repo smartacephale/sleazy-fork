@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eroprofile PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.19
+// @version      2.0.20
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration
 // @license      MIT

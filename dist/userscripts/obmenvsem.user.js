@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Obmenvsem PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.21
+// @version      1.0.22
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration
 // @license      MIT

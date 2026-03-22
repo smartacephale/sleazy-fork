@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'Simpcity PervertMonkey',
-  version: '1.0.1',
+  version: '1.0.2',
   description: 'Infinite scroll [optional], Filter by Title',
   match: 'https://simpcity.cr/threads/*',
   'run-at': 'document-end',

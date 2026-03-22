@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xhamster PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.21
+// @version      5.0.22
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views
 // @license      MIT
