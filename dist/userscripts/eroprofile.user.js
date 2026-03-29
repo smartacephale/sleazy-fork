@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eroprofile PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.20
+// @version      2.0.21
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration
 // @license      MIT
@@ -24,17 +24,17 @@
   document.querySelector(".videoGrid")?.after(document.querySelector(".clB"));
   new core.Rules({
     paginationStrategyOptions: {
-      paginationSelector: ".boxNav2",
+      paginationSelector: ".page-nav",
       searchParamSelector: "pnum"
     },
-    thumbs: { selector: ".video" },
+    thumbs: { selector: ".grid-tile-video" },
     thumb: {
       selectors: {
-        title: "[title]",
-        duration: ".videoDur"
+        title: ".title",
+        duration: ".duration"
       }
     },
-    containerSelector: ".videoGrid",
+    containerSelector: "div:has(>.grid-tile-video)",
     schemeOptions: [
       "Title Filter",
       "Duration Filter",
