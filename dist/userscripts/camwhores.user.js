@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CamWhores PervertMonkey
 // @namespace    pervertmonkey
-// @version      3.0.23
+// @version      3.0.24
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Duration and Private/Public. Sort by Duration and Views. Mass friend request button. Download button
 // @license      MIT
@@ -10,7 +10,7 @@
 // @homepageURL  https://sleazyfork.org/en/users/1253342-smartacephale
 // @source       https://github.com/smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
-// @match        https://*.camwhores.tv
+// @match        https://*.camwhores.tv/*
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
 // @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
