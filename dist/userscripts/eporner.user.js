@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eporner PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.22
+// @version      2.0.23
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration
 // @license      MIT
@@ -24,7 +24,6 @@
 
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
-  const show_video_prev = _unsafeWindow.show_video_prev;
   new core.Rules({
     paginationStrategyOptions: {
       paginationSelector: ".numlist2"
@@ -76,10 +75,8 @@
   });
   function animatePreview(doc) {
     utils.OnHover.create(doc, "div[id^=vf][data-id]", (e) => {
-      const target = e;
-      const thumb = target.closest("[data-id]");
-      const id = thumb?.getAttribute("data-id");
-      show_video_prev(id);
+      const thumb = e.closest("[data-id]");
+      _unsafeWindow.EP.thumbs.preview.start(thumb);
     });
   }
 

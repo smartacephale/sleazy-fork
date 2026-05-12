@@ -5,13 +5,11 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.22',
+  version: '2.0.23',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
 };
-
-const show_video_prev = (unsafeWindow as any).show_video_prev;
 
 const rules = new Rules({
   paginationStrategyOptions: {
@@ -65,9 +63,7 @@ const rules = new Rules({
 
 function animatePreview(doc: HTMLElement) {
   OnHover.create(doc, 'div[id^=vf][data-id]', (e) => {
-    const target = e as HTMLImageElement;
-    const thumb = target.closest('[data-id]');
-    const id = thumb?.getAttribute('data-id');
-    show_video_prev(id);
+    const thumb = e.closest('[data-id]');
+    (unsafeWindow as any).EP.thumbs.preview.start(thumb);
   });
 }
