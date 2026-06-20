@@ -8,7 +8,7 @@ export const meta: MonkeyUserScript = {
   version: '5.0.21',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
-  match: ['https://motherless.com/*'],
+  match: ['https://motherless.xxx/*'],
   grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],
 };
 

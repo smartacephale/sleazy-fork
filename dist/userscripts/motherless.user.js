@@ -5,12 +5,12 @@
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views
 // @license      MIT
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.com
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=motherless.xxx
 // @homepage     https://github.com/smartacephale/sleazy-fork#readme
 // @homepageURL  https://sleazyfork.org/en/users/1253342-smartacephale
 // @source       https://github.com/smartacephale
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
-// @match        https://motherless.com/*
+// @match        https://motherless.xxx/*
 // @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
 // @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
