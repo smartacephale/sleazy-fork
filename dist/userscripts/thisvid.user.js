@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ThisVid.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      8.0.21
+// @version      8.0.22
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Preview for private videos. Filter by Title, Duration, Quality and Public/Private. Sort by Duration and Views. Private/Public feed of friends uploads. Check access to private vids. Mass friend request button. Sorts messages. Download button 📼
 // @license      MIT
@@ -1018,7 +1018,7 @@ function takeWhile(predicate) {
             await friend(fid);
           }
         }
-      }, 60)
+      }, 5)
     ).forEach(() => {
     });
   }
