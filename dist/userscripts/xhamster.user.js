@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xhamster PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.22
+// @version      5.0.23
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views
 // @license      MIT
@@ -75,7 +75,15 @@
     paginationStrategyOptions,
     getPaginationData,
     containerSelectorLast: ".thumb-list",
-    thumbs: { selector: ".video-thumb" },
+    thumbs: {
+      selector: ".video-thumb",
+      transform: (thumb) => {
+        if (thumb.querySelector("[class*=placeholder]")) {
+          console.log("has placeholder", thumb);
+        }
+        return thumb;
+      }
+    },
     thumb: {
       selectors: {
         title: ".video-thumb-info__name,.video-thumb-info>a",
@@ -85,9 +93,8 @@
       }
     },
     thumbImg: {
-      strategy: "auto",
-      remove: "[loading]"
-    },
+      strategy: "auto"
+},
     gropeStrategy: "all-in-all",
     customDataFilterFns: [
       {

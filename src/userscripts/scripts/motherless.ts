@@ -5,7 +5,7 @@ import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.22',
+  version: '5.0.23',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
   match: ['https://motherless.xxx/*'],
@@ -153,7 +153,9 @@ async function desktopAddMobGalleries() {
   for (const [i, x] of mobGalleries.entries()) {
     if (i > galleriesCount - 1) {
       const mobGallery = mobileGalleryToDesktop(x);
-      const mobGalleryId = mobGallery.querySelector('a').href.split('/').at(-1);
+      const mobGalleryId = (mobGallery.querySelector('a') as HTMLAnchorElement).href
+        .split('/')
+        .at(-1);
       if (galleriesContainer.querySelector(`a[href*=${mobGalleryId}]`)) continue;
       galleriesContainer.append(mobGallery);
     }

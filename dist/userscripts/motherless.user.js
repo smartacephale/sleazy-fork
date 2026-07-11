@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.22
+// @version      5.0.23
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views
 // @license      MIT
@@ -133,15 +133,18 @@
   async function desktopAddMobGalleries() {
     const galleries = document.querySelector(".media-related-galleries");
     if (!galleries) return;
-    const galleriesContainer = galleries.querySelector(".content-inner");
-    const galleriesCount = galleries.querySelectorAll(".gallery-container").length;
     const mobDom = await utils.fetchWith(window.location.href, { type: "html", mobile: true });
     const mobGalleries = mobDom.querySelectorAll(
       ".ml-gallery-thumb"
     );
+    const galleriesContainer = galleries.querySelector(".content-inner");
+    const galleriesCount = galleries.querySelectorAll(".gallery-container").length;
     for (const [i, x] of mobGalleries.entries()) {
       if (i > galleriesCount - 1) {
-        galleriesContainer.append(mobileGalleryToDesktop(x));
+        const mobGallery = mobileGalleryToDesktop(x);
+        const mobGalleryId = mobGallery.querySelector("a").href.split("/").at(-1);
+        if (galleriesContainer.querySelector(`a[href*=${mobGalleryId}]`)) continue;
+        galleriesContainer.append(mobGallery);
       }
     }
   }
