@@ -5,7 +5,7 @@ import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.23',
+  version: '5.0.24',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
   match: ['https://motherless.xxx/*'],
@@ -142,23 +142,21 @@ async function desktopAddMobGalleries() {
   const galleries = document.querySelector('.media-related-galleries');
   if (!galleries) return;
 
-  const mobDom = await fetchWith(window.location.href, { type: 'html', mobile: true });
-  const mobGalleries = (mobDom as HTMLElement).querySelectorAll<HTMLElement>(
-    '.ml-gallery-thumb',
-  );
+  const mobDom = await fetchWith<HTMLElement>(window.location.href, {
+    type: 'html',
+    mobile: true,
+  });
+  const mobGalleries = mobDom.querySelectorAll<HTMLElement>('.ml-gallery-thumb');
 
   const galleriesContainer = galleries.querySelector('.content-inner') as HTMLElement;
-  const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
 
-  for (const [i, x] of mobGalleries.entries()) {
-    if (i > galleriesCount - 1) {
-      const mobGallery = mobileGalleryToDesktop(x);
-      const mobGalleryId = (mobGallery.querySelector('a') as HTMLAnchorElement).href
-        .split('/')
-        .at(-1);
-      if (galleriesContainer.querySelector(`a[href*=${mobGalleryId}]`)) continue;
-      galleriesContainer.append(mobGallery);
-    }
+  for (const x of mobGalleries.values()) {
+    const mobGallery = mobileGalleryToDesktop(x);
+    const mobGalleryId = (mobGallery.querySelector('a') as HTMLAnchorElement).href
+      .split('/')
+      .at(-1);
+    if (galleriesContainer.querySelector(`a[href*=${mobGalleryId}]`)) continue;
+    galleriesContainer.append(mobGallery);
   }
 }
 
