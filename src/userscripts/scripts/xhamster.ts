@@ -14,7 +14,7 @@ import {
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster PervertMonkey',
-  version: '5.0.22',
+  version: '5.0.23',
   description:
     'Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
@@ -88,7 +88,15 @@ const rules = new Rules({
   paginationStrategyOptions,
   getPaginationData,
   containerSelectorLast: '.thumb-list',
-  thumbs: { selector: '.video-thumb' },
+  thumbs: {
+    selector: '.video-thumb',
+    transform: (thumb: HTMLElement) => {
+      if (thumb.querySelector('[class*=placeholder]')) {
+        console.log('has placeholder', thumb);
+      }
+      return thumb;
+    },
+  },
   thumb: {
     selectors: {
       title: '.video-thumb-info__name,.video-thumb-info>a',
@@ -99,7 +107,7 @@ const rules = new Rules({
   },
   thumbImg: {
     strategy: 'auto',
-    remove: '[loading]',
+    // remove: '[loading]',
   },
   gropeStrategy: 'all-in-all',
   customDataFilterFns: [
