@@ -152,7 +152,10 @@ async function desktopAddMobGalleries() {
 
   for (const [i, x] of mobGalleries.entries()) {
     if (i > galleriesCount - 1) {
-      galleriesContainer.append(mobileGalleryToDesktop(x));
+      const mobGallery = mobileGalleryToDesktop(x);
+      const mobGalleryId = mobGallery.querySelector('a').href.split('/').at(-1);
+      if (galleriesContainer.querySelector(`a[href*=${mobGalleryId}]`)) continue;
+      galleriesContainer.append(mobGallery);
     }
   }
 }
