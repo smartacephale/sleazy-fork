@@ -142,16 +142,20 @@ async function desktopAddMobGalleries() {
   const galleries = document.querySelector('.media-related-galleries');
   if (!galleries) return;
 
-  const galleriesContainer = galleries.querySelector('.content-inner') as HTMLElement;
-  const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
   const mobDom = await fetchWith(window.location.href, { type: 'html', mobile: true });
   const mobGalleries = (mobDom as HTMLElement).querySelectorAll<HTMLElement>(
     '.ml-gallery-thumb',
   );
 
+  const galleriesContainer = galleries.querySelector('.content-inner') as HTMLElement;
+  const galleriesCount = galleries.querySelectorAll('.gallery-container').length;
+
   for (const [i, x] of mobGalleries.entries()) {
     if (i > galleriesCount - 1) {
-      galleriesContainer.append(mobileGalleryToDesktop(x));
+      const mobGallery = mobileGalleryToDesktop(x);
+      const mobGalleryId = mobGallery.querySelector('a').href.split('/').at(-1);
+      if (galleriesContainer.querySelector(`a[href*=${mobGalleryId}]`)) continue;
+      galleriesContainer.append(mobGallery);
     }
   }
 }
