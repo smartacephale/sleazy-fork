@@ -1,12 +1,15 @@
 <h1 align="center">PervertMonkey</h1>
 
-<p align="center"><img alt="Static Badge" src="https://img.shields.io/badge/Tampermonkey-OK-aliceblue?labelColor=lightblue"> <img alt="Static Badge" src="https://img.shields.io/badge/Violentmonkey-OK-slategray?labelColor=skyblue">
+<p align="center">
+<img alt="Static Badge" src="https://img.shields.io/badge/Tampermonkey-OK-aliceblue?labelColor=lightblue"> 
+<img alt="Static Badge" src="https://img.shields.io/badge/Violentmonkey-OK-slategray?labelColor=skyblue">
+<a href="https://deepwiki.com/smartacephale/sleazy-fork"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
 
 <p align="center"><code>install scripts:</code> https://sleazyfork.org/en/scripts?set=590816</p>
 
 ## Userscripts
-```shell
+```shell<a href="https://deepwiki.com/smartacephale/sleazy-fork"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 src/userscripts/scripts  # dev
 dist/userscripts         # build
 ```

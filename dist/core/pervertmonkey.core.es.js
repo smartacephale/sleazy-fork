@@ -2922,11 +2922,11 @@ class PaginationStrategyPathnameParams extends PaginationStrategy {
   constructor() {
     super(...arguments);
     __publicField(this, "extractPage", (a2) => {
-      var _a3;
+      var _a3, _b2;
       const href = typeof a2 === "string" ? a2 : a2.href;
       const { pathname } = new URL(href, this.doc.baseURI || this.url.origin);
       return parseInt(
-        ((_a3 = pathname.match(this.pathnameSelector)) == null ? void 0 : _a3.pop()) || this.offsetMin.toString()
+        ((_b2 = (_a3 = pathname.match(this.pathnameSelector)) == null ? void 0 : _a3.filter(Boolean)) == null ? void 0 : _b2.pop()) || this.offsetMin.toString()
       );
     });
   }

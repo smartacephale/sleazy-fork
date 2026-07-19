@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eporner PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.0.23
+// @version      2.0.24
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration
 // @license      MIT
@@ -24,14 +24,15 @@
 
   var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : undefined)();
 
-  new core.Rules({
+  const rules = new core.Rules({
     paginationStrategyOptions: {
       paginationSelector: ".numlist2"
-    },
+
+},
     thumbs: { selector: "div[id^=vf][data-id]" },
     thumb: {
       selectors: {
-        title: "a",
+        title: "a[href*=video-]",
         uploader: '[title="Uploader"]',
         duration: '[title="Duration"]',
         views: { selector: '[title="Views"]', type: "float" },
@@ -73,6 +74,9 @@
     gropeStrategy: "all-in-all",
     animatePreview
   });
+  rules.dataManager.dataFilter.createCssFilters(
+    (x) => `#panel-rightXpornstar #vidresults.showall ${x}`
+  );
   function animatePreview(doc) {
     utils.OnHover.create(doc, "div[id^=vf][data-id]", (e) => {
       const thumb = e.closest("[data-id]");

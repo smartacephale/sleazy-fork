@@ -5,7 +5,7 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.23',
+  version: '2.0.24',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
@@ -14,11 +14,13 @@ export const meta: MonkeyUserScript = {
 const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: '.numlist2',
+    // pathnameSelector: /\/(\d+)\/?$/,
+    // pathnameSelector: /\/(\d+)\/([\w-]+\/)?$/
   },
   thumbs: { selector: 'div[id^=vf][data-id]' },
   thumb: {
     selectors: {
-      title: 'a',
+      title: 'a[href*=video-]',
       uploader: '[title="Uploader"]',
       duration: '[title="Duration"]',
       views: { selector: '[title="Views"]', type: 'float' },
@@ -60,6 +62,10 @@ const rules = new Rules({
   gropeStrategy: 'all-in-all',
   animatePreview,
 });
+
+rules.dataManager.dataFilter.createCssFilters(
+  (x) => `#panel-rightXpornstar #vidresults.showall ${x}`,
+);
 
 function animatePreview(doc: HTMLElement) {
   OnHover.create(doc, 'div[id^=vf][data-id]', (e) => {

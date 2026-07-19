@@ -19,18 +19,14 @@ export function getPaginationStrategy(
   const { url, searchParamSelector } = options;
 
   if (!pagination) {
-    // console.error('Found No Pagination');
     return _paginationStrategy;
   }
 
   if (typeof options.getPaginationUrlGenerator === 'function') {
-    // console.log(PaginationStrategy.name);
     return new PaginationStrategy(options);
   }
 
   const pageLinks = getPaginationLinks(pagination, url).map((l) => new URL(l));
-
-  // console.log({ pageLinks: pageLinks.map((l) => l.href) });
 
   const selectStrategy = (): typeof PaginationStrategy => {
     if (PaginationStrategyDataParams.testLinks(pagination)) {

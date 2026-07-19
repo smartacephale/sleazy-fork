@@ -7,7 +7,8 @@ export class PaginationStrategyPathnameParams extends PaginationStrategy {
     const href = typeof a === 'string' ? a : a.href;
     const { pathname } = new URL(href, this.doc.baseURI || this.url.origin);
     return parseInt(
-      pathname.match(this.pathnameSelector)?.pop() || this.offsetMin.toString(),
+      pathname.match(this.pathnameSelector)?.filter(Boolean)?.pop() ||
+        this.offsetMin.toString(),
     );
   };
 
@@ -55,11 +56,15 @@ export class PaginationStrategyPathnameParams extends PaginationStrategy {
   getPaginationUrlGenerator(url_: URL = this.url) {
     const url = new URL(url_.href);
 
+    // console.log('this.pathnameSelector', this.pathnameSelector);
+
     const pathnameSelectorPlaceholder = this.pathnameSelector
       .toString()
       .replace(/\\{1,}/g, '')
       .replace(/[$?()]+/g, '')
       .replace(/\/{1,}/g, '/');
+
+    // console.log({ pathnameSelectorPlaceholder, 'url.pathname': url.pathname });
 
     if (!this.pathnameSelector.test(url.pathname)) {
       url.pathname = url.pathname
@@ -67,7 +72,37 @@ export class PaginationStrategyPathnameParams extends PaginationStrategy {
         .replace(/\/{1,}/g, '/');
     }
 
+    // console.log({ pathnameSelectorPlaceholder, 'url.pathname': url.pathname });
+
     const paginationUrlGenerator = (offset: number) => {
+      // console.log({
+      //   pathname: url.pathname,
+      //   replace: '',
+      //   pathnameSelector: this.pathnameSelector,
+      //   pathnameSelectorPlaceholder: pathnameSelectorPlaceholder.replace(
+      //     /d\+/,
+      //     offset.toString(),
+      //   ),
+      // });
+
+      // pathnameSelectorPlaceholder.replace()
+      // need to create tests
+
+      //   url.pathname = url.pathname.replace(
+      //     this.pathnameSelector,
+      //     (a, b, c, d) => {
+      //       console.log({ a, b, c, d, pathnameSelectorPlaceholder });
+      //       if (a.length + 1 < pathnameSelectorPlaceholder.length) {
+      //         return a.replace(/\d+/, offset.toString());
+      //       }
+      //       // return a;
+      //       return pathnameSelectorPlaceholder.replace(/d\+/, offset.toString());
+      //     },
+      //     // pathnameSelectorPlaceholder.replace(/d\+/, offset.toString()),
+      //   );
+      //   return url.href;
+      // };
+
       url.pathname = url.pathname.replace(
         this.pathnameSelector,
         pathnameSelectorPlaceholder.replace(/d\+/, offset.toString()),
