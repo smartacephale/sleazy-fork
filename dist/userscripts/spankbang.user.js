@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.20
+// @version      4.1.0
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views
 // @license      MIT
@@ -13,11 +13,14 @@
 // @match        https://*.spankbang.com/*
 // @match        https://*.spankbang.*/*
 // @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
-// @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
 // ==/UserScript==
+
+var core = window.pervertmonkey.core || pervertmonkey.core;
+var utils = core;
+
 
 (function (core) {
   'use strict';
@@ -39,9 +42,16 @@ views: { selector: '[data-testid="views"]', type: "float" },
     thumbImg: { strategy: "auto" },
     gropeStrategy: "all-in-all",
     customDataFilterFns: [
-      { qualityLow: (e, state) => !!state.qualityLow && e.quality !== "" },
-      { qualityHD: (e, state) => !!state.qualityHD && e.quality !== "HD" },
-      { quality4k: (e, state) => !!state.quality4k && e.quality !== "4K" }
+      {
+        qualityFilter: {
+          handle(el, state) {
+            const hasAnyQualitySelected = state.qualityLow || state.qualityHD || state.quality4k;
+            if (!hasAnyQualitySelected) return false;
+            return !(state.qualityLow && el.quality === "" || state.qualityHD && el.quality === "HD" || state.quality4k && el.quality === "4K");
+          },
+          deps: ["qualityLow", "qualityHD", "quality4k"]
+        }
+      }
     ],
     schemeOptions: [
       "Title Filter",

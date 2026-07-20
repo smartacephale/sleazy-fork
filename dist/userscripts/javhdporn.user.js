@@ -13,11 +13,14 @@
 // @match        https://*.javhdporn.net/*
 // @match        https://*.javhdporn.*/*
 // @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
-// @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
 // ==/UserScript==
+
+var core = window.pervertmonkey.core || pervertmonkey.core;
+var utils = core;
+
 
 (function (core) {
   'use strict';

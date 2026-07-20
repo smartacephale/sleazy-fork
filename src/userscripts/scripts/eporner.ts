@@ -5,7 +5,7 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.0.24',
+  version: '2.1.0',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
@@ -33,12 +33,38 @@ const rules = new Rules({
   },
   containerSelectorLast: '#vidresults',
   customDataFilterFns: [
-    { quality360: (el, state) => !!state.quality360 && el.quality !== 360 },
-    { quality480: (el, state) => !!state.quality480 && el.quality !== 480 },
-    { quality720: (el, state) => !!state.quality720 && el.quality !== 720 },
-    { quality1080: (el, state) => !!state.quality1080 && el.quality !== 1080 },
-    { quality2k: (el, state) => !!state.quality2k && el.quality !== 2 },
-    { quality4k: (el, state) => !!state.quality4k && el.quality !== 4 },
+    {
+      qualityFilter: {
+        handle(el, state) {
+          const hasAnyQualitySelected =
+            state.quality360 ||
+            state.quality480 ||
+            state.quality720 ||
+            state.quality1080 ||
+            state.quality2k ||
+            state.quality4k;
+
+          if (!hasAnyQualitySelected) return false;
+
+          return !(
+            (state.quality360 && el.quality === 360) ||
+            (state.quality480 && el.quality === 480) ||
+            (state.quality720 && el.quality === 720) ||
+            (state.quality1080 && el.quality === 1080) ||
+            (state.quality2k && el.quality === 2) ||
+            (state.quality4k && el.quality === 4)
+          );
+        },
+        deps: [
+          'quality360',
+          'quality480',
+          'quality720',
+          'quality1080',
+          'quality2k',
+          'quality4k',
+        ],
+      },
+    },
   ],
   schemeOptions: [
     'Title Filter',

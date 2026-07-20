@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
@@ -6,6 +6,7 @@ import monkey, { type MonkeyUserScript } from 'vite-plugin-monkey';
 import pkg from '../package.json' with { type: 'json' };
 import defaultMeta from '../src/userscripts/meta.json' with { type: 'json' };
 import { setIcon } from './utils/attach-scripts-icons.ts';
+import { injectCodeIntoUserscript } from './utils/code-injection.ts';
 import { getScriptMetaData } from './utils/get-script-metadata.ts';
 import { incrementUserscriptsVersions } from './utils/increment-scripts-versions.ts';
 
@@ -42,7 +43,6 @@ const runBuild = async () => {
       Object.assign(userscript, {
         require: [
           `https://cdn.jsdelivr.net/npm/pervert-monkey@${version}/dist/core/pervertmonkey.core.umd.js`,
-          'data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;',
         ],
       });
 
@@ -73,6 +73,11 @@ const runBuild = async () => {
           }),
         ],
       });
+
+      const outputPath = `dist/userscripts/${fileName}.user.js`;
+      const coreInjection = `\n\nvar core = window.pervertmonkey.core || pervertmonkey.core;\nvar utils = core;\n`;
+
+      injectCodeIntoUserscript(outputPath, coreInjection);
     } catch (err) {
       console.error(`❌ Failed to build ${file}:`, err);
     }

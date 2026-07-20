@@ -1,11 +1,17 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { GM_addElement, GM_addStyle, unsafeWindow } from '$';
 import { Rules } from '../../core';
-import { fetchWith, OnHover, replaceElementTag, Tick } from '../../utils';
+import {
+  fetchWith,
+  OnHover,
+  replaceElementTag,
+  Tick,
+  waitForElementToAppear,
+} from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Motherless PervertMonkey',
-  version: '5.0.24',
+  version: '5.0.25',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views',
   match: ['https://motherless.xxx/*'],
@@ -16,7 +22,7 @@ export const meta: MonkeyUserScript = {
 const $ = (unsafeWindow as any).$;
 
 const rules = new Rules({
-  containerSelectorLast: '.content-inner',
+  containerSelector: '.content-inner',
   thumbs: { selector: '.thumb-container, .mobile-thumb' },
   thumb: {
     selectors: {
@@ -141,6 +147,10 @@ function mobileGalleryToDesktop(e: HTMLElement) {
 async function desktopAddMobGalleries() {
   const galleries = document.querySelector('.media-related-galleries');
   if (!galleries) return;
+
+  await new Promise((resolve) => {
+    waitForElementToAppear(document, '.thumb-container.gallery-container', resolve);
+  });
 
   const mobDom = await fetchWith<HTMLElement>(window.location.href, {
     type: 'html',

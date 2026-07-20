@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Motherless PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.24
+// @version      5.0.25
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration, Sort by Duration and Views
 // @license      MIT
@@ -12,12 +12,15 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://motherless.xxx/*
 // @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
-// @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addElement
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
 // ==/UserScript==
+
+var core = window.pervertmonkey.core || pervertmonkey.core;
+var utils = core;
+
 
 (function (core, utils) {
   'use strict';
@@ -29,7 +32,7 @@
   _unsafeWindow.__is_premium = true;
   const $ = _unsafeWindow.$;
   const rules = new core.Rules({
-    containerSelectorLast: ".content-inner",
+    containerSelector: ".content-inner",
     thumbs: { selector: ".thumb-container, .mobile-thumb" },
     thumb: {
       selectors: {
@@ -133,6 +136,9 @@
   async function desktopAddMobGalleries() {
     const galleries = document.querySelector(".media-related-galleries");
     if (!galleries) return;
+    await new Promise((resolve) => {
+      utils.waitForElementToAppear(document, ".thumb-container.gallery-container", resolve);
+    });
     const mobDom = await utils.fetchWith(window.location.href, {
       type: "html",
       mobile: true

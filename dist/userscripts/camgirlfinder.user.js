@@ -12,10 +12,13 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://camgirlfinder.net/*
 // @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
-// @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
+
+var core = window.pervertmonkey.core || pervertmonkey.core;
+var utils = core;
+
 
 (function () {
   'use strict';

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.22
+// @version      4.1.0
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.
 // @license      MIT
@@ -12,11 +12,14 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xvideos.com/*
 // @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.25/dist/core/pervertmonkey.core.umd.js
-// @require      data:application/javascript,var core = window.pervertmonkey.core || pervertmonkey.core; var utils = core;
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
 // ==/UserScript==
+
+var core = window.pervertmonkey.core || pervertmonkey.core;
+var utils = core;
+
 
 (function (core, utils) {
   'use strict';
@@ -47,12 +50,16 @@
       }
     },
     customDataFilterFns: [
-      { qualityLow: (e, state) => !!state.qualityLow && e.quality !== "" },
-      { quality360: (e, state) => !!state.quality360 && e.quality !== "360p" },
-      { quality720: (e, state) => !!state.quality720 && e.quality !== "720p" },
-      { quality1080: (e, state) => !!state.quality1080 && e.quality !== "1080p" },
-      { quality1440: (e, state) => !!state.quality1440 && e.quality !== "1440p" },
-      { quality4k: (e, state) => !!state.quality4k && e.quality !== "4k" }
+      {
+        qualityFilter: {
+          handle(el, state) {
+            const hasAnyQualitySelected = state.qualityLow || state.quality360 || state.quality720 || state.quality1080 || state.quality1440 || state.quality4k;
+            if (!hasAnyQualitySelected) return false;
+            return !(state.qualityLow && el.quality === "" || state.quality360 && el.quality === "360p" || state.quality720 && el.quality === "720p" || state.quality1080 && el.quality === "1080p" || state.quality1440 && el.quality === "1440p" || state.quality4k && el.quality === "4k");
+          },
+          deps: ["qualityLow", "quality360", "quality720", "quality1080", "quality1440", "quality4k"]
+        }
+      }
     ],
     schemeOptions: [
       "Title Filter",
