@@ -15,7 +15,7 @@
 // @match        https://*ebalka.*.*/*
 // @match        https://*.ebalk*.*/*
 // @match        https://*.fuckingbear*.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.26/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.27/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -54,7 +54,7 @@ var ___utils = ___core;
 			const e = thumb.querySelector(".card__thumb_video");
 			e.classList.toggle("video-on");
 			const src = e.querySelector(".card__image")?.getAttribute("data-preview");
-			const videoElem = (0, ___utils.parseHtml)(`<video style="position: absolute; left: 0px; top: 0px; visibility: visible; margin-top: -1px;"
+			const videoElem = (0, ___utils.parseHtml)(`<video style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) scale(1.1); visibility: visible; margin-top: -1px;"
       autoplay="" loop="" playsinline="true" webkit-playsinline="true" src="${src}"></video>`);
 			e.appendChild(videoElem);
 			return () => {

@@ -13,7 +13,7 @@
 // @match        https://*.obmenvsem.com/*
 // @match        https://*.obmenvsem.*/*
 // @match        https://*.obmenvsems.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.26/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.27/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addElement
 // @grant        GM_addStyle
 // @grant        unsafeWindow

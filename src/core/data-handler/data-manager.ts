@@ -15,9 +15,17 @@ export class DataManager {
   );
   public dataFilter: DataFilter;
 
+  public static create(
+    rules: Rules,
+    o: Partial<Pick<DataManager, 'removeDuplicates' | 'containerHomogenity'>> = {},
+  ) {
+    return new DataManager(rules, o.removeDuplicates, o.containerHomogenity);
+  }
+
   constructor(
-    private rules: Rules,
-    private containerHomogenity?: Parameters<typeof areElementsAlike>[2],
+    public rules: Rules,
+    public removeDuplicates = false,
+    public containerHomogenity?: Parameters<typeof areElementsAlike>[2],
   ) {
     this.dataFilter = new DataFilter(this.rules);
   }
@@ -65,7 +73,7 @@ export class DataManager {
   public async parseData(
     html: HTMLElement,
     container?: HTMLElement,
-    removeDuplicates = false,
+    removeDuplicates = this.removeDuplicates,
     shouldLazify = true,
   ) {
     const thumbs = this.rules.thumbsParser.getThumbs(html);

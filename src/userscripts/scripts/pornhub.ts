@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'PornHub PervertMonkey',
-  version: '4.0.20',
+  version: '4.0.21',
   description:
     'Infinite scroll [optional]. Filter by Title, Uploader and Duration. Sort by Duration and Views',
   match: ['https://*.pornhub.com/*'],
@@ -20,7 +20,9 @@ const rules = new Rules({
       .filter((e) => e.children.length > 0 && e.checkVisibility())
       .sort((a, b) => b.children.length - a.children.length)?.[0] as HTMLElement,
 
-  containerHomogenity: { id: true, className: true },
+  dataManagerOptions: {
+    containerHomogenity: { id: true, className: true },
+  },
   thumbs: { selector: 'li[data-video-vkey]' },
   thumb: {
     selectors: {

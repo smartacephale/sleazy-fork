@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PornHub PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.0.20
+// @version      4.0.21
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title, Uploader and Duration. Sort by Duration and Views
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.pornhub.com/*
 // @exclude      https://*.pornhub.com/embed/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.26/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.27/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -30,10 +30,10 @@ var ___utils = ___core;
 			overwritePaginationLast: (n) => n === 9 ? 9999 : n
 		},
 		containerSelector: () => [...document.querySelectorAll("ul:has(> li[data-video-vkey])")].filter((e) => e.children.length > 0 && e.checkVisibility()).sort((a, b) => b.children.length - a.children.length)?.[0],
-		containerHomogenity: {
+		dataManagerOptions: { containerHomogenity: {
 			id: true,
 			className: true
-		},
+		} },
 		thumbs: { selector: "li[data-video-vkey]" },
 		thumb: { selectors: {
 			title: "span.title",

@@ -587,14 +587,19 @@ var DataFilter = class {
 };
 //#endregion
 //#region src/core/data-handler/data-manager.ts
-var DataManager = class {
+var DataManager = class DataManager {
 	rules;
+	removeDuplicates;
 	containerHomogenity;
 	data = /* @__PURE__ */ new Map();
 	lazyImgLoader = new LazyImgLoader((target) => !DataFilter.isFiltered(target));
 	dataFilter;
-	constructor(rules, containerHomogenity) {
+	static create(rules, o = {}) {
+		return new DataManager(rules, o.removeDuplicates, o.containerHomogenity);
+	}
+	constructor(rules, removeDuplicates = false, containerHomogenity) {
 		this.rules = rules;
+		this.removeDuplicates = removeDuplicates;
 		this.containerHomogenity = containerHomogenity;
 		this.dataFilter = new DataFilter(this.rules);
 	}
@@ -628,7 +633,7 @@ var DataManager = class {
 		const filters = Object.fromEntries(keys.map((k) => [k, this.rules.store.state[k]]));
 		await this.applyFilters(filters, offset);
 	}
-	async parseData(html, container, removeDuplicates = false, shouldLazify = true) {
+	async parseData(html, container, removeDuplicates = this.removeDuplicates, shouldLazify = true) {
 		const thumbs = this.rules.thumbsParser.getThumbs(html);
 		const dataOffset = this.data.size;
 		const fragment = document.createDocumentFragment();
@@ -8680,7 +8685,7 @@ var Rules = class {
 	paginationStrategyOptions = {};
 	paginationStrategy;
 	dataManager;
-	containerHomogenity;
+	dataManagerOptions = {};
 	customDataFilterFns = [];
 	hookDataFilterFns() {
 		const defaultFilterFns = getSelectorFnsFromScheme(this.schemeOptions.filter((s) => typeof s === "string"));
@@ -8745,7 +8750,7 @@ var Rules = class {
 		});
 		this.mutationObservers = [];
 		this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
-		this.dataManager = new DataManager(this, this.containerHomogenity);
+		this.dataManager = DataManager.create(this, this.dataManagerOptions);
 		this.inputController.dispose();
 		this.inputController = new JabronioGuiController(this.store, this.dataManager);
 		this.resetInfiniteScroller();
@@ -8764,7 +8769,7 @@ var Rules = class {
 		this.store = this.createStore();
 		this.gui = this.createGui();
 		this.hookDataFilterFns();
-		this.dataManager = new DataManager(this, this.containerHomogenity);
+		this.dataManager = DataManager.create(this, this.dataManagerOptions);
 		this.inputController = new JabronioGuiController(this.store, this.dataManager);
 		this.reset();
 	}

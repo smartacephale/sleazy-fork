@@ -62,7 +62,7 @@ export class Rules {
   public paginationStrategy: PaginationStrategy;
 
   public dataManager: DataManager;
-  public containerHomogenity: ConstructorParameters<typeof DataManager>[1];
+  public dataManagerOptions: Parameters<typeof DataManager.create>[1] = {};
 
   public customDataFilterFns: (Record<string, DataFilterFnFrom<any>> | string)[] = [];
   private hookDataFilterFns() {
@@ -157,7 +157,7 @@ export class Rules {
 
     this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
 
-    this.dataManager = new DataManager(this, this.containerHomogenity);
+    this.dataManager = DataManager.create(this, this.dataManagerOptions);
 
     this.inputController.dispose();
     this.inputController = new JabronioGuiController(this.store, this.dataManager);
@@ -188,7 +188,7 @@ export class Rules {
     this.gui = this.createGui();
 
     this.hookDataFilterFns();
-    this.dataManager = new DataManager(this, this.containerHomogenity);
+    this.dataManager = DataManager.create(this, this.dataManagerOptions);
     this.inputController = new JabronioGuiController(this.store, this.dataManager);
 
     this.reset();

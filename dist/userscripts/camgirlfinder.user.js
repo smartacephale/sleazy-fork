@@ -11,7 +11,7 @@
 // @source       https://github.com/smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://camgirlfinder.net/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.26/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.27/dist/core/pervertmonkey.core.umd.js
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==

@@ -49,7 +49,7 @@ function animatePreview(container: HTMLElement) {
     const src = e.querySelector('.card__image')?.getAttribute('data-preview') as string;
 
     const videoElem =
-      parseHtml(`<video style="position: absolute; left: 0px; top: 0px; visibility: visible; margin-top: -1px;"
+      parseHtml(`<video style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%) scale(1.1); visibility: visible; margin-top: -1px;"
       autoplay="" loop="" playsinline="true" webkit-playsinline="true" src="${src}"></video>`) as HTMLVideoElement;
     e.appendChild(videoElem);
 
