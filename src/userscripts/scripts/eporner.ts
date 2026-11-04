@@ -5,7 +5,7 @@ import { OnHover } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.1.4',
+  version: '2.1.6',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
@@ -15,8 +15,7 @@ export const meta: MonkeyUserScript = {
 const rules = new Rules({
   paginationStrategyOptions: {
     paginationSelector: '.numlist2',
-    // pathnameSelector: /\/(\d+)\/?$/,
-    // pathnameSelector: /\/(\d+)\/([\w-]+\/)?$/
+    pathnameSelector: /\/(\d+)(?=\/|$)/,
     overwritePaginationLast: (n, _) => (n === 9 ? 9999 : n),
   },
   thumbs: { selector: 'div[id^=vf][data-id]' },

@@ -113,7 +113,7 @@ function instantiateTemplate(sourceSelector, attributeUpdates, contentUpdates) {
 			element.innerText = textValue;
 		});
 	});
-	return wrapper.innerHTML;
+	return wrapper?.firstChild;
 }
 //#endregion
 //#region src/utils/dom/observers.ts
@@ -198,6 +198,14 @@ function objectToFormData(obj) {
 	});
 	return formData;
 }
+function findProperty(obj, targetKey) {
+	if (obj === null || typeof obj !== "object") return;
+	if (targetKey in obj) return obj[targetKey];
+	for (const key of Object.keys(obj)) {
+		const result = findProperty(obj[key], targetKey);
+		if (result !== void 0) return result;
+	}
+}
 //#endregion
 //#region src/utils/strings/regexes.ts
 var RegexFilter = class {
@@ -258,9 +266,18 @@ function findNextSibling(e) {
 //#endregion
 //#region src/utils/dom/index.ts
 function parseHtml(html) {
-	const parsed = new DOMParser().parseFromString(html, "text/html").body;
+	return parseDocumentBody(html);
+}
+function parseDocument(html) {
+	return new DOMParser().parseFromString(html, "text/html");
+}
+function getDocumentBody(document) {
+	const parsed = document.body;
 	if (parsed.children.length > 1) return parsed;
 	return parsed.firstElementChild;
+}
+function parseDocumentBody(html) {
+	return getDocumentBody(parseDocument(html));
 }
 //#endregion
 //#region src/utils/events/on-hover.ts
@@ -2052,8 +2069,12 @@ var InfiniteScroller = class InfiniteScroller {
 		await this.doScroll(url, offset);
 		return true;
 	};
+	cachedUrlDocument = void 0;
 	async getPaginationData(url) {
-		return await fetchHtml(url);
+		const document = parseDocument(await fetchText(url));
+		Object.assign(document, { sourceURL: url });
+		this.cachedUrlDocument = document;
+		return getDocumentBody(document);
 	}
 	async doScroll(url, offset) {
 		const page = await this.getPaginationData(url);
@@ -3109,22 +3130,51 @@ function upgradePathname(curr, links, pathnamePaginationSelector = /\/(page\/)?\
 }
 //#endregion
 //#region src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategyPathnameParams.ts
+/** Non-global copy with the `d` flag so we get capture group indices. */
+var withIndices = (re) => {
+	const flags = `${re.flags.replace(/[gyd]/g, "")}d`;
+	return new RegExp(re.source, flags);
+};
+/**
+* Locate the page number inside a pathname.
+* Uses the last all-digit capture group; if the selector has none,
+* falls back to the last digit run inside the whole match.
+*/
+var findPageSpan = (pathname, selector) => {
+	const m = withIndices(selector).exec(pathname);
+	if (!m) return null;
+	const indices = m.indices;
+	for (let i = indices.length - 1; i >= 1; i--) {
+		const idx = indices[i];
+		if (idx && /^\d+$/.test(m[i])) return {
+			start: idx[0],
+			end: idx[1],
+			value: parseInt(m[i], 10)
+		};
+	}
+	const digits = [...m[0].matchAll(/\d+/g)].pop();
+	if (!digits) return null;
+	const start = m.index + digits.index;
+	return {
+		start,
+		end: start + digits[0].length,
+		value: parseInt(digits[0], 10)
+	};
+};
 var PaginationStrategyPathnameParams = class PaginationStrategyPathnameParams extends PaginationStrategy {
 	extractPage = (a) => {
 		const href = typeof a === "string" ? a : a.href;
 		const { pathname } = new URL(href, this.doc.baseURI || this.url.origin);
-		return parseInt(pathname.match(this.pathnameSelector)?.filter(Boolean)?.pop() || this.offsetMin.toString());
+		return findPageSpan(pathname, this.pathnameSelector)?.value ?? this.offsetMin;
 	};
 	static checkLink(link, pathnameSelector = PaginationStrategy._pathnameSelector) {
-		return pathnameSelector.test(link.pathname);
+		return new RegExp(pathnameSelector.source, pathnameSelector.flags.replace(/[gy]/g, "")).test(link.pathname);
 	}
 	static testLinks(links, options) {
-		const result = links.some((h) => PaginationStrategyPathnameParams.checkLink(h, options.pathnameSelector));
-		if (result) {
-			const pathnamesMatched = links.filter((h) => PaginationStrategyPathnameParams.checkLink(h, options.pathnameSelector));
-			options.url = upgradePathname(parseUrl(options.url), pathnamesMatched);
-		}
-		return result;
+		const pathnamesMatched = links.filter((h) => PaginationStrategyPathnameParams.checkLink(h, options.pathnameSelector));
+		if (pathnamesMatched.length === 0) return false;
+		options.url = upgradePathname(parseUrl(options.url), pathnamesMatched);
+		return true;
 	}
 	getPaginationLast() {
 		const links = getPaginationLinks(this.getPaginationElement() || document, this.url.href, this.pathnameSelector);
@@ -3137,14 +3187,25 @@ var PaginationStrategyPathnameParams = class PaginationStrategyPathnameParams ex
 		return this.extractPage(this.url.href);
 	}
 	getPaginationUrlGenerator(url_ = this.url) {
-		const url = new URL(url_.href);
-		const pathnameSelectorPlaceholder = this.pathnameSelector.toString().replace(/\\{1,}/g, "").replace(/[$?()]+/g, "").replace(/\/{1,}/g, "/");
-		if (!this.pathnameSelector.test(url.pathname)) url.pathname = url.pathname.concat(pathnameSelectorPlaceholder.replace(/d\+/, this.offsetMin.toString())).replace(/\/{1,}/g, "/");
-		const paginationUrlGenerator = (offset) => {
-			url.pathname = url.pathname.replace(this.pathnameSelector, pathnameSelectorPlaceholder.replace(/d\+/, offset.toString()));
-			return url.href;
+		const base = new URL(url_.href);
+		if (!findPageSpan(base.pathname, this.pathnameSelector)) base.pathname = `${base.pathname}${this.getPlaceholder(this.offsetMin)}`.replace(/\/{2,}/g, "/");
+		const span = findPageSpan(base.pathname, this.pathnameSelector);
+		if (!span) return (offset) => {
+			const u = new URL(url_.href);
+			u.pathname = `${u.pathname}/${offset}`.replace(/\/{2,}/g, "/");
+			return u.href;
 		};
-		return paginationUrlGenerator;
+		const before = base.pathname.slice(0, span.start);
+		const after = base.pathname.slice(span.end);
+		return (offset) => {
+			const u = new URL(base.href);
+			u.pathname = `${before}${offset}${after}`;
+			return u.href;
+		};
+	}
+	/** Builds e.g. "/page/2/" from a selector like /\/page\/(\d+)\/?$/ — only used when the page is absent from the URL. */
+	getPlaceholder(offset) {
+		return this.pathnameSelector.source.replace(/\\(.)/g, "$1").replace(/\(\?:/g, "(").replace(/\(\?[=!<][^)]*\)/g, "").replace(/[$^?()]/g, "").replace(/d\+/, String(offset)).replace(/\/{2,}/g, "/");
 	}
 };
 //#endregion
@@ -3220,7 +3281,7 @@ var ThumbDataParser = class ThumbDataParser {
 		};
 	}
 	getUrl(thumb) {
-		return querySelectorOrSelf(thumb, this.getUrlSelector).href;
+		return querySelectorOrSelf(thumb, this.getUrlSelector)?.href || "";
 	}
 	preprocessCustomThumbDataSelectors() {
 		if (!this.selectors) return;
@@ -3328,8 +3389,9 @@ var ThumbsParser = class ThumbsParser {
 	selector = ".thumb";
 	strategy = "default";
 	transform;
-	static create(options = {}) {
-		return Object.assign(new ThumbsParser(), options);
+	rules;
+	static create(options = {}, rules) {
+		return Object.assign(new ThumbsParser(), options, { rules });
 	}
 	getThumbs(container) {
 		if (!container) return [];
@@ -3338,7 +3400,9 @@ var ThumbsParser = class ThumbsParser {
 			return [...container?.children || []];
 		}
 		const thumbs = Array.from(container.querySelectorAll(this.selector));
-		if (typeof this.transform === "function") thumbs.forEach(this.transform);
+		if (typeof this.transform === "function") thumbs.forEach((t) => {
+			this?.transform?.(t, this.rules?.infiniteScroller?.cachedUrlDocument);
+		});
 		return thumbs;
 	}
 };
@@ -8762,7 +8826,7 @@ var Rules = class {
 	constructor(options) {
 		if (this.isEmbedded) throw Error("Embedded is not supported");
 		Object.assign(this, options);
-		this.thumbsParser = ThumbsParser.create(this.thumbs);
+		this.thumbsParser = ThumbsParser.create(this.thumbs, this);
 		this.thumbDataParser = ThumbDataParser.create(this.thumb);
 		this.thumbImgParser = ThumbImgParser.create(this.thumbImg);
 		this.paginationStrategy = getPaginationStrategy(this.paginationStrategyOptions);
@@ -8775,6 +8839,6 @@ var Rules = class {
 	}
 };
 //#endregion
-export { DataFilter, DataManager, InfiniteScroller, LazyImgLoader, MOBILE_UA, Observer, OnHover, PaginationStrategy, PaginationStrategyDataParams, PaginationStrategyPathnameParams, PaginationStrategySearchParams, RegexFilter, Rules, ThumbDataParser, ThumbImgParser, ThumbsParser, Tick, areElementsAlike, chunks, circularShift, containMutation, copyAttributes, downloader, exterminateVideo, fetchHtml, fetchJson, fetchText, fetchWith, findNextSibling, formatTimeToHHMMSS, getCommonParents, getPaginationStrategy, instantiateTemplate, irange, memoize, objectToFormData, parseCssUrl, parseDataParams, parseHtml, parseIntegerOr, parseNumericAbbreviation, parseUrl, querySelectorLast, querySelectorLastNumber, querySelectorOrSelf, querySelectorText, range, removeClassesAndDataAttributes, replaceElementTag, runIdleJob, sanitizeStr, splitWith, timeToSeconds, wait, waitForElementToAppear, waitForElementToDisappear, watchDomChangesWithThrottle, watchElementChildrenCount };
+export { DataFilter, DataManager, InfiniteScroller, LazyImgLoader, MOBILE_UA, Observer, OnHover, PaginationStrategy, PaginationStrategyDataParams, PaginationStrategyPathnameParams, PaginationStrategySearchParams, RegexFilter, Rules, ThumbDataParser, ThumbImgParser, ThumbsParser, Tick, areElementsAlike, chunks, circularShift, containMutation, copyAttributes, downloader, exterminateVideo, fetchHtml, fetchJson, fetchText, fetchWith, findNextSibling, findProperty, formatTimeToHHMMSS, getCommonParents, getDocumentBody, getPaginationStrategy, instantiateTemplate, irange, memoize, objectToFormData, parseCssUrl, parseDataParams, parseDocument, parseDocumentBody, parseHtml, parseIntegerOr, parseNumericAbbreviation, parseUrl, querySelectorLast, querySelectorLastNumber, querySelectorOrSelf, querySelectorText, range, removeClassesAndDataAttributes, replaceElementTag, runIdleJob, sanitizeStr, splitWith, timeToSeconds, wait, waitForElementToAppear, waitForElementToDisappear, watchDomChangesWithThrottle, watchElementChildrenCount };
 
 //# sourceMappingURL=pervertmonkey.core.es.js.map

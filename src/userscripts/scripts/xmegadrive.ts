@@ -5,7 +5,7 @@ import { circularShift, OnHover, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'xmegadrive PervertMonkey',
-  version: '1.0.0',
+  version: '1.0.2',
   description:
     'Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views.',
   match: ['https://*.xmegadrive.com/*'],
@@ -43,16 +43,6 @@ const rules = new Rules({
 function animatePreview(container: HTMLElement) {
   const tick = new Tick(500);
 
-  function killjquery(n = 10) {
-    if (n > 0) {
-      n--;
-      $('img[data-cnt]').off();
-      setTimeout(() => killjquery(n), 250);
-    }
-  }
-
-  killjquery();
-
   function rotateImg(src: string, count: number) {
     return src.replace(/(\d)(?=\.jpg$)/, (_, n) => `${circularShift(parseInt(n), count)}`);
   }
@@ -62,6 +52,7 @@ function animatePreview(container: HTMLElement) {
     '.list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)',
     (e) => {
       const img = e.querySelector('img') as HTMLImageElement;
+      $(img).off();
       const origin = img.src;
       const count = parseInt(img.getAttribute('data-cnt') as string) || 5;
       tick.start(

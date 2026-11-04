@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         xmegadrive PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.0
+// @version      1.0.2
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views.
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xmegadrive.com/*
 // @exclude      https://*.xmegadrive.com/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.27/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -56,19 +56,12 @@ var ___utils = ___core;
 	});
 	function animatePreview(container) {
 		const tick = new ___utils.Tick(500);
-		function killjquery(n = 10) {
-			if (n > 0) {
-				n--;
-				$("img[data-cnt]").off();
-				setTimeout(() => killjquery(n), 250);
-			}
-		}
-		killjquery();
 		function rotateImg(src, count) {
 			return src.replace(/(\d)(?=\.jpg$)/, (_, n) => `${(0, ___utils.circularShift)(parseInt(n), count)}`);
 		}
 		___utils.OnHover.create(container, ".list-videos .item, .playlist .item, .list-playlists > div > .item, .item:has(.title)", (e) => {
 			const img = e.querySelector("img");
+			$(img).off();
 			const origin = img.src;
 			const count = parseInt(img.getAttribute("data-cnt")) || 5;
 			tick.start(() => {

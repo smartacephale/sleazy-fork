@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Obmenvsem PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.22
+// @version      1.0.23
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title and Duration, Sort by Duration
 // @license      MIT
@@ -13,7 +13,7 @@
 // @match        https://*.obmenvsem.com/*
 // @match        https://*.obmenvsem.*/*
 // @match        https://*.obmenvsems.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.27/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addElement
 // @grant        GM_addStyle
 // @grant        unsafeWindow

@@ -3,7 +3,7 @@ import { Rules } from '../../core';
 
 export const meta: MonkeyUserScript = {
   name: 'PornHub PervertMonkey',
-  version: '4.0.21',
+  version: '4.0.22',
   description:
     'Infinite scroll [optional]. Filter by Title, Uploader and Duration. Sort by Duration and Views',
   match: ['https://*.pornhub.com/*'],

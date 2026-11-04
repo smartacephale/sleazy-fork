@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Xhamster PervertMonkey
 // @namespace    pervertmonkey
-// @version      5.0.23
+// @version      5.1.1
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views
 // @license      MIT
@@ -13,7 +13,7 @@
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.*/*
 // @exclude      https://*.xhamster.com/embed*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.27/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addElement
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -28,10 +28,9 @@ var ___utils = ___core;
 	"use strict";
 	var _GM_addElement = (() => typeof GM_addElement != "undefined" ? GM_addElement : void 0)();
 	var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)();
-	var IS_VIDEO_PAGE = /^\/videos|moments\//.test(location.pathname);
 	var IS_PLAYLIST = /^\/my\/favorites\/videos\/\w+/.test(location.pathname);
 	function createThumb(data) {
-		return (0, ___utils.instantiateTemplate)(".video-thumb", {
+		return (0, ___utils.instantiateTemplate)("[data-video-type=\"video\"].video-thumb", {
 			href: data.pageURL,
 			"data-previewvideo": data.trailerURL,
 			"data-previewvideo-fallback": data.trailerFallbackUrl,
@@ -47,7 +46,10 @@ var ___utils = ___core;
 		});
 	}
 	var getPaginationData = !IS_PLAYLIST ? void 0 : async (url) => {
-		return (0, ___utils.parseHtml)(`<div>${(await (0, ___utils.fetchJson)(url)).list.map((e) => createThumb(e)).join("\n")}</div>`);
+		const thumbsHtml = (await fetch(url, { headers: { "x-csrf-token": "1" } }).then((r) => r.json())).list.map((e) => createThumb(e));
+		const wrapper = document.createElement("div");
+		wrapper.append(...thumbsHtml);
+		return wrapper;
 	};
 	function createPlaylistPaginationStrategy() {
 		const collectionId = location.pathname.split("/my/favorites/videos/")[1].split("-")[0];
@@ -59,19 +61,34 @@ var ___utils = ___core;
 			getPaginationLast: () => paginationLast,
 			getPaginationOffset: () => paginationOffset,
 			getPaginationUrlGenerator: () => (offset) => {
-				return `https://xhamster.com/api/front/favorite/get-playlist?id=${collectionId}&perPage=60&page=${offset}`;
+				return `https://xhamster.com/api/front/favorite/get-playlist?id=${collectionId}&page=${offset}`;
 			}
 		};
 	}
-	var rules = new ___core.Rules({
-		paginationStrategyOptions: IS_PLAYLIST ? createPlaylistPaginationStrategy() : { paginationSelector: ".prev-next-list, .test-pager" },
+	var paginationStrategyOptions = IS_PLAYLIST ? createPlaylistPaginationStrategy() : { paginationSelector: ".prev-next-list, .test-pager" };
+	var initialsCache = new Map();
+	function getInitials(document) {
+		const url = document.sourceURL;
+		return initialsCache.getOrInsertComputed(url, () => {
+			initialsCache.clear();
+			const initialsScript = Array.from(document.scripts).find((s) => s.id === "initials-script")?.innerHTML;
+			if (!initialsScript?.length) return {};
+			return (0, ___utils.findProperty)(JSON.parse(initialsScript.substring(16, initialsScript.length - 1)), "videoThumbProps");
+		});
+	}
+	new ___core.Rules({
+		paginationStrategyOptions,
 		getPaginationData,
 		containerSelectorLast: ".thumb-list",
 		thumbs: {
-			selector: ".video-thumb",
-			transform: (thumb) => {
-				if (thumb.querySelector("[class*=placeholder]")) console.log("has placeholder", thumb);
-				return thumb;
+			selector: "[data-video-type=\"video\"].video-thumb",
+			transform: (t, document) => {
+				try {
+					if (!t.querySelector("[class*=placeholderSkeleton]") || !document) return;
+					const tid = Number.parseInt(t.getAttribute("data-video-id") || "");
+					const data = getInitials(document).find((i) => i.id === tid);
+					if (data) t.innerHTML = createThumb(data).innerHTML;
+				} catch (_) {}
 			}
 		},
 		thumb: { selectors: {
@@ -86,7 +103,10 @@ var ___utils = ___core;
 				type: "float"
 			}
 		} },
-		thumbImg: { strategy: "auto" },
+		thumbImg: {
+			strategy: "auto",
+			remove: "[loading]"
+		},
 		gropeStrategy: "all-in-all",
 		customDataFilterFns: [{ filterWatched: (e, state) => !!(state.filterWatched && e.watched) }, { filterUnwatched: (e, state) => !!(state.filterUnwatched && !e.watched) }],
 		schemeOptions: [
@@ -128,13 +148,4 @@ var ___utils = ___core;
 			return createPreviewVideoElement(videoSrc, container);
 		});
 	}
-	function expandMoreVideoPage() {
-		(0, ___utils.watchElementChildrenCount)(rules.container, () => setTimeout(rules.gropeInit, 1800));
-		(0, ___utils.waitForElementToAppear)(document.body, "button[data-role=\"show-more-next\"]", (e) => {
-			new ___utils.Observer((target) => {
-				target.click();
-			}).observe(e);
-		});
-	}
-	if (IS_VIDEO_PAGE) expandMoreVideoPage();
 })(___core, ___utils);

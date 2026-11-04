@@ -3,18 +3,15 @@ import { GM_addElement, unsafeWindow } from '$';
 import { Rules } from '../../core';
 import {
   exterminateVideo,
-  fetchJson,
+  findProperty,
   instantiateTemplate,
-  Observer,
   OnHover,
-  parseHtml,
-  waitForElementToAppear,
-  watchElementChildrenCount,
+  // watchDomChangesWithThrottle,
 } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Xhamster PervertMonkey',
-  version: '5.0.23',
+  version: '5.1.1',
   description:
     'Infinite scroll [optional], Filter by Title, Duration and Watched/Unwatched. Sort by Duration and Views',
   match: ['https://*.xhamster.com/*', 'https://*.xhamster.*/*'],
@@ -22,10 +19,10 @@ export const meta: MonkeyUserScript = {
   grant: ['GM_addElement', 'GM_addStyle', 'unsafeWindow'],
 };
 
-const IS_VIDEO_PAGE = /^\/videos|moments\//.test(location.pathname);
+// const IS_VIDEO_PAGE = /^\/videos|moments\//.test(location.pathname);
 const IS_PLAYLIST = /^\/my\/favorites\/videos\/\w+/.test(location.pathname);
 
-function createThumb(data: Record<string, string>): string {
+function createThumb(data: Record<string, string>): HTMLElement {
   const attrsToReplace = {
     href: data.pageURL,
     'data-previewvideo': data.trailerURL,
@@ -43,18 +40,26 @@ function createThumb(data: Record<string, string>): string {
     '[data-role="video-duration"] div': data.duration,
   };
 
-  return instantiateTemplate('.video-thumb', attrsToReplace, text);
+  return instantiateTemplate('[data-video-type="video"].video-thumb', attrsToReplace, text);
 }
 
 const getPaginationData: Rules['getPaginationData'] = !IS_PLAYLIST
   ? undefined
   : async (url: string): Promise<HTMLElement> => {
-      const data = await fetchJson(url);
-      const thumbsHtml = (data as any).list
-        .map((e: Record<string, string>) => createThumb(e))
-        .join('\n');
-      return parseHtml(`<div>${thumbsHtml}</div>`);
-    };
+    const data = await fetch(url, {
+      headers: {
+        'x-csrf-token': '1',
+      }
+    }).then(r => r.json());
+
+    const thumbsHtml = (data as any).list
+      .map((e: Record<string, string>) => createThumb(e)) as HTMLElement[];
+
+    const wrapper = document.createElement('div');
+    wrapper.append(...thumbsHtml);
+
+    return wrapper;
+  };
 
 function createPlaylistPaginationStrategy() {
   const collectionId = location.pathname
@@ -69,7 +74,7 @@ function createPlaylistPaginationStrategy() {
     getPaginationLast: () => paginationLast,
     getPaginationOffset: () => paginationOffset,
     getPaginationUrlGenerator: () => (offset: number) => {
-      return `https://xhamster.com/api/front/favorite/get-playlist?id=${collectionId}&perPage=60&page=${offset}`;
+      return `https://xhamster.com/api/front/favorite/get-playlist?id=${collectionId}&page=${offset}`;
     },
   };
 
@@ -84,17 +89,48 @@ const paginationStrategyOptions = IS_PLAYLIST
   ? createPlaylistPaginationStrategy()
   : paginationStrategyOptionsDefault;
 
+const initialsCache = new Map<string, any>();
+
+function getInitials(document: Document): any {
+  const url = (document as any).sourceURL;
+
+  return initialsCache.getOrInsertComputed(url, () => {
+    initialsCache.clear();
+
+    const initialsScript = Array.from(document.scripts).find(
+      (s) => s.id === 'initials-script',
+    )?.innerHTML;
+
+    if (!initialsScript?.length) return {};
+
+    const initials = JSON.parse(
+      initialsScript.substring('window.initials='.length, initialsScript.length - 1),
+    );
+
+    return findProperty(initials, 'videoThumbProps');
+  });
+}
+
 const rules = new Rules({
   paginationStrategyOptions,
   getPaginationData,
   containerSelectorLast: '.thumb-list',
   thumbs: {
-    selector: '.video-thumb',
-    transform: (thumb: HTMLElement) => {
-      if (thumb.querySelector('[class*=placeholder]')) {
-        console.log('has placeholder', thumb);
-      }
-      return thumb;
+    selector: '[data-video-type="video"].video-thumb',
+    transform: (t, document) => {
+      try {
+        if (!t.querySelector('[class*=placeholderSkeleton]') || !document) return;
+
+        const tid = Number.parseInt(t.getAttribute('data-video-id') || '');
+        const cache = getInitials(document);
+
+        const data = cache.find((i: any) => i.id === tid);
+
+        if (data) {
+          const replacement = createThumb(data);
+          t.innerHTML = replacement.innerHTML;
+        }
+      } catch (_) { }
     },
   },
   thumb: {
@@ -107,7 +143,7 @@ const rules = new Rules({
   },
   thumbImg: {
     strategy: 'auto',
-    // remove: '[loading]',
+    remove: '[loading]',
   },
   gropeStrategy: 'all-in-all',
   customDataFilterFns: [
@@ -164,16 +200,8 @@ function animatePreview() {
   });
 }
 
-function expandMoreVideoPage() {
-  watchElementChildrenCount(rules.container, () => setTimeout(rules.gropeInit, 1800));
-  waitForElementToAppear(document.body, 'button[data-role="show-more-next"]', (e) => {
-    const observer = new Observer((target) => {
-      (target as HTMLButtonElement).click();
-    });
-    observer.observe(e as HTMLElement);
-  });
-}
-
-if (IS_VIDEO_PAGE) {
-  expandMoreVideoPage();
-}
+// if (IS_VIDEO_PAGE) {
+//   watchDomChangesWithThrottle(rules.container, () => {
+//     rules.reset();
+//   }, 1000, 10);
+// }

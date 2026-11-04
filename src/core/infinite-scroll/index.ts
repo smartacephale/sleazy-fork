@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs';
-import { fetchHtml, Observer, wait } from '../../utils';
+import { fetchText, getDocumentBody, Observer, parseDocument, wait } from '../../utils';
 import type { PaginationStrategy } from '../parsers';
 import type { Rules } from '../rules';
 
@@ -78,8 +78,16 @@ export class InfiniteScroller {
     return true;
   };
 
+  public cachedUrlDocument: Document | undefined = undefined;
+
   private async getPaginationData(url: string): Promise<HTMLElement> {
-    return await fetchHtml(url);
+    const text = await fetchText(url);
+    const document = parseDocument(text);
+
+    Object.assign(document, { sourceURL: url });
+    this.cachedUrlDocument = document;
+
+    return getDocumentBody(document);
   }
 
   async doScroll(url: string, offset: number) {

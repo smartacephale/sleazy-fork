@@ -5,7 +5,7 @@ import { fetchHtml, parseUrl } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Obmenvsem PervertMonkey',
-  version: '1.0.22',
+  version: '1.0.23',
   description: 'Infinite scroll [optional], Filter by Title and Duration, Sort by Duration',
   match: [
     'https://*.obmenvsem.com/*',

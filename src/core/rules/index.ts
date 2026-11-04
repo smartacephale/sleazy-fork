@@ -149,7 +149,7 @@ export class Rules {
 
   public onResetCallback?: () => void;
 
-  private reset() {
+  public reset() {
     this.mutationObservers.forEach((o) => {
       o.disconnect();
     });
@@ -178,7 +178,7 @@ export class Rules {
 
     Object.assign(this, options);
 
-    this.thumbsParser = ThumbsParser.create(this.thumbs);
+    this.thumbsParser = ThumbsParser.create(this.thumbs, this);
     this.thumbDataParser = ThumbDataParser.create(this.thumb);
     this.thumbImgParser = ThumbImgParser.create(this.thumbImg);
 

@@ -32,7 +32,7 @@ export function instantiateTemplate(
   sourceSelector: string,
   attributeUpdates: Record<string, string>,
   contentUpdates: Record<string, string>,
-): string {
+): HTMLElement {
   const source = document.querySelector(sourceSelector) as HTMLElement;
 
   const wrapper = document.createElement('div');
@@ -51,5 +51,5 @@ export function instantiateTemplate(
     });
   });
 
-  return wrapper.innerHTML;
+  return wrapper?.firstChild as HTMLElement;
 }

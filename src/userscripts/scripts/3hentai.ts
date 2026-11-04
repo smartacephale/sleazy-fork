@@ -4,7 +4,7 @@ import { circularShift, OnHover, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: '3Hentai PervertMonkey',
-  version: '1.0.20',
+  version: '1.0.21',
   description: 'Infinite scroll [optional], Filter by Title, thumb preview',
   match: 'https://*.3hentai.net/*',
 };
