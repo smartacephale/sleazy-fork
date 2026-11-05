@@ -1,9 +1,9 @@
 import { parseHtml, waitForElementToAppear } from '.';
 
 export function exterminateVideo(video: HTMLVideoElement) {
-  video.removeAttribute('src');
-  video.load();
-  video.remove();
+  video?.removeAttribute('src');
+  video?.load();
+  video?.remove();
 }
 
 export function downloader(options: {
