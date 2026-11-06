@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JavDatabase PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.0
+// @version      1.0.1
 // @author       violent-orangutan
 // @description  Adds search movie links
 // @license      MIT
@@ -22,13 +22,20 @@ var ___utils = ___core;
 
 (function() {
 	"use strict";
-	var websites = [{
-		name: "missav.ws",
-		url: (u) => `https://missav.ws/en/search/${u}`
-	}, {
-		name: "javhdporn.net",
-		url: (u) => `https://www.javhdporn.net/search/${u}/`
-	}];
+	var websites = [
+		{
+			name: "missav.ws",
+			url: (u) => `https://missav.ws/en/search/${u}`
+		},
+		{
+			name: "javhdporn.net",
+			url: (u) => `https://www.javhdporn.net/search/${u}/`
+		},
+		{
+			name: "javxxx.me",
+			url: (u) => `https://www.javxxx.me/search/${u}/`
+		}
+	];
 	function createLinks(name) {
 		return `<div style='display: flex;' >${websites.map((w) => `
       <a target="_blank" style='padding: 2px;' href="${w.url(name)}">

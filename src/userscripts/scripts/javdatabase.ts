@@ -2,7 +2,7 @@ import type { MonkeyUserScript } from 'vite-plugin-monkey';
 
 export const meta: MonkeyUserScript = {
   name: 'JavDatabase PervertMonkey',
-  version: '1.0.0',
+  version: '1.0.1',
   description: 'Adds search movie links',
   match: ['https://www.javdatabase.com/*'],
   grant: 'none',
@@ -16,6 +16,7 @@ interface Website {
 const websites: Website[] = [
   { name: 'missav.ws', url: (u) => `https://missav.ws/en/search/${u}` },
   { name: 'javhdporn.net', url: (u) => `https://www.javhdporn.net/search/${u}/` },
+  { name: 'javxxx.me', url: (u) => `https://www.javxxx.me/search/${u}/` },
 ];
 
 function createLinks(name: string) {
