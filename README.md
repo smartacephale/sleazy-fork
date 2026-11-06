@@ -3,7 +3,9 @@
 <p align="center">
 <img alt="Static Badge" src="https://img.shields.io/badge/Tampermonkey-OK-aliceblue?labelColor=lightblue"> 
 <img alt="Static Badge" src="https://img.shields.io/badge/Violentmonkey-OK-slategray?labelColor=skyblue">
-<a href="https://deepwiki.com/smartacephale/sleazy-fork"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+<a href="https://deepwiki.com/smartacephale/sleazy-fork">  
+  <img src="https://img.shields.io/badge/Ask-DeepWiki-blue" alt="Ask DeepWiki">  
+</a>
 </p>
 
 <p align="center"><code>install scripts:</code> https://sleazyfork.org/en/scripts?set=590816</p>
