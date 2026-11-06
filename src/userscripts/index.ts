@@ -1,1 +1,1 @@
-import './scripts/x-x-x';
+import './scripts/javdatabase';

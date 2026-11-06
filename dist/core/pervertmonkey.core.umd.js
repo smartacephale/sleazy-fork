@@ -85,9 +85,9 @@
 	//#endregion
 	//#region src/utils/dom/miscellaneous.ts
 	function exterminateVideo(video) {
-		video.removeAttribute("src");
-		video.load();
-		video.remove();
+		video?.removeAttribute("src");
+		video?.load();
+		video?.remove();
 	}
 	function downloader(options) {
 		const btn = parseHtml(options.buttonHtml);
