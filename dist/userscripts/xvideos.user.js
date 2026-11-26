@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         XVideos PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.1.1
+// @version      4.2.0
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.
 // @license      MIT
@@ -11,7 +11,8 @@
 // @source       https://github.com/smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.xvideos.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
+// @match        https://*.xvideos.red/*
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -23,7 +24,55 @@ var ___utils = ___core;
 
 (function(___core, ___utils) {
 	"use strict";
-	var xv = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)().xv;
+	var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)();
+	function createQualityFilter(qualities) {
+		const keys = Object.keys(qualities);
+		const entries = Object.entries(qualities);
+		function shouldFilter(el, state) {
+			return !entries.some((e) => state[e[0]] && el.quality === e[1]);
+		}
+		return {
+			qualityFilter: {
+				handle(el, state) {
+					if (!keys.some((q) => !!state[q])) return false;
+					return shouldFilter(el, state);
+				},
+				deps: keys
+			},
+			qualityFilterScheme: [{
+				title: "Quality Filter",
+				content: keys.map((k) => ({
+					[k]: false,
+					label: k.substring(7)
+				}))
+			}]
+		};
+	}
+	function createTextFilter(filterName, dataPropName, positive) {
+		const filterNameValue = `${filterName}Words`;
+		return {
+			handle(e, state, searchFilter) {
+				if (!Object.hasOwn(state, filterName) || !state[filterName]) return false;
+				return !searchFilter?.(e[dataPropName]);
+			},
+			$preDefine: (state) => {
+				const r = new ___utils.RegexFilter(state[filterNameValue]);
+				if (positive) return (s) => r.hasEvery(s);
+				return (s) => r.hasNone(s);
+			},
+			deps: [filterNameValue]
+		};
+	}
+	createTextFilter("filterExclude", "title", false), createTextFilter("filterInclude", "title", true), createTextFilter("filterUploaderExclude", "uploader", false), createTextFilter("filterUploaderInclude", "uploader", true);
+	var xv = _unsafeWindow.xv;
+	var { qualityFilter, qualityFilterScheme } = createQualityFilter({
+		qualityLow: "",
+		quality360: "360p",
+		quality720: "720p",
+		quality1080: "1080p",
+		quality1440: "1440p",
+		quality4k: "4k"
+	});
 	new ___core.Rules({
 		paginationStrategyOptions: {
 			paginationSelector: "#main .pagination:last-child",
@@ -52,53 +101,12 @@ var ___utils = ___core;
 				}, 200);
 			}
 		},
-		customDataFilterFns: [{ qualityFilter: {
-			handle(el, state) {
-				if (!(state.qualityLow || state.quality360 || state.quality720 || state.quality1080 || state.quality1440 || state.quality4k)) return false;
-				return !(state.qualityLow && el.quality === "" || state.quality360 && el.quality === "360p" || state.quality720 && el.quality === "720p" || state.quality1080 && el.quality === "1080p" || state.quality1440 && el.quality === "1440p" || state.quality4k && el.quality === "4k");
-			},
-			deps: [
-				"qualityLow",
-				"quality360",
-				"quality720",
-				"quality1080",
-				"quality1440",
-				"quality4k"
-			]
-		} }],
+		customDataFilterFns: [{ qualityFilter }],
 		schemeOptions: [
 			"Title Filter",
 			"Uploader Filter",
 			"Duration Filter",
-			{
-				title: "Quality Filter",
-				content: [
-					{
-						qualityLow: false,
-						label: "Low"
-					},
-					{
-						quality360: false,
-						label: "360p"
-					},
-					{
-						quality720: false,
-						label: "720p"
-					},
-					{
-						quality1080: false,
-						label: "1080p"
-					},
-					{
-						quality1440: false,
-						label: "1440p"
-					},
-					{
-						quality4k: false,
-						label: "4k"
-					}
-				]
-			},
+			...qualityFilterScheme,
 			"Sort By",
 			"Badge",
 			"Advanced"

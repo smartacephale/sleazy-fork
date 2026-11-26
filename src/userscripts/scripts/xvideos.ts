@@ -1,17 +1,29 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
 import { Rules } from '../../core';
+import { createQualityFilter } from '../../core/jabroni-config';
 import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'XVideos PervertMonkey',
-  version: '4.1.1',
+  version: '4.2.0',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.',
-  match: 'https://*.xvideos.com/*',
+  match: ['https://*.xvideos.com/*', 'https://*.xvideos.red/*'],
 };
 
 const xv = (unsafeWindow as any).xv;
+
+const qualities = {
+  qualityLow: '',
+  quality360: '360p',
+  quality720: '720p',
+  quality1080: '1080p',
+  quality1440: '1440p',
+  quality4k: '4k',
+};
+
+const { qualityFilter, qualityFilterScheme } = createQualityFilter(qualities);
 
 const rules = new Rules({
   paginationStrategyOptions: {
@@ -35,48 +47,12 @@ const rules = new Rules({
       }, 200);
     },
   },
-  customDataFilterFns: [
-    {
-      qualityFilter: {
-        handle(el, state) {
-          const hasAnyQualitySelected =
-            state.qualityLow ||
-            state.quality360 ||
-            state.quality720 ||
-            state.quality1080 ||
-            state.quality1440 ||
-            state.quality4k;
-
-          if (!hasAnyQualitySelected) return false;
-
-          return !(
-            (state.qualityLow && el.quality === '') ||
-            (state.quality360 && el.quality === '360p') ||
-            (state.quality720 && el.quality === '720p') ||
-            (state.quality1080 && el.quality === '1080p') ||
-            (state.quality1440 && el.quality === '1440p') ||
-            (state.quality4k && el.quality === '4k')
-          );
-        },
-        deps: ['qualityLow', 'quality360', 'quality720', 'quality1080', 'quality1440', 'quality4k'],
-      },
-    },
-  ],
+  customDataFilterFns: [{ qualityFilter }],
   schemeOptions: [
     'Title Filter',
     'Uploader Filter',
     'Duration Filter',
-    {
-      title: 'Quality Filter',
-      content: [
-        { qualityLow: false, label: 'Low' },
-        { quality360: false, label: '360p' },
-        { quality720: false, label: '720p' },
-        { quality1080: false, label: '1080p' },
-        { quality1440: false, label: '1440p' },
-        { quality4k: false, label: '4k' },
-      ],
-    },
+    ...qualityFilterScheme,
     'Sort By',
     'Badge',
     'Advanced',

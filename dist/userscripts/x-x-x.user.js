@@ -13,7 +13,7 @@
 // @match        https://x-x-x.video/*
 // @match        https://x-x-x.tube/*
 // @match        https://*.extreme.adult/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -49,8 +49,7 @@ var ___utils = ___core;
 		}
 		___utils.OnHover.create(container, ".item.thumb", (target) => {
 			const img = target.querySelector("img");
-			const dataPreview = img?.getAttribute("data-preview");
-			return createPreviewElement(dataPreview, img);
+			return createPreviewElement(img?.getAttribute("data-preview"), img);
 		});
 	}
 })(___core, ___utils);

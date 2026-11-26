@@ -1,20 +1,43 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
 import { Rules } from '../../core';
-import { OnHover } from '../../utils';
+import { createQualityFilter } from '../../core/jabroni-config';
+import { OnHover, querySelectorLast } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.1.6',
+  version: '2.2.0',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],
   supportURL: 'https://sleazyfork.org/en/scripts/552559-eporner-pervertmonkey/feedback',
 };
 
+const containerSelectorLast = 'div:has(div[id^=vf][data-id])';
+const paginationSelector = '.numlist2';
+
+const paginationIsInThumbs = !!querySelectorLast(
+  document.body,
+  containerSelectorLast,
+)?.querySelector(paginationSelector);
+
+const intersectionObservableSelector = paginationIsInThumbs ? 'footer' : paginationSelector;
+
+const qualities = {
+  quality360: 360,
+  quality480: 480,
+  quality720: 720,
+  quality1080: 1080,
+  quality2k: 2,
+  quality4k: 4,
+};
+
+const { qualityFilter, qualityFilterScheme } = createQualityFilter(qualities);
+
 const rules = new Rules({
+  intersectionObservableSelector,
   paginationStrategyOptions: {
-    paginationSelector: '.numlist2',
+    paginationSelector,
     pathnameSelector: /\/(\d+)(?=\/|$)/,
     overwritePaginationLast: (n, _) => (n === 9 ? 9999 : n),
   },
@@ -32,56 +55,13 @@ const rules = new Rules({
     strategy: 'auto',
     remove: 'auto',
   },
-  containerSelectorLast: 'div:has(div[id^=vf][data-id])',
-  customDataFilterFns: [
-    {
-      qualityFilter: {
-        handle(el, state) {
-          const hasAnyQualitySelected =
-            state.quality360 ||
-            state.quality480 ||
-            state.quality720 ||
-            state.quality1080 ||
-            state.quality2k ||
-            state.quality4k;
-
-          if (!hasAnyQualitySelected) return false;
-
-          return !(
-            (state.quality360 && el.quality === 360) ||
-            (state.quality480 && el.quality === 480) ||
-            (state.quality720 && el.quality === 720) ||
-            (state.quality1080 && el.quality === 1080) ||
-            (state.quality2k && el.quality === 2) ||
-            (state.quality4k && el.quality === 4)
-          );
-        },
-        deps: [
-          'quality360',
-          'quality480',
-          'quality720',
-          'quality1080',
-          'quality2k',
-          'quality4k',
-        ],
-      },
-    },
-  ],
+  containerSelectorLast,
+  customDataFilterFns: [{ qualityFilter }],
   schemeOptions: [
     'Title Filter',
     'Uploader Filter',
     'Duration Filter',
-    {
-      title: 'Quality Filter ',
-      content: [
-        { quality360: false },
-        { quality480: false },
-        { quality720: false },
-        { quality1080: false },
-        { quality2k: false },
-        { quality4k: false },
-      ],
-    },
+    ...qualityFilterScheme,
     'Sort By',
     'Badge',
     'Advanced',

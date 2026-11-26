@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.pornhub.com/*
 // @exclude      https://*.pornhub.com/embed/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -59,7 +59,7 @@ var ___utils = ___core;
 		cookieStore.set({
 			name: "accessAgeDisclaimerPH",
 			value: "2",
-			expires: Date.now() + 2160 * 60 * 60 * 1e3
+			expires: Date.now() + 7776e6
 		});
 		document.querySelectorAll("[data-label=\"over18_enter\"]").forEach((b) => {
 			b.click();

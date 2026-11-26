@@ -1,1 +1,1 @@
-import './scripts/javdatabase';
+import './scripts/spankbang';

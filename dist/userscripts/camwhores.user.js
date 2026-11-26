@@ -13,7 +13,7 @@
 // @match        https://*.camwhores.tv/*
 // @match        https://*.camwhores.*/*
 // @exclude      https://*.camwhores.tv/*mode=async*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -58,7 +58,7 @@ var ___utils = ___core;
 		}
 		isLocked() {
 			const lock = parseInt(localStorage.getItem(this.lockKey));
-			return !(!lock || Date.now() - lock > 300 * 1e3);
+			return !(!lock || Date.now() - lock > 3e5);
 		}
 		lock(value) {
 			if (value) localStorage.setItem(this.lockKey, JSON.stringify(Date.now()));
@@ -167,8 +167,9 @@ var ___utils = ___core;
 	}
 	async function getMemberFriends(id) {
 		const url = new URL(IS_COMMUNITY_LIST ? "/members/" : `/members/${id}/friends/`, location.origin);
+		const doc = await (0, ___utils.fetchHtml)(url.href);
 		const paginationStrategy = (0, ___core.getPaginationStrategy)({
-			doc: await (0, ___utils.fetchHtml)(url.href),
+			doc,
 			url,
 			overwritePaginationLast: (x) => x === 9 ? 999 : x
 		});

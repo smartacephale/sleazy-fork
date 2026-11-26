@@ -13,7 +13,7 @@ const buildCoreConfig: UserConfig = {
     minify: false,
     outDir: 'dist/core',
     lib: {
-      entry: path.resolve(__dirname, './src/index.ts'),
+      entry: path.resolve(import.meta.dirname, './src/index.ts'),
       name: 'pervertmonkey.core',
       fileName: (format) => `pervertmonkey.core.${format}.js`,
     },
@@ -28,9 +28,9 @@ const buildCoreConfig: UserConfig = {
   },
   plugins: [
     dts({
-      bundleTypes: true,
+      bundleTypes: false,
       afterBuild: () => {
-        const distCore = path.resolve(__dirname, 'dist/core');
+        const distCore = path.resolve(import.meta.dirname, 'dist/core');
         if (!existsSync(distCore)) return;
 
         const entries = readdirSync(distCore, { withFileTypes: true });

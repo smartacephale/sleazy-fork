@@ -5,7 +5,7 @@ import { circularShift, OnHover, Tick } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'xmegadrive PervertMonkey',
-  version: '1.0.2',
+  version: '1.0.3',
   description:
     'Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views.',
   match: ['https://*.xmegadrive.com/*'],
@@ -53,7 +53,7 @@ function animatePreview(container: HTMLElement) {
     (e) => {
       const img = e.querySelector('img') as HTMLImageElement;
       $(img).off();
-      const origin = img.src;
+      const origin = img.getAttribute("data-original") as string;
       const count = parseInt(img.getAttribute('data-cnt') as string) || 5;
       tick.start(
         () => {

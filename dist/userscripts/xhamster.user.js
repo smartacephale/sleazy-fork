@@ -13,7 +13,7 @@
 // @match        https://*.xhamster.com/*
 // @match        https://*.xhamster.*/*
 // @exclude      https://*.xhamster.com/embed*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addElement
 // @grant        GM_addStyle
 // @grant        unsafeWindow
@@ -30,7 +30,7 @@ var ___utils = ___core;
 	var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)();
 	var IS_PLAYLIST = /^\/my\/favorites\/videos\/\w+/.test(location.pathname);
 	function createThumb(data) {
-		return (0, ___utils.instantiateTemplate)("[data-video-type=\"video\"].video-thumb", {
+		const attrsToReplace = {
 			href: data.pageURL,
 			"data-previewvideo": data.trailerURL,
 			"data-previewvideo-fallback": data.trailerFallbackUrl,
@@ -39,11 +39,13 @@ var ___utils = ___core;
 			"data-video-id": data.id,
 			srcset: data.thumbURL,
 			src: data.imageURL
-		}, {
+		};
+		const text = {
 			".video-thumb-views": data.views,
 			"[title]": data.title,
 			"[data-role=\"video-duration\"] div": data.duration
-		});
+		};
+		return (0, ___utils.instantiateTemplate)("[data-video-type=\"video\"].video-thumb", attrsToReplace, text);
 	}
 	var getPaginationData = !IS_PLAYLIST ? void 0 : async (url) => {
 		const thumbsHtml = (await fetch(url, { headers: { "x-csrf-token": "1" } }).then((r) => r.json())).list.map((e) => createThumb(e));
@@ -73,7 +75,8 @@ var ___utils = ___core;
 			initialsCache.clear();
 			const initialsScript = Array.from(document.scripts).find((s) => s.id === "initials-script")?.innerHTML;
 			if (!initialsScript?.length) return {};
-			return (0, ___utils.findProperty)(JSON.parse(initialsScript.substring(16, initialsScript.length - 1)), "videoThumbProps");
+			const initials = JSON.parse(initialsScript.substring(16, initialsScript.length - 1));
+			return (0, ___utils.findProperty)(initials, "videoThumbProps");
 		});
 	}
 	new ___core.Rules({
@@ -144,8 +147,7 @@ var ___utils = ___core;
 		}
 		___utils.OnHover.create(document.body, ".video-thumb", (e) => {
 			const container = e.querySelector(".thumb-image-container__image");
-			const videoSrc = e.querySelector("[data-previewvideo]")?.getAttribute("data-previewvideo");
-			return createPreviewVideoElement(videoSrc, container);
+			return createPreviewVideoElement(e.querySelector("[data-previewvideo]")?.getAttribute("data-previewvideo"), container);
 		});
 	}
 })(___core, ___utils);

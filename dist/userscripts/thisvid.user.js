@@ -11,7 +11,7 @@
 // @source       https://github.com/smartacephale/sleazy-fork
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.thisvid.com/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -724,7 +724,6 @@ var ___utils = ___core;
 									--active;
 									innerIndices.push(index);
 									while (active < concurrent && outerValues.length) pullNextOuter(outerValues.shift());
-									break;
 							}
 						}
 					} while (!outerComplete || active + outerValues.length > 0);
@@ -748,7 +747,7 @@ var ___utils = ___core;
 			});
 		}
 	};
-	function flatMap(selector, concurrent = Infinity, thisArg) {
+	function flatMap(selector, concurrent = 1e400, thisArg) {
 		return function flatMapOperatorFunction(source) {
 			return new FlattenConcurrentAsyncIterable(source, selector, concurrent, false, thisArg);
 		};
@@ -822,7 +821,7 @@ var ___utils = ___core;
 		}
 		isLocked() {
 			const lock = parseInt(localStorage.getItem(this.lockKey));
-			return !(!lock || Date.now() - lock > 300 * 1e3);
+			return !(!lock || Date.now() - lock > 3e5);
 		}
 		lock(value) {
 			if (value) localStorage.setItem(this.lockKey, JSON.stringify(Date.now()));
@@ -910,7 +909,8 @@ var ___utils = ___core;
 		],
 		gropeStrategy: "all-in-all"
 	};
-	var rules = new ___core.Rules(IS_MY_MEMBER_PAGE || IS_MY_WALL ? await(createPrivateFeed()) : defaultRulesConfig);
+	var config = IS_MY_MEMBER_PAGE || IS_MY_WALL ? await(createPrivateFeed()) : defaultRulesConfig;
+	var rules = new ___core.Rules(config);
 	_GM_addStyle(`
   .haveNoAccess { background: linear-gradient(to bottom, #b50000 0%, #2c2c2c 100%) red !important; }
   .haveAccess { background: linear-gradient(to bottom, #4e9299 0%, #2c2c2c 100%) green !important; }
@@ -1001,7 +1001,8 @@ var ___utils = ___core;
 		}
 	}
 	async function getMemberData(id) {
-		const doc = await (0, ___utils.fetchHtml)(id.includes("member") ? id : `/members/${id}/`);
+		const url = id.includes("member") ? id : `/members/${id}/`;
+		const doc = await (0, ___utils.fetchHtml)(url);
 		const data = {};
 		doc.querySelectorAll(".profile span").forEach((s) => {
 			if (s.innerText.includes("Name:")) data.name = s.firstElementChild?.innerText;
@@ -1083,8 +1084,9 @@ var ___utils = ___core;
 		const { uploadedPrivate, uploadedPublic, name } = await getMemberData(id);
 		const videosCount = type === "private" ? uploadedPrivate : uploadedPublic;
 		const url = new URL(`https://thisvid.com/members/${id}/${type}_videos/`);
+		const doc = await (0, ___utils.fetchHtml)(url.href);
 		const paginationStrategy = (0, ___core.getPaginationStrategy)({
-			doc: await (0, ___utils.fetchHtml)(url.href),
+			doc,
 			url
 		});
 		return {
@@ -1274,8 +1276,7 @@ var ___utils = ___core;
 	}
 	function highlightMessages() {
 		document.querySelectorAll(".entry").forEach((entry) => {
-			const memberUrl = entry.querySelector("a")?.href;
-			getMemberData(memberUrl).then(({ uploadedPublic, uploadedPrivate }) => {
+			getMemberData(entry.querySelector("a")?.href).then(({ uploadedPublic, uploadedPrivate }) => {
 				if (uploadedPrivate > 0) {
 					const success = !entry.innerText.includes("has declined");
 					entry.classList.add(success ? "success" : "failure");
@@ -1299,7 +1300,8 @@ var ___utils = ___core;
 	if (IS_MEMBER_FRIEND) document.querySelector(".profile")?.classList.add("friendProfile");
 	if (IS_PLAYLIST) {
 		const videoUrl = fixPlaylistThumbUrl(location.pathname);
-		const link = (0, ___utils.replaceElementTag)(document.querySelector(".tools-left > li:nth-child(4) > .title-description"), "a");
+		const desc = document.querySelector(".tools-left > li:nth-child(4) > .title-description");
+		const link = (0, ___utils.replaceElementTag)(desc, "a");
 		link.href = videoUrl;
 	}
 })(___core, ___utils);

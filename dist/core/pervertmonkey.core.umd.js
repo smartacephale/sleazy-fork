@@ -2,7 +2,7 @@
 	typeof exports === "object" && typeof module !== "undefined" ? factory(exports, require("vite-plugin-monkey/dist/client")) : typeof define === "function" && define.amd ? define(["exports", "vite-plugin-monkey/dist/client"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory((global.pervertmonkey = global.pervertmonkey || {}, global.pervertmonkey.core = {}), global.window));
 })(this, function(exports, vite_plugin_monkey_dist_client) {
 	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-	//#region src/core/data-handler/data-filter-fn.ts
+	// src/core/data-handler/data-filter-fn.ts
 	var DataFilterFn = class DataFilterFn {
 		handle;
 		deps;
@@ -36,8 +36,7 @@
 			};
 		}
 	};
-	//#endregion
-	//#region src/utils/arrays/index.ts
+	// src/utils/arrays/index.ts
 	function chunks(arr, size) {
 		return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) => arr.slice(i * size, i * size + size));
 	}
@@ -47,13 +46,11 @@
 	function range(size, start = 1, step = 1) {
 		return irange(start, step).take(size).toArray();
 	}
-	//#endregion
-	//#region src/utils/async/index.ts
+	// src/utils/async/index.ts
 	function wait(milliseconds) {
 		return new Promise((resolve) => setTimeout(resolve, milliseconds));
 	}
-	//#endregion
-	//#region src/utils/dom/attributes.ts
+	// src/utils/dom/attributes.ts
 	function copyAttributes(target, source) {
 		for (const attr of source.attributes) if (attr.nodeValue) target.setAttribute(attr.nodeName, attr.nodeValue);
 	}
@@ -82,8 +79,7 @@
 		}
 		return true;
 	}
-	//#endregion
-	//#region src/utils/dom/miscellaneous.ts
+	// src/utils/dom/miscellaneous.ts
 	function exterminateVideo(video) {
 		video?.removeAttribute("src");
 		video?.load();
@@ -118,8 +114,7 @@
 		});
 		return wrapper?.firstChild;
 	}
-	//#endregion
-	//#region src/utils/dom/observers.ts
+	// src/utils/dom/observers.ts
 	function waitForElementToAppear(parent, selector, callback) {
 		const observer = new MutationObserver((_mutations) => {
 			const e = parent.querySelector(selector);
@@ -160,7 +155,7 @@
 		observer.observe(element, { childList: true });
 		return observer;
 	}
-	function watchDomChangesWithThrottle(element, callback, throttle = 1e3, times = Infinity, options = {
+	function watchDomChangesWithThrottle(element, callback, throttle = 1e3, times = 1e400, options = {
 		childList: true,
 		subtree: true,
 		attributes: true
@@ -169,7 +164,7 @@
 		let timeout;
 		let times_ = times;
 		const observer = new MutationObserver((_mutationList, _observer) => {
-			if (times_ !== Infinity && times_ < 1) {
+			if (times_ !== 1e400 && times_ < 1) {
 				observer.disconnect();
 				return;
 			}
@@ -182,8 +177,7 @@
 		observer.observe(element, options);
 		return observer;
 	}
-	//#endregion
-	//#region src/utils/objects/memoize.ts
+	// src/utils/objects/memoize.ts
 	function memoize(fn) {
 		const cache = /* @__PURE__ */ new Map();
 		const memoizedFunction = ((...args) => {
@@ -192,8 +186,7 @@
 		});
 		return memoizedFunction;
 	}
-	//#endregion
-	//#region src/utils/objects/index.ts
+	// src/utils/objects/index.ts
 	function objectToFormData(obj) {
 		const formData = new FormData();
 		Object.entries(obj).forEach(([k, v]) => {
@@ -209,8 +202,7 @@
 			if (result !== void 0) return result;
 		}
 	}
-	//#endregion
-	//#region src/utils/strings/regexes.ts
+	// src/utils/strings/regexes.ts
 	var RegexFilter = class {
 		regexes;
 		constructor(str, flags = "gi") {
@@ -231,16 +223,14 @@
 			return this.regexes.every((r) => !r.test(str));
 		}
 	};
-	//#endregion
-	//#region src/utils/strings/index.ts
+	// src/utils/strings/index.ts
 	function splitWith(s, c = ",") {
 		return s.split(c).map((s) => s.trim()).filter(Boolean);
 	}
 	function sanitizeStr(s) {
 		return s?.replace(/\n|\t/g, " ").replace(/ {2,}/g, " ").trim() || "";
 	}
-	//#endregion
-	//#region src/utils/dom/selectors.ts
+	// src/utils/dom/selectors.ts
 	function querySelectorOrSelf(element, selector) {
 		if (element.matches?.(selector)) return element;
 		return element.querySelector(selector);
@@ -266,8 +256,7 @@
 		if (e.parentElement) return findNextSibling(e.parentElement);
 		return null;
 	}
-	//#endregion
-	//#region src/utils/dom/index.ts
+	// src/utils/dom/index.ts
 	function parseHtml(html) {
 		return parseDocumentBody(html);
 	}
@@ -282,8 +271,7 @@
 	function parseDocumentBody(html) {
 		return getDocumentBody(parseDocument(html));
 	}
-	//#endregion
-	//#region src/utils/events/on-hover.ts
+	// src/utils/events/on-hover.ts
 	var OnHover = class OnHover {
 		container;
 		targetSelector;
@@ -313,8 +301,7 @@
 			return new OnHover(...args);
 		}
 	};
-	//#endregion
-	//#region src/utils/events/tick.ts
+	// src/utils/events/tick.ts
 	var Tick = class {
 		delay;
 		startImmediate;
@@ -339,8 +326,7 @@
 			}
 		}
 	};
-	//#endregion
-	//#region src/utils/fetch/index.ts
+	// src/utils/fetch/index.ts
 	var MOBILE_UA = { "User-Agent": [
 		"Mozilla/5.0 (Linux; Android 10; K)",
 		"AppleWebKit/537.36 (KHTML, like Gecko)",
@@ -357,13 +343,11 @@
 	var fetchJson = (input) => fetchWith(input, { type: "json" });
 	var fetchHtml = (input) => fetchWith(input, { type: "html" });
 	var fetchText = (input) => fetchWith(input, { type: "text" });
-	//#endregion
-	//#region src/utils/math/index.ts
+	// src/utils/math/index.ts
 	function circularShift(n, c = 6, s = 1) {
 		return (n + s) % c || c;
 	}
-	//#endregion
-	//#region src/utils/observers/lazy-image-loader.ts
+	// src/utils/observers/lazy-image-loader.ts
 	var LazyImgLoader = class {
 		attributeName;
 		lazyImgObserver;
@@ -385,8 +369,7 @@
 			target.removeAttribute(this.attributeName);
 		}
 	};
-	//#endregion
-	//#region src/utils/observers/index.ts
+	// src/utils/observers/index.ts
 	var Observer = class Observer {
 		callback;
 		timeout;
@@ -421,8 +404,7 @@
 			return observer;
 		}
 	};
-	//#endregion
-	//#region src/utils/parsers/time-parser.ts
+	// src/utils/parsers/time-parser.ts
 	/**
 	* Converts a duration string (e.g., "1h 22min 3sec") to HH:MM:SS format.
 	* @param timeStr - The duration string to format.
@@ -443,8 +425,7 @@
 	function timeToSeconds(timeStr) {
 		return (/[a-zA-Z]/.test(timeStr) ? formatTimeToHHMMSS(timeStr) : timeStr).split(":").reverse().reduce((total, unit, index) => total + parseInt(unit, 10) * 60 ** index, 0);
 	}
-	//#endregion
-	//#region src/utils/parsers/index.ts
+	// src/utils/parsers/index.ts
 	function parseUrl(s) {
 		return new URL(typeof s === "string" ? s : s.href);
 	}
@@ -481,8 +462,7 @@
 	function parseCssUrl(s) {
 		return s.replace(/url\("|"\).*/g, "");
 	}
-	//#endregion
-	//#region src/utils/performance/index.ts
+	// src/utils/performance/index.ts
 	function runIdleJob(iterator, job) {
 		return new Promise((resolve) => {
 			const scheduler = window.requestIdleCallback || ((cb) => {
@@ -523,8 +503,7 @@
 			container.style.contain = originalContain;
 		}
 	}
-	//#endregion
-	//#region src/core/data-handler/data-filter-fn-defaults.ts
+	// src/core/data-handler/data-filter-fn-defaults.ts
 	function createTextFilter(filterName, dataPropName, positive) {
 		const filterNameValue = `${filterName}Words`;
 		return {
@@ -565,8 +544,7 @@
 		filterPrivate: (e, state) => state.filterPrivate && e.private,
 		filterPublic: (e, state) => state.filterPublic && !e.private
 	};
-	//#endregion
-	//#region src/core/data-handler/data-filter.ts
+	// src/core/data-handler/data-filter.ts
 	var DataFilter = class {
 		rules;
 		filters = /* @__PURE__ */ new Map();
@@ -581,7 +559,8 @@
 		}
 		createCssFilters() {
 			this.filters.forEach((_, name) => {
-				(0, vite_plugin_monkey_dist_client.GM_addStyle)(`@layer userscriptOverride { .${DataFilterFn.setPrefix(name)} { display: none !important; } }`);
+				const cssRule = `@layer userscriptOverride { .${DataFilterFn.setPrefix(name)} { display: none !important; } }`;
+				(0, vite_plugin_monkey_dist_client.GM_addStyle)(cssRule);
 			});
 		}
 		customDataFilterFns = {};
@@ -605,8 +584,7 @@
 			return Object.keys(filters).filter((k) => k in this.filterDepsMapping).map((k) => this.filterDepsMapping[k]).map((k) => this.filters.get(k));
 		}
 	};
-	//#endregion
-	//#region src/core/data-handler/data-manager.ts
+	// src/core/data-handler/data-manager.ts
 	var DataManager = class DataManager {
 		rules;
 		removeDuplicates;
@@ -697,8 +675,7 @@
 			}
 		}
 	};
-	//#endregion
-	//#region node_modules/tslib/tslib.es6.mjs
+	// node_modules/tslib/tslib.es6.mjs
 	/******************************************************************************
 	Copyright (c) Microsoft Corporation.
 	
@@ -945,13 +922,11 @@
 			}, reject);
 		}
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/isFunction.js
+	// node_modules/rxjs/dist/esm5/internal/util/isFunction.js
 	function isFunction(value) {
 		return typeof value === "function";
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/createErrorClass.js
+	// node_modules/rxjs/dist/esm5/internal/util/createErrorClass.js
 	function createErrorClass(createImpl) {
 		var _super = function(instance) {
 			Error.call(instance);
@@ -962,8 +937,7 @@
 		ctorFunc.prototype.constructor = ctorFunc;
 		return ctorFunc;
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/UnsubscriptionError.js
+	// node_modules/rxjs/dist/esm5/internal/util/UnsubscriptionError.js
 	var UnsubscriptionError = createErrorClass(function(_super) {
 		return function UnsubscriptionErrorImpl(errors) {
 			_super(this);
@@ -974,16 +948,14 @@
 			this.errors = errors;
 		};
 	});
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/arrRemove.js
+	// node_modules/rxjs/dist/esm5/internal/util/arrRemove.js
 	function arrRemove(arr, item) {
 		if (arr) {
 			var index = arr.indexOf(item);
 			0 <= index && arr.splice(index, 1);
 		}
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/Subscription.js
+	// node_modules/rxjs/dist/esm5/internal/Subscription.js
 	var Subscription = function() {
 		function Subscription(initialTeardown) {
 			this.initialTeardown = initialTeardown;
@@ -1047,13 +1019,15 @@
 		};
 		Subscription.prototype.add = function(teardown) {
 			var _a;
-			if (teardown && teardown !== this) if (this.closed) execFinalizer(teardown);
-			else {
-				if (teardown instanceof Subscription) {
-					if (teardown.closed || teardown._hasParent(this)) return;
-					teardown._addParent(this);
+			if (teardown && teardown !== this) {
+				if (this.closed) execFinalizer(teardown);
+				else {
+					if (teardown instanceof Subscription) {
+						if (teardown.closed || teardown._hasParent(this)) return;
+						teardown._addParent(this);
+					}
+					(this._finalizers = (_a = this._finalizers) !== null && _a !== void 0 ? _a : []).push(teardown);
 				}
-				(this._finalizers = (_a = this._finalizers) !== null && _a !== void 0 ? _a : []).push(teardown);
 			}
 		};
 		Subscription.prototype._hasParent = function(parent) {
@@ -1089,8 +1063,7 @@
 		if (isFunction(finalizer)) finalizer();
 		else finalizer.unsubscribe();
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/config.js
+	// node_modules/rxjs/dist/esm5/internal/config.js
 	var config = {
 		onUnhandledError: null,
 		onStoppedNotification: null,
@@ -1098,8 +1071,7 @@
 		useDeprecatedSynchronousErrorHandling: false,
 		useDeprecatedNextContext: false
 	};
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/scheduler/timeoutProvider.js
+	// node_modules/rxjs/dist/esm5/internal/scheduler/timeoutProvider.js
 	var timeoutProvider = {
 		setTimeout: function(handler, timeout) {
 			var args = [];
@@ -1114,8 +1086,7 @@
 		},
 		delegate: void 0
 	};
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/reportUnhandledError.js
+	// node_modules/rxjs/dist/esm5/internal/util/reportUnhandledError.js
 	function reportUnhandledError(err) {
 		timeoutProvider.setTimeout(function() {
 			var onUnhandledError = config.onUnhandledError;
@@ -1123,11 +1094,9 @@
 			else throw err;
 		});
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/noop.js
+	// node_modules/rxjs/dist/esm5/internal/util/noop.js
 	function noop() {}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/NotificationFactories.js
+	// node_modules/rxjs/dist/esm5/internal/NotificationFactories.js
 	var COMPLETE_NOTIFICATION = (function() {
 		return createNotification("C", void 0, void 0);
 	})();
@@ -1144,8 +1113,7 @@
 			error
 		};
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/errorContext.js
+	// node_modules/rxjs/dist/esm5/internal/util/errorContext.js
 	var context = null;
 	function errorContext(cb) {
 		if (config.useDeprecatedSynchronousErrorHandling) {
@@ -1168,8 +1136,7 @@
 			context.error = err;
 		}
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/Subscriber.js
+	// node_modules/rxjs/dist/esm5/internal/Subscriber.js
 	var Subscriber = function(_super) {
 		__extends(Subscriber, _super);
 		function Subscriber(destination) {
@@ -1311,18 +1278,15 @@
 		error: defaultErrorHandler,
 		complete: noop
 	};
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/symbol/observable.js
+	// node_modules/rxjs/dist/esm5/internal/symbol/observable.js
 	var observable = (function() {
 		return typeof Symbol === "function" && Symbol.observable || "@@observable";
 	})();
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/identity.js
+	// node_modules/rxjs/dist/esm5/internal/util/identity.js
 	function identity(x) {
 		return x;
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/pipe.js
+	// node_modules/rxjs/dist/esm5/internal/util/pipe.js
 	function pipeFromArray(fns) {
 		if (fns.length === 0) return identity;
 		if (fns.length === 1) return fns[0];
@@ -1332,8 +1296,7 @@
 			}, input);
 		};
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/Observable.js
+	// node_modules/rxjs/dist/esm5/internal/Observable.js
 	var Observable = function() {
 		function Observable(subscribe) {
 			if (subscribe) this._subscribe = subscribe;
@@ -1420,8 +1383,7 @@
 	function isSubscriber(value) {
 		return value && value instanceof Subscriber || isObserver(value) && isSubscription(value);
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/lift.js
+	// node_modules/rxjs/dist/esm5/internal/util/lift.js
 	function hasLift(source) {
 		return isFunction(source === null || source === void 0 ? void 0 : source.lift);
 	}
@@ -1437,8 +1399,7 @@
 			throw new TypeError("Unable to lift unknown Observable type");
 		};
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/operators/OperatorSubscriber.js
+	// node_modules/rxjs/dist/esm5/internal/operators/OperatorSubscriber.js
 	function createOperatorSubscriber(destination, onNext, onComplete, onError, onFinalize) {
 		return new OperatorSubscriber(destination, onNext, onComplete, onError, onFinalize);
 	}
@@ -1485,8 +1446,7 @@
 		};
 		return OperatorSubscriber;
 	}(Subscriber);
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/ObjectUnsubscribedError.js
+	// node_modules/rxjs/dist/esm5/internal/util/ObjectUnsubscribedError.js
 	var ObjectUnsubscribedError = createErrorClass(function(_super) {
 		return function ObjectUnsubscribedErrorImpl() {
 			_super(this);
@@ -1494,8 +1454,7 @@
 			this.message = "object unsubscribed";
 		};
 	});
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/Subject.js
+	// node_modules/rxjs/dist/esm5/internal/Subject.js
 	var Subject = function(_super) {
 		__extends(Subject, _super);
 		function Subject() {
@@ -1633,21 +1592,19 @@
 		};
 		return AnonymousSubject;
 	}(Subject);
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/scheduler/dateTimestampProvider.js
+	// node_modules/rxjs/dist/esm5/internal/scheduler/dateTimestampProvider.js
 	var dateTimestampProvider = {
 		now: function() {
 			return (dateTimestampProvider.delegate || Date).now();
 		},
 		delegate: void 0
 	};
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/ReplaySubject.js
+	// node_modules/rxjs/dist/esm5/internal/ReplaySubject.js
 	var ReplaySubject = function(_super) {
 		__extends(ReplaySubject, _super);
 		function ReplaySubject(_bufferSize, _windowTime, _timestampProvider) {
-			if (_bufferSize === void 0) _bufferSize = Infinity;
-			if (_windowTime === void 0) _windowTime = Infinity;
+			if (_bufferSize === void 0) _bufferSize = 1e400;
+			if (_windowTime === void 0) _windowTime = 1e400;
 			if (_timestampProvider === void 0) _timestampProvider = dateTimestampProvider;
 			var _this = _super.call(this) || this;
 			_this._bufferSize = _bufferSize;
@@ -1655,7 +1612,7 @@
 			_this._timestampProvider = _timestampProvider;
 			_this._buffer = [];
 			_this._infiniteTimeWindow = true;
-			_this._infiniteTimeWindow = _windowTime === Infinity;
+			_this._infiniteTimeWindow = _windowTime === 1e400;
 			_this._bufferSize = Math.max(1, _bufferSize);
 			_this._windowTime = Math.max(1, _windowTime);
 			return _this;
@@ -1682,7 +1639,7 @@
 		ReplaySubject.prototype._trimBuffer = function() {
 			var _a = this, _bufferSize = _a._bufferSize, _timestampProvider = _a._timestampProvider, _buffer = _a._buffer, _infiniteTimeWindow = _a._infiniteTimeWindow;
 			var adjustedBufferSize = (_infiniteTimeWindow ? 1 : 2) * _bufferSize;
-			_bufferSize < Infinity && adjustedBufferSize < _buffer.length && _buffer.splice(0, _buffer.length - adjustedBufferSize);
+			_bufferSize < 1e400 && adjustedBufferSize < _buffer.length && _buffer.splice(0, _buffer.length - adjustedBufferSize);
 			if (!_infiniteTimeWindow) {
 				var now = _timestampProvider.now();
 				var last = 0;
@@ -1692,45 +1649,37 @@
 		};
 		return ReplaySubject;
 	}(Subject);
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/isArrayLike.js
+	// node_modules/rxjs/dist/esm5/internal/util/isArrayLike.js
 	var isArrayLike = (function(x) {
 		return x && typeof x.length === "number" && typeof x !== "function";
 	});
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/isPromise.js
+	// node_modules/rxjs/dist/esm5/internal/util/isPromise.js
 	function isPromise(value) {
 		return isFunction(value === null || value === void 0 ? void 0 : value.then);
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/isInteropObservable.js
+	// node_modules/rxjs/dist/esm5/internal/util/isInteropObservable.js
 	function isInteropObservable(input) {
 		return isFunction(input[observable]);
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/isAsyncIterable.js
+	// node_modules/rxjs/dist/esm5/internal/util/isAsyncIterable.js
 	function isAsyncIterable(obj) {
 		return Symbol.asyncIterator && isFunction(obj === null || obj === void 0 ? void 0 : obj[Symbol.asyncIterator]);
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/throwUnobservableError.js
+	// node_modules/rxjs/dist/esm5/internal/util/throwUnobservableError.js
 	function createInvalidObservableTypeError(input) {
 		return /* @__PURE__ */ new TypeError("You provided " + (input !== null && typeof input === "object" ? "an invalid object" : "'" + input + "'") + " where a stream was expected. You can provide an Observable, Promise, ReadableStream, Array, AsyncIterable, or Iterable.");
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/symbol/iterator.js
+	// node_modules/rxjs/dist/esm5/internal/symbol/iterator.js
 	function getSymbolIterator() {
 		if (typeof Symbol !== "function" || !Symbol.iterator) return "@@iterator";
 		return Symbol.iterator;
 	}
 	var iterator = getSymbolIterator();
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/isIterable.js
+	// node_modules/rxjs/dist/esm5/internal/util/isIterable.js
 	function isIterable(input) {
 		return isFunction(input === null || input === void 0 ? void 0 : input[iterator]);
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/util/isReadableStreamLike.js
+	// node_modules/rxjs/dist/esm5/internal/util/isReadableStreamLike.js
 	function readableStreamLikeToAsyncGenerator(readableStream) {
 		return __asyncGenerator(this, arguments, function readableStreamLikeToAsyncGenerator_1() {
 			var reader, _a, value, done;
@@ -1770,8 +1719,7 @@
 	function isReadableStreamLike(obj) {
 		return isFunction(obj === null || obj === void 0 ? void 0 : obj.getReader);
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/observable/innerFrom.js
+	// node_modules/rxjs/dist/esm5/internal/observable/innerFrom.js
 	function innerFrom(input) {
 		if (input instanceof Observable) return input;
 		if (input != null) {
@@ -1893,8 +1841,7 @@
 			});
 		});
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/operators/map.js
+	// node_modules/rxjs/dist/esm5/internal/operators/map.js
 	function map(project, thisArg) {
 		return operate(function(source, subscriber) {
 			var index = 0;
@@ -1903,8 +1850,7 @@
 			}));
 		});
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/operators/scanInternals.js
+	// node_modules/rxjs/dist/esm5/internal/operators/scanInternals.js
 	function scanInternals(accumulator, seed, hasSeed, emitOnNext, emitBeforeComplete) {
 		return function(source, subscriber) {
 			var hasState = hasSeed;
@@ -1920,13 +1866,11 @@
 			})));
 		};
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/operators/scan.js
+	// node_modules/rxjs/dist/esm5/internal/operators/scan.js
 	function scan(accumulator, seed) {
 		return operate(scanInternals(accumulator, seed, arguments.length >= 2, true));
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/operators/share.js
+	// node_modules/rxjs/dist/esm5/internal/operators/share.js
 	function share(options) {
 		if (options === void 0) options = {};
 		var _a = options.connector, connector = _a === void 0 ? function() {
@@ -1999,14 +1943,13 @@
 		} });
 		return innerFrom(on.apply(void 0, __spreadArray([], __read(args)))).subscribe(onSubscriber);
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/operators/shareReplay.js
+	// node_modules/rxjs/dist/esm5/internal/operators/shareReplay.js
 	function shareReplay(configOrBufferSize, windowTime, scheduler) {
 		var _a, _b, _c;
 		var bufferSize;
 		var refCount = false;
-		if (configOrBufferSize && typeof configOrBufferSize === "object") _a = configOrBufferSize.bufferSize, bufferSize = _a === void 0 ? Infinity : _a, _b = configOrBufferSize.windowTime, windowTime = _b === void 0 ? Infinity : _b, _c = configOrBufferSize.refCount, refCount = _c === void 0 ? false : _c, scheduler = configOrBufferSize.scheduler;
-		else bufferSize = configOrBufferSize !== null && configOrBufferSize !== void 0 ? configOrBufferSize : Infinity;
+		if (configOrBufferSize && typeof configOrBufferSize === "object") _a = configOrBufferSize.bufferSize, bufferSize = _a === void 0 ? 1e400 : _a, _b = configOrBufferSize.windowTime, windowTime = _b === void 0 ? 1e400 : _b, _c = configOrBufferSize.refCount, refCount = _c === void 0 ? false : _c, scheduler = configOrBufferSize.scheduler;
+		else bufferSize = configOrBufferSize !== null && configOrBufferSize !== void 0 ? configOrBufferSize : 1e400;
 		return share({
 			connector: function() {
 				return new ReplaySubject(bufferSize, windowTime, scheduler);
@@ -2016,8 +1959,7 @@
 			resetOnRefCountZero: refCount
 		});
 	}
-	//#endregion
-	//#region node_modules/rxjs/dist/esm5/internal/operators/takeUntil.js
+	// node_modules/rxjs/dist/esm5/internal/operators/takeUntil.js
 	function takeUntil(notifier) {
 		return operate(function(source, subscriber) {
 			innerFrom(notifier).subscribe(createOperatorSubscriber(subscriber, function() {
@@ -2026,8 +1968,7 @@
 			!subscriber.closed && source.subscribe(subscriber);
 		});
 	}
-	//#endregion
-	//#region src/core/infinite-scroll/index.ts
+	// src/core/infinite-scroll/index.ts
 	var InfiniteScroller = class InfiniteScroller {
 		paginationOffset = 1;
 		rules;
@@ -2114,8 +2055,7 @@
 			return infiniteScroller;
 		}
 	};
-	//#endregion
-	//#region src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategy.ts
+	// src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategy.ts
 	var PaginationStrategy = class {
 		doc = document;
 		url;
@@ -2149,8 +2089,7 @@
 			return (_) => this.url.href;
 		}
 	};
-	//#endregion
-	//#region src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategyDataParams.ts
+	// src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategyDataParams.ts
 	var PaginationStrategyDataParams = class extends PaginationStrategy {
 		getPaginationLast() {
 			const links = this.getPaginationElement()?.querySelectorAll(this.dataparamSelector);
@@ -2193,8 +2132,7 @@
 			return Array.from(doc.querySelectorAll("[data-parameters *= from]")).length > 0;
 		}
 	};
-	//#endregion
-	//#region node_modules/urlpattern-polyfill/dist/urlpattern.js
+	// node_modules/urlpattern-polyfill/dist/urlpattern.js
 	var Pe$1 = Object.defineProperty;
 	var a = (e, t) => Pe$1(e, "name", {
 		value: t,
@@ -2376,9 +2314,7 @@
 				case "*":
 					m = 0;
 					break;
-				case "+":
-					m = 2;
-					break;
+				case "+": m = 2;
 			}
 			if (!d && !g && m === 3) {
 				$(u);
@@ -2702,11 +2638,7 @@
 					case 7:
 						this.#h() ? this.#r(8, 1) : this.#f() && this.#r(9, 1);
 						break;
-					case 8:
-						this.#f() && this.#r(9, 1);
-						break;
-					case 9: break;
-					case 10: break;
+					case 8: this.#f() && this.#r(9, 1);
 				}
 			}
 			this.#t.hostname !== void 0 && this.#t.port === void 0 && (this.#t.port = "");
@@ -2736,10 +2668,7 @@
 				case 8:
 					this.#t.search = this.#c();
 					break;
-				case 9:
-					this.#t.hash = this.#c();
-					break;
-				case 10: break;
+				case 9: this.#t.hash = this.#c();
 			}
 			this.#o !== 0 && t !== 10 && ([
 				1,
@@ -2973,9 +2902,7 @@
 						case "search":
 							Object.assign(i, b, l), i.encodePart = ge$1;
 							break;
-						case "hash":
-							Object.assign(i, b, l), i.encodePart = me$1;
-							break;
+						case "hash": Object.assign(i, b, l), i.encodePart = me$1;
 					}
 					try {
 						this.#s[s] = F(o, i), this.#n[s] = W$1(this.#s[s], this.#t[s], i), this.#e[s] = Ae$1(this.#s[s], i), this.#l = this.#l || this.#s[s].some((h) => h.type === 2);
@@ -3098,8 +3025,7 @@
 		}
 	};
 	a(Y, "URLPattern");
-	//#endregion
-	//#region src/core/parsers/pagination-parser/pagination-utils/index.ts
+	// src/core/parsers/pagination-parser/pagination-utils/index.ts
 	function depaginatePathname(url, pathnamePaginationSelector = /\/(page\/)?\d+\/?$/) {
 		const newUrl = new URL(url.toString());
 		newUrl.pathname = newUrl.pathname.replace(pathnamePaginationSelector, "/");
@@ -3131,8 +3057,7 @@
 		if (last.pathname !== curr.pathname) curr.pathname = last.pathname;
 		return curr;
 	}
-	//#endregion
-	//#region src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategyPathnameParams.ts
+	// src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategyPathnameParams.ts
 	/** Non-global copy with the `d` flag so we get capture group indices. */
 	var withIndices = (re) => {
 		const flags = `${re.flags.replace(/[gyd]/g, "")}d`;
@@ -3211,8 +3136,7 @@
 			return this.pathnameSelector.source.replace(/\\(.)/g, "$1").replace(/\(\?:/g, "(").replace(/\(\?[=!<][^)]*\)/g, "").replace(/[$^?()]/g, "").replace(/d\+/, String(offset)).replace(/\/{2,}/g, "/");
 		}
 	};
-	//#endregion
-	//#region src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategySearchParams.ts
+	// src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategySearchParams.ts
 	var PaginationStrategySearchParams = class PaginationStrategySearchParams extends PaginationStrategy {
 		extractPage = (a) => {
 			const href = typeof a === "string" ? a : a.href;
@@ -3247,8 +3171,7 @@
 			return links.some((h) => PaginationStrategySearchParams.checkLink(h, searchParamSelector));
 		}
 	};
-	//#endregion
-	//#region src/core/parsers/pagination-parser/index.ts
+	// src/core/parsers/pagination-parser/index.ts
 	function getPaginationStrategy(options) {
 		const _paginationStrategy = new PaginationStrategy(options);
 		const pagination = _paginationStrategy.getPaginationElement();
@@ -3266,8 +3189,7 @@
 		};
 		return new (selectStrategy())(options);
 	}
-	//#endregion
-	//#region src/core/parsers/thumb-data-parser.ts
+	// src/core/parsers/thumb-data-parser.ts
 	var ThumbDataParser = class ThumbDataParser {
 		strategy;
 		selectors;
@@ -3349,8 +3271,7 @@
 			return thumbData;
 		}
 	};
-	//#endregion
-	//#region src/core/parsers/thumb-img-parser.ts
+	// src/core/parsers/thumb-img-parser.ts
 	var ThumbImgParser = class ThumbImgParser {
 		selector;
 		remove;
@@ -3386,8 +3307,7 @@
 			};
 		}
 	};
-	//#endregion
-	//#region src/core/parsers/thumbs-parser.ts
+	// src/core/parsers/thumbs-parser.ts
 	var ThumbsParser = class ThumbsParser {
 		selector = ".thumb";
 		strategy = "default";
@@ -3409,8 +3329,7 @@
 			return thumbs;
 		}
 	};
-	//#endregion
-	//#region node_modules/jabroni-outfit/dist/jabroni-outfit.es.js
+	// node_modules/jabroni-outfit/dist/jabroni-outfit.es.js
 	var _i = {};
 	// @__NO_SIDE_EFFECTS__
 	function oe(t) {
@@ -3868,9 +3787,7 @@
 				case "delete":
 					u || (a(s.get(ve)), _e(t) && a(s.get(Co)));
 					break;
-				case "set":
-					_e(t) && a(s.get(ve));
-					break;
+				case "set": _e(t) && a(s.get(ve));
 			}
 		}
 		or();
@@ -4361,7 +4278,7 @@
 				me = z;
 			}
 		} : (g = ot, q.NODE_ENV !== "production" && h(t)), e && r) {
-			const z = g, st = r === !0 ? Infinity : r;
+			const z = g, st = r === !0 ? 1 / 0 : r;
 			g = () => ee(z(), st);
 		}
 		const Y = aa(), U = () => {
@@ -4403,7 +4320,7 @@
 			}
 		}, q.NODE_ENV !== "production" && (c.onTrack = n.onTrack, c.onTrigger = n.onTrigger), e ? o ? wt(!0) : F = c.run() : s ? s(wt.bind(null, !0), !0) : c.run(), U.pause = c.pause.bind(c), U.resume = c.resume.bind(c), U.stop = U, U;
 	}
-	function ee(t, e = Infinity, n) {
+	function ee(t, e = 1 / 0, n) {
 		if (e <= 0 || !L(t) || t.__v_skip || (n = n || /* @__PURE__ */ new Map(), (n.get(t) || 0) >= e)) return t;
 		if (n.set(t, e), e--, et(t)) ee(t.value, e, n);
 		else if (C(t)) for (let o = 0; o < t.length; o++) ee(t[o], e, n);
@@ -4630,7 +4547,7 @@
 			le = null, Me = 0;
 		}
 	}
-	var un = (t) => t.id == null ? t.flags & 2 ? -1 : Infinity : t.id;
+	var un = (t) => t.id == null ? t.flags & 2 ? -1 : 1 / 0 : t.id;
 	function Ji(t) {
 		f.NODE_ENV !== "production" && (t = t || /* @__PURE__ */ new Map());
 		const e = f.NODE_ENV !== "production" ? (n) => ar(t, n) : ot;
@@ -6065,8 +5982,8 @@ For more details, see https://link.vuejs.org/feature-flags.`);
 		}, po = (l, p, b, v, y, m, N, w, E) => {
 			l = l || Te, p = p || Te;
 			const _ = l.length, V = p.length, O = Math.min(_, V);
-			let D;
-			for (D = 0; D < O; D++) {
+			let D = 0;
+			for (; D < O; D++) {
 				const j = p[D] = E ? ce(p[D]) : Mt(p[D]);
 				S(l[D], j, b, null, y, m, N, w, E);
 			}
@@ -8515,8 +8432,7 @@ Expected function or array of functions, received type ${typeof t}.`), ot);
 			return r;
 		});
 	}
-	//#endregion
-	//#region src/core/jabroni-config/default-scheme.ts
+	// src/core/jabroni-config/default-scheme.ts
 	var DefaultScheme = [
 		{
 			title: "Title Filter",
@@ -8665,8 +8581,7 @@ Expected function or array of functions, received type ${typeof t}.`), ot);
 			}]
 		}
 	];
-	//#endregion
-	//#region src/core/jabroni-config/default-store.ts
+	// src/core/jabroni-config/default-store.ts
 	var StoreStateDefault = {
 		enabled: true,
 		collapsed: false,
@@ -8674,8 +8589,7 @@ Expected function or array of functions, received type ${typeof t}.`), ot);
 		$paginationLast: 1,
 		$paginationOffset: 1
 	};
-	//#endregion
-	//#region src/core/jabroni-config/jabroni-gui-controller.ts
+	// src/core/jabroni-config/jabroni-gui-controller.ts
 	var JabronioGuiController = class {
 		store;
 		dataManager;
@@ -8716,8 +8630,7 @@ Expected function or array of functions, received type ${typeof t}.`), ot);
 			});
 		}
 	};
-	//#endregion
-	//#region src/core/jabroni-config/scheme-selectors-mapping.ts
+	// src/core/jabroni-config/scheme-selectors-mapping.ts
 	function getSelectorFnsFromScheme(xs) {
 		return xs.flatMap((s) => {
 			const schemeBlock = DefaultScheme.find((e) => e.title === s);
@@ -8725,8 +8638,7 @@ Expected function or array of functions, received type ${typeof t}.`), ot);
 			return schemeBlock.content.flatMap((c) => Object.keys(c));
 		}).filter((k) => k in defaultDataFilterFns);
 	}
-	//#endregion
-	//#region src/core/rules/index.ts
+	// src/core/rules/index.ts
 	var Rules = class {
 		thumbs = {};
 		thumbsParser;
@@ -8841,7 +8753,6 @@ Expected function or array of functions, received type ${typeof t}.`), ot);
 			this.reset();
 		}
 	};
-	//#endregion
 	exports.DataFilter = DataFilter;
 	exports.DataManager = DataManager;
 	exports.InfiniteScroller = InfiniteScroller;

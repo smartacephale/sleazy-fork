@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Eporner PervertMonkey
 // @namespace    pervertmonkey
-// @version      2.1.6
+// @version      2.2.0
 // @author       violent-orangutan
 // @description  Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://sleazyfork.org/en/scripts/552559-eporner-pervertmonkey/feedback
 // @match        https://*.eporner.com/*
 // @match        https://*.eporner.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.28/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -25,9 +25,60 @@ var ___utils = ___core;
 (function(___core, ___utils) {
 	"use strict";
 	var _unsafeWindow = (() => typeof unsafeWindow != "undefined" ? unsafeWindow : void 0)();
+	function createQualityFilter(qualities) {
+		const keys = Object.keys(qualities);
+		const entries = Object.entries(qualities);
+		function shouldFilter(el, state) {
+			return !entries.some((e) => state[e[0]] && el.quality === e[1]);
+		}
+		return {
+			qualityFilter: {
+				handle(el, state) {
+					if (!keys.some((q) => !!state[q])) return false;
+					return shouldFilter(el, state);
+				},
+				deps: keys
+			},
+			qualityFilterScheme: [{
+				title: "Quality Filter",
+				content: keys.map((k) => ({
+					[k]: false,
+					label: k.substring(7)
+				}))
+			}]
+		};
+	}
+	function createTextFilter(filterName, dataPropName, positive) {
+		const filterNameValue = `${filterName}Words`;
+		return {
+			handle(e, state, searchFilter) {
+				if (!Object.hasOwn(state, filterName) || !state[filterName]) return false;
+				return !searchFilter?.(e[dataPropName]);
+			},
+			$preDefine: (state) => {
+				const r = new ___utils.RegexFilter(state[filterNameValue]);
+				if (positive) return (s) => r.hasEvery(s);
+				return (s) => r.hasNone(s);
+			},
+			deps: [filterNameValue]
+		};
+	}
+	createTextFilter("filterExclude", "title", false), createTextFilter("filterInclude", "title", true), createTextFilter("filterUploaderExclude", "uploader", false), createTextFilter("filterUploaderInclude", "uploader", true);
+	var containerSelectorLast = "div:has(div[id^=vf][data-id])";
+	var paginationSelector = ".numlist2";
+	var intersectionObservableSelector = !!(0, ___utils.querySelectorLast)(document.body, containerSelectorLast)?.querySelector(paginationSelector) ? "footer" : paginationSelector;
+	var { qualityFilter, qualityFilterScheme } = createQualityFilter({
+		quality360: 360,
+		quality480: 480,
+		quality720: 720,
+		quality1080: 1080,
+		quality2k: 2,
+		quality4k: 4
+	});
 	new ___core.Rules({
+		intersectionObservableSelector,
 		paginationStrategyOptions: {
-			paginationSelector: ".numlist2",
+			paginationSelector,
 			pathnameSelector: /\/(\d+)(?=\/|$)/,
 			overwritePaginationLast: (n, _) => n === 9 ? 9999 : n
 		},
@@ -49,36 +100,13 @@ var ___utils = ___core;
 			strategy: "auto",
 			remove: "auto"
 		},
-		containerSelectorLast: "div:has(div[id^=vf][data-id])",
-		customDataFilterFns: [{ qualityFilter: {
-			handle(el, state) {
-				if (!(state.quality360 || state.quality480 || state.quality720 || state.quality1080 || state.quality2k || state.quality4k)) return false;
-				return !(state.quality360 && el.quality === 360 || state.quality480 && el.quality === 480 || state.quality720 && el.quality === 720 || state.quality1080 && el.quality === 1080 || state.quality2k && el.quality === 2 || state.quality4k && el.quality === 4);
-			},
-			deps: [
-				"quality360",
-				"quality480",
-				"quality720",
-				"quality1080",
-				"quality2k",
-				"quality4k"
-			]
-		} }],
+		containerSelectorLast,
+		customDataFilterFns: [{ qualityFilter }],
 		schemeOptions: [
 			"Title Filter",
 			"Uploader Filter",
 			"Duration Filter",
-			{
-				title: "Quality Filter ",
-				content: [
-					{ quality360: false },
-					{ quality480: false },
-					{ quality720: false },
-					{ quality1080: false },
-					{ quality2k: false },
-					{ quality4k: false }
-				]
-			},
+			...qualityFilterScheme,
 			"Sort By",
 			"Badge",
 			"Advanced"

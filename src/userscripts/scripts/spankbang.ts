@@ -1,13 +1,18 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { Rules } from '../../core';
+import { createQualityFilter } from '../../core/jabroni-config';
 
 export const meta: MonkeyUserScript = {
   name: 'SpankBang.com PervertMonkey',
-  version: '4.1.1',
+  version: '4.2.0',
   description:
     'Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views',
   match: ['https://*.spankbang.com/*', 'https://*.spankbang.*/*'],
 };
+
+const qualities = { 'qualityLow': '', 'qualityHD': 'HD', 'quality4k': '4K' };
+
+const { qualityFilter, qualityFilterScheme } = createQualityFilter(qualities);
 
 const rules = new Rules({
   containerSelector: '.main-container .js-media-list, .main_content_container .video-list',
@@ -26,38 +31,11 @@ const rules = new Rules({
   },
   thumbImg: { strategy: 'auto' },
   gropeStrategy: 'all-in-all',
-  customDataFilterFns: [
-    {
-      qualityFilter: {
-        handle(el, state) {
-          const hasAnyQualitySelected =
-            state.qualityLow ||
-            state.qualityHD ||
-            state.quality4k;
-
-          if (!hasAnyQualitySelected) return false;
-
-          return !(
-            (state.qualityLow && el.quality === '') ||
-            (state.qualityHD && el.quality === 'HD') ||
-            (state.quality4k && el.quality === '4K')
-          );
-        },
-        deps: ['qualityLow', 'qualityHD', 'quality4k'],
-      },
-    },
-  ],
+  customDataFilterFns: [{ qualityFilter }],
   schemeOptions: [
     'Title Filter',
     'Duration Filter',
-    {
-      title: 'Quality Filter',
-      content: [
-        { qualityLow: false, label: 'Low' },
-        { qualityHD: false, label: 'HD' },
-        { quality4k: false, label: '4K' },
-      ],
-    },
+    ...qualityFilterScheme,
     'Sort By',
     'Badge',
     'Advanced',
