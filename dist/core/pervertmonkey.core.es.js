@@ -2052,6 +2052,236 @@ var InfiniteScroller = class InfiniteScroller {
 		return infiniteScroller;
 	}
 };
+// src/core/jabroni-config/default-scheme.ts
+var DefaultScheme = [
+	{
+		title: "Title Filter",
+		collapsed: true,
+		content: [
+			{
+				filterExclude: false,
+				label: "exclude"
+			},
+			{
+				filterExcludeWords: "",
+				label: "keywords",
+				watch: "filterExclude",
+				placeholder: "word, f:full_word, r:RegEx..."
+			},
+			{
+				filterInclude: false,
+				label: "include"
+			},
+			{
+				filterIncludeWords: "",
+				label: "keywords",
+				watch: "filterInclude",
+				placeholder: "word, f:full_word, r:RegEx..."
+			}
+		]
+	},
+	{
+		title: "Uploader Filter",
+		collapsed: true,
+		content: [
+			{
+				filterUploaderExclude: false,
+				label: "exclude"
+			},
+			{
+				filterUploaderExcludeWords: "",
+				label: "keywords",
+				watch: "filterUploaderExclude",
+				placeholder: "word, f:full_word, r:RegEx..."
+			},
+			{
+				filterUploaderInclude: false,
+				label: "include"
+			},
+			{
+				filterUploaderIncludeWords: "",
+				label: "keywords",
+				watch: "filterUploaderInclude",
+				placeholder: "word, f:full_word, r:RegEx..."
+			}
+		]
+	},
+	{
+		title: "Duration Filter",
+		collapsed: true,
+		content: [
+			{
+				filterDuration: false,
+				label: "enable"
+			},
+			{
+				filterDurationFrom: 0,
+				watch: "filterDuration",
+				label: "from",
+				type: "time"
+			},
+			{
+				filterDurationTo: 600,
+				watch: "filterDuration",
+				label: "to",
+				type: "time"
+			}
+		]
+	},
+	{
+		title: "Sort By",
+		collapsed: true,
+		content: [{ "sort by views": () => {} }, { "sort by duration": () => {} }]
+	},
+	{
+		title: "Sort By Duration",
+		collapsed: true,
+		content: [{ "sort by duration": () => {} }]
+	},
+	{
+		title: "Sort By Views",
+		collapsed: true,
+		content: [{ "sort by views": () => {} }]
+	},
+	{
+		title: "Privacy Filter",
+		collapsed: true,
+		content: [
+			{
+				filterPrivate: false,
+				label: "private"
+			},
+			{
+				filterPublic: false,
+				label: "public"
+			},
+			{ "check access 🔓": () => {} }
+		]
+	},
+	{
+		title: "HD Filter",
+		content: [{
+			filterHD: false,
+			label: "hd"
+		}, {
+			filterNonHD: false,
+			label: "non-hd"
+		}]
+	},
+	{
+		title: "Advanced",
+		collapsed: true,
+		content: [
+			{
+				infiniteScrollEnabled: true,
+				label: "infinite scroll"
+			},
+			{
+				autoScroll: false,
+				label: "auto scroll"
+			},
+			{
+				delay: 250,
+				label: "scroll delay"
+			},
+			{
+				writeHistory: false,
+				label: "write history"
+			},
+			{ reset: () => {
+				localStorage.removeItem("state_acephale");
+			} }
+		]
+	},
+	{
+		title: "Badge",
+		content: [{
+			text: "return `${state.$paginationOffset}/${state.$paginationLast}`",
+			vif: "return state.$paginationLast > 1"
+		}]
+	}
+];
+// src/core/jabroni-config/default-store.ts
+var StoreStateDefault = {
+	enabled: true,
+	collapsed: false,
+	darkmode: true,
+	$paginationLast: 1,
+	$paginationOffset: 1
+};
+// src/core/jabroni-config/jabroni-gui-controller.ts
+var JabronioGuiController = class {
+	store;
+	dataManager;
+	constructor(store, dataManager) {
+		this.store = store;
+		this.dataManager = dataManager;
+		this.directionalEventObservable$ = this.directionalEvent();
+		this.setupStoreListeners();
+	}
+	destroy$ = new Subject();
+	dispose() {
+		this.destroy$.next();
+		this.destroy$.complete();
+	}
+	directionalEventObservable$;
+	directionalEvent() {
+		return this.store.eventSubject.pipe(scan((acc, value) => ({
+			type: value,
+			direction: acc.type === value ? !acc.direction : true
+		}), {
+			type: void 0,
+			direction: true
+		}), map(({ type, direction }) => ({
+			type,
+			direction
+		})), shareReplay(1), takeUntil(this.destroy$));
+	}
+	eventsMap = {
+		"sort by duration": (direction) => this.dataManager.sortBy("duration", direction),
+		"sort by views": (direction) => this.dataManager.sortBy("views", direction)
+	};
+	setupStoreListeners() {
+		this.directionalEventObservable$?.subscribe((e) => {
+			this.eventsMap[e.type]?.(e.direction);
+		});
+		this.store.stateSubject.pipe(takeUntil(this.destroy$)).subscribe((a) => {
+			this.dataManager.applyFilters(a);
+		});
+	}
+};
+// src/core/jabroni-config/plugins/quality-filter.ts
+function createQualityFilter(qualities) {
+	const keys = Object.keys(qualities);
+	const entries = Object.entries(qualities);
+	function shouldFilter(el, state) {
+		return !entries.some((e) => state[e[0]] && el.quality === e[1]);
+	}
+	return {
+		qualityFilter: {
+			handle(el, state) {
+				if (!keys.some((q) => !!state[q])) return false;
+				return shouldFilter(el, state);
+			},
+			deps: keys
+		},
+		qualityFilterScheme: [{
+			title: "Quality Filter",
+			content: keys.map((k) => ({
+				[k]: false,
+				label: k.substring(7)
+			}))
+		}]
+	};
+}
+// src/core/jabroni-config/scheme-selectors-mapping.ts
+function getSelectorFnsFromScheme(xs) {
+	return xs.flatMap((s) => {
+		const schemeBlock = DefaultScheme.find((e) => e.title === s);
+		if (!schemeBlock) return [];
+		return schemeBlock.content.flatMap((c) => Object.keys(c));
+	}).filter((k) => k in defaultDataFilterFns);
+}
 // src/core/parsers/pagination-parser/pagination-strategies/PaginationStrategy.ts
 var PaginationStrategy = class {
 	doc = document;
@@ -8429,212 +8659,6 @@ function Wp(t, e = []) {
 		return r;
 	});
 }
-// src/core/jabroni-config/default-scheme.ts
-var DefaultScheme = [
-	{
-		title: "Title Filter",
-		collapsed: true,
-		content: [
-			{
-				filterExclude: false,
-				label: "exclude"
-			},
-			{
-				filterExcludeWords: "",
-				label: "keywords",
-				watch: "filterExclude",
-				placeholder: "word, f:full_word, r:RegEx..."
-			},
-			{
-				filterInclude: false,
-				label: "include"
-			},
-			{
-				filterIncludeWords: "",
-				label: "keywords",
-				watch: "filterInclude",
-				placeholder: "word, f:full_word, r:RegEx..."
-			}
-		]
-	},
-	{
-		title: "Uploader Filter",
-		collapsed: true,
-		content: [
-			{
-				filterUploaderExclude: false,
-				label: "exclude"
-			},
-			{
-				filterUploaderExcludeWords: "",
-				label: "keywords",
-				watch: "filterUploaderExclude",
-				placeholder: "word, f:full_word, r:RegEx..."
-			},
-			{
-				filterUploaderInclude: false,
-				label: "include"
-			},
-			{
-				filterUploaderIncludeWords: "",
-				label: "keywords",
-				watch: "filterUploaderInclude",
-				placeholder: "word, f:full_word, r:RegEx..."
-			}
-		]
-	},
-	{
-		title: "Duration Filter",
-		collapsed: true,
-		content: [
-			{
-				filterDuration: false,
-				label: "enable"
-			},
-			{
-				filterDurationFrom: 0,
-				watch: "filterDuration",
-				label: "from",
-				type: "time"
-			},
-			{
-				filterDurationTo: 600,
-				watch: "filterDuration",
-				label: "to",
-				type: "time"
-			}
-		]
-	},
-	{
-		title: "Sort By",
-		collapsed: true,
-		content: [{ "sort by views": () => {} }, { "sort by duration": () => {} }]
-	},
-	{
-		title: "Sort By Duration",
-		collapsed: true,
-		content: [{ "sort by duration": () => {} }]
-	},
-	{
-		title: "Sort By Views",
-		collapsed: true,
-		content: [{ "sort by views": () => {} }]
-	},
-	{
-		title: "Privacy Filter",
-		collapsed: true,
-		content: [
-			{
-				filterPrivate: false,
-				label: "private"
-			},
-			{
-				filterPublic: false,
-				label: "public"
-			},
-			{ "check access 🔓": () => {} }
-		]
-	},
-	{
-		title: "HD Filter",
-		content: [{
-			filterHD: false,
-			label: "hd"
-		}, {
-			filterNonHD: false,
-			label: "non-hd"
-		}]
-	},
-	{
-		title: "Advanced",
-		collapsed: true,
-		content: [
-			{
-				infiniteScrollEnabled: true,
-				label: "infinite scroll"
-			},
-			{
-				autoScroll: false,
-				label: "auto scroll"
-			},
-			{
-				delay: 250,
-				label: "scroll delay"
-			},
-			{
-				writeHistory: false,
-				label: "write history"
-			},
-			{ reset: () => {
-				localStorage.removeItem("state_acephale");
-			} }
-		]
-	},
-	{
-		title: "Badge",
-		content: [{
-			text: "return `${state.$paginationOffset}/${state.$paginationLast}`",
-			vif: "return state.$paginationLast > 1"
-		}]
-	}
-];
-// src/core/jabroni-config/default-store.ts
-var StoreStateDefault = {
-	enabled: true,
-	collapsed: false,
-	darkmode: true,
-	$paginationLast: 1,
-	$paginationOffset: 1
-};
-// src/core/jabroni-config/jabroni-gui-controller.ts
-var JabronioGuiController = class {
-	store;
-	dataManager;
-	constructor(store, dataManager) {
-		this.store = store;
-		this.dataManager = dataManager;
-		this.directionalEventObservable$ = this.directionalEvent();
-		this.setupStoreListeners();
-	}
-	destroy$ = new Subject();
-	dispose() {
-		this.destroy$.next();
-		this.destroy$.complete();
-	}
-	directionalEventObservable$;
-	directionalEvent() {
-		return this.store.eventSubject.pipe(scan((acc, value) => ({
-			type: value,
-			direction: acc.type === value ? !acc.direction : true
-		}), {
-			type: void 0,
-			direction: true
-		}), map(({ type, direction }) => ({
-			type,
-			direction
-		})), shareReplay(1), takeUntil(this.destroy$));
-	}
-	eventsMap = {
-		"sort by duration": (direction) => this.dataManager.sortBy("duration", direction),
-		"sort by views": (direction) => this.dataManager.sortBy("views", direction)
-	};
-	setupStoreListeners() {
-		this.directionalEventObservable$?.subscribe((e) => {
-			this.eventsMap[e.type]?.(e.direction);
-		});
-		this.store.stateSubject.pipe(takeUntil(this.destroy$)).subscribe((a) => {
-			this.dataManager.applyFilters(a);
-		});
-	}
-};
-// src/core/jabroni-config/scheme-selectors-mapping.ts
-function getSelectorFnsFromScheme(xs) {
-	return xs.flatMap((s) => {
-		const schemeBlock = DefaultScheme.find((e) => e.title === s);
-		if (!schemeBlock) return [];
-		return schemeBlock.content.flatMap((c) => Object.keys(c));
-	}).filter((k) => k in defaultDataFilterFns);
-}
 // src/core/rules/index.ts
 var Rules = class {
 	thumbs = {};
@@ -8750,6 +8774,6 @@ var Rules = class {
 		this.reset();
 	}
 };
-export { DataFilter, DataManager, InfiniteScroller, LazyImgLoader, MOBILE_UA, Observer, OnHover, PaginationStrategy, PaginationStrategyDataParams, PaginationStrategyPathnameParams, PaginationStrategySearchParams, RegexFilter, Rules, ThumbDataParser, ThumbImgParser, ThumbsParser, Tick, areElementsAlike, chunks, circularShift, containMutation, copyAttributes, downloader, exterminateVideo, fetchHtml, fetchJson, fetchText, fetchWith, findNextSibling, findProperty, formatTimeToHHMMSS, getCommonParents, getDocumentBody, getPaginationStrategy, instantiateTemplate, irange, memoize, objectToFormData, parseCssUrl, parseDataParams, parseDocument, parseDocumentBody, parseHtml, parseIntegerOr, parseNumericAbbreviation, parseUrl, querySelectorLast, querySelectorLastNumber, querySelectorOrSelf, querySelectorText, range, removeClassesAndDataAttributes, replaceElementTag, runIdleJob, sanitizeStr, splitWith, timeToSeconds, wait, waitForElementToAppear, waitForElementToDisappear, watchDomChangesWithThrottle, watchElementChildrenCount };
+export { DataFilter, DataManager, DefaultScheme, InfiniteScroller, JabronioGuiController, LazyImgLoader, MOBILE_UA, Observer, OnHover, PaginationStrategy, PaginationStrategyDataParams, PaginationStrategyPathnameParams, PaginationStrategySearchParams, RegexFilter, Rules, StoreStateDefault, ThumbDataParser, ThumbImgParser, ThumbsParser, Tick, areElementsAlike, chunks, circularShift, containMutation, copyAttributes, createQualityFilter, downloader, exterminateVideo, fetchHtml, fetchJson, fetchText, fetchWith, findNextSibling, findProperty, formatTimeToHHMMSS, getCommonParents, getDocumentBody, getPaginationStrategy, getSelectorFnsFromScheme, instantiateTemplate, irange, memoize, objectToFormData, parseCssUrl, parseDataParams, parseDocument, parseDocumentBody, parseHtml, parseIntegerOr, parseNumericAbbreviation, parseUrl, querySelectorLast, querySelectorLastNumber, querySelectorOrSelf, querySelectorText, range, removeClassesAndDataAttributes, replaceElementTag, runIdleJob, sanitizeStr, splitWith, timeToSeconds, wait, waitForElementToAppear, waitForElementToDisappear, watchDomChangesWithThrottle, watchElementChildrenCount };
 
 //# sourceMappingURL=pervertmonkey.core.es.js.map

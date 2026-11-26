@@ -1,12 +1,11 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { Rules } from '../../core';
-import { createQualityFilter } from '../../core/jabroni-config';
+import { createQualityFilter, Rules } from '../../core';
 import { exterminateVideo, OnHover, parseHtml } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'XVideos PervertMonkey',
-  version: '4.2.0',
+  version: '4.2.1',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader and Duration. Sort by Duration and Views.',
   match: ['https://*.xvideos.com/*', 'https://*.xvideos.red/*'],

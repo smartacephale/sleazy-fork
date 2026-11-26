@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SpankBang.com PervertMonkey
 // @namespace    pervertmonkey
-// @version      4.2.0
+// @version      4.2.1
 // @author       violent-orangutan
 // @description  Infinite scroll [optional]. Filter by Title and Duration. Sort by Duration and Views
 // @license      MIT
@@ -12,7 +12,7 @@
 // @supportURL   https://github.com/smartacephale/sleazy-fork/issues
 // @match        https://*.spankbang.com/*
 // @match        https://*.spankbang.*/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.30/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-idle
@@ -22,51 +22,12 @@ var ___core = window.pervertmonkey.core || pervertmonkey.core;
 var ___utils = ___core;
 
 
-(function(___core, ___utils) {
+(function(___core) {
 	"use strict";
-	function createQualityFilter(qualities) {
-		const keys = Object.keys(qualities);
-		const entries = Object.entries(qualities);
-		function shouldFilter(el, state) {
-			return !entries.some((e) => state[e[0]] && el.quality === e[1]);
-		}
-		return {
-			qualityFilter: {
-				handle(el, state) {
-					if (!keys.some((q) => !!state[q])) return false;
-					return shouldFilter(el, state);
-				},
-				deps: keys
-			},
-			qualityFilterScheme: [{
-				title: "Quality Filter",
-				content: keys.map((k) => ({
-					[k]: false,
-					label: k.substring(7)
-				}))
-			}]
-		};
-	}
-	function createTextFilter(filterName, dataPropName, positive) {
-		const filterNameValue = `${filterName}Words`;
-		return {
-			handle(e, state, searchFilter) {
-				if (!Object.hasOwn(state, filterName) || !state[filterName]) return false;
-				return !searchFilter?.(e[dataPropName]);
-			},
-			$preDefine: (state) => {
-				const r = new ___utils.RegexFilter(state[filterNameValue]);
-				if (positive) return (s) => r.hasEvery(s);
-				return (s) => r.hasNone(s);
-			},
-			deps: [filterNameValue]
-		};
-	}
-	createTextFilter("filterExclude", "title", false), createTextFilter("filterInclude", "title", true), createTextFilter("filterUploaderExclude", "uploader", false), createTextFilter("filterUploaderInclude", "uploader", true);
-	var { qualityFilter, qualityFilterScheme } = createQualityFilter({
-		"qualityLow": "",
-		"qualityHD": "HD",
-		"quality4k": "4K"
+	var { qualityFilter, qualityFilterScheme } = (0, ___core.createQualityFilter)({
+		qualityLow: "",
+		qualityHD: "HD",
+		quality4k: "4K"
 	});
 	new ___core.Rules({
 		containerSelector: ".main-container .js-media-list, .main_content_container .video-list",
@@ -96,4 +57,4 @@ var ___utils = ___core;
 			"Advanced"
 		]
 	});
-})(___core, ___utils);
+})(___core);

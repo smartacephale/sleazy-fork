@@ -1,12 +1,11 @@
 import type { MonkeyUserScript } from 'vite-plugin-monkey';
 import { unsafeWindow } from '$';
-import { Rules } from '../../core';
-import { createQualityFilter } from '../../core/jabroni-config';
+import { createQualityFilter, Rules } from '../../core';
 import { OnHover, querySelectorLast } from '../../utils';
 
 export const meta: MonkeyUserScript = {
   name: 'Eporner PervertMonkey',
-  version: '2.2.0',
+  version: '2.2.1',
   description:
     'Infinite scroll [optional], Filter by Title, Uploader, Duration and HD, Sort by Views and Duration',
   match: ['https://*.eporner.com/*', 'https://*.eporner.*/*'],

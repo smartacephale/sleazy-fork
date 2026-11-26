@@ -15,7 +15,7 @@
 // @match        https://simpcity.cr/forums/*
 // @match        https://simpcity.cr/account/bookmarks*
 // @match        https://simpcity.cr/tags/*
-// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.29/dist/core/pervertmonkey.core.umd.js
+// @require      https://cdn.jsdelivr.net/npm/pervert-monkey@1.0.30/dist/core/pervertmonkey.core.umd.js
 // @grant        GM_addStyle
 // @grant        unsafeWindow
 // @run-at       document-end
