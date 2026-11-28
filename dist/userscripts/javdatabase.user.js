@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JavDatabase PervertMonkey
 // @namespace    pervertmonkey
-// @version      1.0.1
+// @version      1.0.2
 // @author       violent-orangutan
 // @description  Adds search movie links
 // @license      MIT
